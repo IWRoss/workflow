@@ -36,8 +36,6 @@ const addDesignRequest = async (newTask) => {
     newTask.client
   }`;
 
-  console.log(newTask);
-
   // Add item to board with column values
   const result = await monday.api(`mutation {
     create_item (board_id: ${
@@ -63,6 +61,8 @@ const addDesignRequest = async (newTask) => {
       id
     }
   }`);
+
+  console.log(result);
 
   // Add an update with the note
   const addNoteRequest = await monday.api(`mutation {

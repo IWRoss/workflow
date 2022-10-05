@@ -1,0 +1,27 @@
+{
+  "name": "workflow",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/web-api": "^6.7.2",
+    "axios": "^0.19.2",
+    "body-parser": "^1.20.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
+    "express": "~4.16.1",
+    "firebase": "^9.9.4",
+    "monday-sdk-js": "^0.1.4",
+    "morgan": "~1.9.1",
+    "node-cron": "^3.0.2",
+    "nodemon": "^2.0.2"
+  }
+}

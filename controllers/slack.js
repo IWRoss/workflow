@@ -81,11 +81,15 @@ const openDesignRequestForm = async (payload) => {
   // Get leave request form template
   const template = templates.requestLeaveModal;
 
-  // Send leave request form to Slack
-  const result = await slack.views.open({
-    trigger_id: payload.trigger_id,
-    view: templates.designRequestModal,
-  });
+  try {
+    // Send leave request form to Slack
+    const result = await slack.views.open({
+      trigger_id: payload.trigger_id,
+      view: templates.designRequestModal,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**
@@ -135,11 +139,15 @@ const handleDesignRequestResponse = async (payload) => {
   template.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MONDAY_BOARD}/pulses/${result.data.create_item.id}`;
   template.blocks[4].elements[2].url = newTask.dropboxLink;
 
-  // Send message to users
-  const message = await slack.chat.postMessage({
-    channel: process.env.SLACK_CHANNEL,
-    ...template,
-  });
+  try {
+    // Send message to users
+    const message = await slack.chat.postMessage({
+      channel: process.env.SLACK_CHANNEL,
+      ...template,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**
@@ -167,12 +175,16 @@ const claimTask = async (payload) => {
     },
   });
 
-  // Update the message
-  const message = await slack.chat.update({
-    channel: payload.channel.id,
-    ts: payload.message.ts,
-    blocks: [...payload.message.blocks],
-  });
+  try {
+    // Update the message
+    const message = await slack.chat.update({
+      channel: payload.channel.id,
+      ts: payload.message.ts,
+      blocks: [...payload.message.blocks],
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**

@@ -118,7 +118,7 @@ module.exports = {
       },
       label: {
         type: "plain_text",
-        text: "Medium",
+        text: "Media (you can select multiple types)",
         emoji: true,
       },
     },
@@ -127,6 +127,7 @@ module.exports = {
       element: {
         type: "plain_text_input",
         action_id: "dropboxLink",
+        placeholder: "Paste a Dropbox link here. Must be a valid URL",
       },
       label: {
         type: "plain_text",
@@ -140,6 +141,8 @@ module.exports = {
         type: "plain_text_input",
         multiline: true,
         action_id: "notes",
+        placeholder:
+          "Please include additional details, such as project name, branding, scope, etc.",
       },
       label: {
         type: "plain_text",

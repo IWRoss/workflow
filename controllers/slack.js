@@ -13,6 +13,8 @@ const {
   updateAssignedUser,
 } = require("./monday");
 
+const { isValidHttpUrl } = require("../helpers/helpers.js");
+
 /**
  * Import templates
  */
@@ -137,7 +139,12 @@ const handleDesignRequestResponse = async (payload) => {
   template.blocks[3].text.text += newTask.notes;
   template.blocks[4].elements[0].value = result.data.create_item.id;
   template.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MONDAY_BOARD}/pulses/${result.data.create_item.id}`;
-  template.blocks[4].elements[2].url = newTask.dropboxLink;
+
+  if (isValidHttpUrl(newTask.dropboxLink)) {
+    template.blocks[4].elements[2].url = newTask.dropboxLink;
+  } else {
+    template.blocks[4].elements.splice(2, 1);
+  }
 
   try {
     // Send message to users

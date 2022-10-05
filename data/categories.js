@@ -19,5 +19,6 @@ module.exports = [
   "Storyboard",
   "Book",
   "Mini mag",
+  "Image creation/editing",
   "Other",
 ];

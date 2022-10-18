@@ -16,11 +16,6 @@ const {
 const { isValidHttpUrl } = require("../helpers/helpers.js");
 
 /**
- * Import templates
- */
-const templates = require("../templates");
-
-/**
  * Initialise Slack
  */
 const slack = new WebClient(process.env.SLACK_TOKEN);
@@ -60,6 +55,9 @@ const filterMembers = (members) => {
  *
  */
 const addDesignRequestInterfaceToSlack = async () => {
+  // Get templates
+  const templates = require("../templates");
+
   // Get list of members
   const members = await getMembers();
 
@@ -80,8 +78,8 @@ const addDesignRequestInterfaceToSlack = async () => {
  * Open Leave Request Form
  */
 const openDesignRequestForm = async (payload) => {
-  // Get leave request form template
-  const template = templates.requestLeaveModal;
+  // Get templates
+  const templates = require("../templates");
 
   try {
     // Send leave request form to Slack
@@ -105,6 +103,9 @@ const findField = (fields, field) => {
  * Handle Leave Request Response
  */
 const handleDesignRequestResponse = async (payload) => {
+  // Get templates
+  const templates = require("../templates");
+
   const fields = Object.values(payload.view.state.values);
 
   // Get the user

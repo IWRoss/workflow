@@ -29,13 +29,6 @@ server.listen(PORT, function () {
   console.log("listening on port 4000");
 });
 
-// /**
-//  * Run CRON tasks (i.e. tasks on a schedule, such as sending notifc=ications to users)
-//  */
-// const runCron = require("./controllers/cron");
-
-// runCron();
-
 /**
  * If any Slack events need to be run on app initialisation, run them here
  */

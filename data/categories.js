@@ -20,5 +20,6 @@ module.exports = [
   "Book",
   "Mini mag",
   "Image creation/editing",
+  "Photography",
   "Other",
 ];

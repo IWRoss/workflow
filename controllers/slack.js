@@ -173,8 +173,10 @@ const handleRequestResponse = async (payload, locations) => {
     newRequestMessageTemplate.blocks[2].fields[1].text +=
       newTask.clientDeadline;
     newRequestMessageTemplate.blocks[3].text.text += newTask.notes;
-    newRequestMessageTemplate.blocks[4].elements[0].value =
-      result.data.create_item.id;
+    newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
+      boardId,
+      itemId: result.data.create_item.id,
+    });
     newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
     if (isValidHttpUrl(newTask.dropboxLink)) {
@@ -237,8 +239,10 @@ const claimTask = async (payload) => {
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
+  const { boardId, itemId } = JSON.parse(payload.actions[0].value);
+
   // Update the task
-  await updateAssignedUser(mondayUser.id, payload.actions[0].value);
+  await updateAssignedUser(mondayUser.id, itemId, boardId);
 
   // Remove the claim button
   payload.message.blocks[4].elements.splice(0, 1);

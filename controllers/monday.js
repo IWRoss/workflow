@@ -97,21 +97,21 @@ const addTaskToCommTechBoard = async (newTask) => {
 /**
  * Update assigned user on task
  */
-const updateAssignedUser = async (userID, taskID) => {
+const updateAssignedUser = async (userId, taskId, boardId) => {
   const columnValue = JSON.stringify({
     personsAndTeams: [
       {
-        id: userID,
+        id: userId,
         kind: "person",
       },
     ],
   }).replace(/"/g, '\\"');
 
-  console.log(String(taskID));
+  console.log(String(taskId));
 
   // Update the task
   const result = await monday.api(`mutation {
-    change_simple_column_value (item_id: ${taskID}, board_id: ${process.env.MONDAY_BOARD}, column_id: "people", value: "${userID}") 
+    change_simple_column_value (item_id: ${taskId}, board_id: ${boardId}, column_id: "people", value: "${userId}") 
     {
       id
     }

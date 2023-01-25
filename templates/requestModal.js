@@ -1,9 +1,5 @@
 /**
- * Template requestLeaveModal.js
- *
- * This template is used when a user clicks the button to submit a new leave
- * request, opening a modal window. Some of these blocks are dynamically
- * populated with data from the user's form submission.
+ * This is the modal that is used to create a new design request.
  */
 
 const clients = require("../data/clients");
@@ -11,10 +7,10 @@ const categories = require("../data/categories");
 
 module.exports = {
   type: "modal",
-  callback_id: "handleDesignRequestResponse",
+  callback_id: "",
   title: {
     type: "plain_text",
-    text: "Post a studio request",
+    text: "Post a request",
     emoji: true,
   },
   submit: {
@@ -102,18 +98,7 @@ module.exports = {
           text: "Select options",
           emoji: true,
         },
-        options: [
-          ...categories.map((category) => {
-            return {
-              text: {
-                type: "plain_text",
-                text: category,
-                emoji: true,
-              },
-              value: category,
-            };
-          }),
-        ],
+        options: [],
         action_id: "mediaSelect",
       },
       label: {

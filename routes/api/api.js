@@ -2,8 +2,12 @@ const express = require("express"),
   router = express.Router();
 
 const {
-  openDesignRequestForm,
-  handleDesignRequestResponse,
+  openStudioRequestForm,
+  openCommTechRequestForm,
+  openMultipleTeamsRequestForm,
+  handleStudioRequestResponse,
+  handleCommTechRequestResponse,
+  handleMultipleTeamsRequestResponse,
   claimTask,
 } = require("../../controllers/slack");
 
@@ -12,14 +16,26 @@ const {
  * with the Slack controller here.
  */
 const actions = {
-  openDesignRequestForm: (payload) => {
-    openDesignRequestForm(payload);
+  openStudioRequestForm: (payload) => {
+    openStudioRequestForm(payload);
   },
-  request: (payload) => {
-    openDesignRequestForm(payload);
+  openCommTechRequestForm: (payload) => {
+    openCommTechRequestForm(payload);
   },
-  handleDesignRequestResponse: (payload) => {
-    handleDesignRequestResponse(payload);
+  openStudioRequestForm: (payload) => {
+    openStudioRequestForm(payload);
+  },
+  openMultipleTeamsRequestForm: (payload) => {
+    openMultipleTeamsRequestForm(payload);
+  },
+  handleCommTechRequestResponse: (payload) => {
+    handleCommTechRequestResponse(payload);
+  },
+  handleStudioRequestResponse: (payload) => {
+    handleStudioRequestResponse(payload);
+  },
+  handleMultipleTeamsRequestResponse: (payload) => {
+    handleMultipleTeamsRequestResponse(payload);
   },
   claimTask: (payload) => {
     claimTask(payload);

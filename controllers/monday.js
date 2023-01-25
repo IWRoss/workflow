@@ -7,12 +7,12 @@ const monday = mondaySdk();
 monday.setToken(process.env.MONDAY_TOKEN);
 
 /**
- * Get the Design Requests board
+ * Get Monday board
  */
-const getDesignRequestsBoard = async () => {
-  // Get the Design Requests board
+const getMondayBoard = async (boardId) => {
+  // Get the board
   const board = await monday.api(`query {
-    boards (ids: ${process.env.MONDAY_BOARD}) {
+    boards (ids: ${boardId}) {
       name
       items {
         name
@@ -29,35 +29,44 @@ const getDesignRequestsBoard = async () => {
 };
 
 /**
- * Add item to design requests board
+ * Get the Studio Requests board
  */
-const addDesignRequest = async (newTask) => {
+const getStudioRequestsBoard = async () =>
+  getMondayBoard(process.env.STUDIO_MONDAY_BOARD);
+
+/**
+ * Get the CommTech Requests board
+ */
+const getCommTechRequestsBoard = async () =>
+  getMondayBoard(process.env.COMMTECH_MONDAY_BOARD);
+
+const addTaskToBoard = async (newTask, boardId) => {
   const taskTitle = `${new Date().toISOString().split("T")[0]} – Request for ${
     newTask.client
   }`;
 
   // Add item to board with column values
   const result = await monday.api(`mutation {
-    create_item (board_id: ${
-      process.env.MONDAY_BOARD
-    }, item_name: "${taskTitle}", column_values: "${JSON.stringify({
-    person: {
-      personsAndTeams: [
-        {
-          id: newTask.user,
-          kind: "person",
-        },
-      ],
-    },
-    dropdown: newTask.client,
-    date4: newTask.producerDeadline,
-    date: newTask.clientDeadline,
-    link: {
-      url: newTask.dropboxLink,
-      text: "Link",
-    },
-    dropdown8: newTask.media,
-  }).replace(/"/g, '\\"')}") {
+    create_item (board_id: ${boardId}, item_name: "${taskTitle}", column_values: "${JSON.stringify(
+    {
+      person: {
+        personsAndTeams: [
+          {
+            id: newTask.user,
+            kind: "person",
+          },
+        ],
+      },
+      dropdown: newTask.client,
+      date4: newTask.producerDeadline,
+      date: newTask.clientDeadline,
+      link: {
+        url: newTask.dropboxLink,
+        text: "Link",
+      },
+      dropdown8: newTask.media,
+    }
+  ).replace(/"/g, '\\"')}") {
       id
     }
   }`);
@@ -72,6 +81,17 @@ const addDesignRequest = async (newTask) => {
   }`);
 
   return result;
+};
+
+/**
+ * Add item to studio requests board
+ */
+const addTaskToStudioBoard = async (newTask) => {
+  return addTaskToBoard(newTask, process.env.STUDIO_MONDAY_BOARD);
+};
+
+const addTaskToCommTechBoard = async (newTask) => {
+  return addTaskToBoard(newTask, process.env.COMMTECH_MONDAY_BOARD);
 };
 
 /**
@@ -130,8 +150,11 @@ const getMondayUserByEmail = async (email) => {
 };
 
 module.exports = {
-  getDesignRequestsBoard,
-  addDesignRequest,
+  getStudioRequestsBoard,
+  getCommTechRequestsBoard,
+  addTaskToStudioBoard,
+  addTaskToCommTechBoard,
+  addTaskToBoard,
   getMondayUserByEmail,
   updateAssignedUser,
 };

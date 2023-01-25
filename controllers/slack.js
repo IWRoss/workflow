@@ -5,17 +5,15 @@
  */
 const { WebClient } = require("@slack/web-api");
 
-const { db } = require("./firestore");
-
 const _ = require("lodash");
 
 const {
-  addDesignRequest,
+  addTaskToBoard,
   getMondayUserByEmail,
   updateAssignedUser,
 } = require("./monday");
 
-const { isValidHttpUrl, clearRequireCache } = require("../helpers/helpers.js");
+const { isValidHttpUrl } = require("../helpers/helpers.js");
 
 const templates = require("../templates");
 
@@ -58,7 +56,7 @@ const filterMembers = (members) => {
 /**
  *
  */
-const addDesignRequestInterfaceToSlack = async () => {
+const addWorkflowInterfaceToSlack = async () => {
   // Get templates
   const appHomeTemplate = { ...templates.appHome };
 
@@ -79,22 +77,56 @@ const addDesignRequestInterfaceToSlack = async () => {
 };
 
 /**
- * Open Leave Request Form
+ * Open Studio Request Form
  */
-const openDesignRequestForm = async (payload) => {
+const openRequestForm = async (payload, callbackName) => {
   // Get templates
-  const designRequestModalTemplate = { ...templates.designRequestModal };
+  const requestModal = _.cloneDeep(templates.requestModal);
+
+  requestModal.callback_id =
+    callbackName || "handleMultipleTeamsRequestResponse";
+
+  const categories = require("../data/categories");
+
+  /**
+   * Define a const theCategories containing either the categories corresponding to the callbackName,
+   * or, if that does not exist, flatten the categories object and return all values, removing duplicates
+   */
+
+  const theCategories = categories[callbackName] || [
+    ...new Set(_.flatten(Object.values(categories))),
+  ];
+
+  requestModal.blocks[3].element.options = theCategories.map((category) => {
+    return {
+      text: {
+        type: "plain_text",
+        text: category,
+        emoji: true,
+      },
+      value: category,
+    };
+  });
 
   try {
     // Send leave request form to Slack
     const result = await slack.views.open({
       trigger_id: payload.trigger_id,
-      view: designRequestModalTemplate,
+      view: requestModal,
     });
   } catch (error) {
     console.log(error);
   }
 };
+
+const openStudioRequestForm = async (payload) =>
+  openRequestForm(payload, "handleStudioRequestResponse");
+
+const openCommTechRequestForm = async (payload) =>
+  openRequestForm(payload, "handleCommTechRequestResponse");
+
+const openMultipleTeamsRequestForm = async (payload) =>
+  openRequestForm(payload, "handleMultipleTeamsRequestResponse");
 
 /**
  * Find field
@@ -104,9 +136,9 @@ const findField = (fields, field) => {
 };
 
 /**
- * Handle Leave Request Response
+ * Handle Request Response
  */
-const handleDesignRequestResponse = async (payload) => {
+const handleRequestResponse = async (payload, locations) => {
   const fields = Object.values(payload.view.state.values);
 
   // Get the user
@@ -127,41 +159,73 @@ const handleDesignRequestResponse = async (payload) => {
     notes: findField(fields, "notes").value,
   };
 
-  // Add the task to Monday.com
-  const result = await addDesignRequest(newTask);
+  // Add task to boards
+  const results = locations.map(async ({ boardId, slackChannel }) => {
+    const result = await addTaskToBoard(newTask, boardId);
 
-  // Get template
-  let newRequestMessageTemplate = _.cloneDeep(templates.newRequestMessage);
+    let newRequestMessageTemplate = _.cloneDeep(templates.newRequestMessage);
 
-  newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new studio request:`;
-  newRequestMessageTemplate.blocks[1].fields[0].text += newTask.client;
-  newRequestMessageTemplate.blocks[1].fields[1].text += newTask.media;
-  newRequestMessageTemplate.blocks[2].fields[0].text +=
-    newTask.producerDeadline;
-  newRequestMessageTemplate.blocks[2].fields[1].text += newTask.clientDeadline;
-  newRequestMessageTemplate.blocks[3].text.text += newTask.notes;
-  newRequestMessageTemplate.blocks[4].elements[0].value =
-    result.data.create_item.id;
-  newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MONDAY_BOARD}/pulses/${result.data.create_item.id}`;
+    newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
+    newRequestMessageTemplate.blocks[1].fields[0].text += newTask.client;
+    newRequestMessageTemplate.blocks[1].fields[1].text += newTask.media;
+    newRequestMessageTemplate.blocks[2].fields[0].text +=
+      newTask.producerDeadline;
+    newRequestMessageTemplate.blocks[2].fields[1].text +=
+      newTask.clientDeadline;
+    newRequestMessageTemplate.blocks[3].text.text += newTask.notes;
+    newRequestMessageTemplate.blocks[4].elements[0].value =
+      result.data.create_item.id;
+    newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
-  if (isValidHttpUrl(newTask.dropboxLink)) {
-    newRequestMessageTemplate.blocks[4].elements[2].url = newTask.dropboxLink;
-  } else {
-    newRequestMessageTemplate.blocks[4].elements.splice(2, 1);
-  }
+    if (isValidHttpUrl(newTask.dropboxLink)) {
+      newRequestMessageTemplate.blocks[4].elements[2].url = newTask.dropboxLink;
+    } else {
+      newRequestMessageTemplate.blocks[4].elements.splice(2, 1);
+    }
 
-  try {
-    // Send message to users
-    const message = await slack.chat.postMessage({
-      channel: process.env.SLACK_CHANNEL,
-      ...newRequestMessageTemplate,
-    });
-  } catch (error) {
-    console.log(error);
-  }
+    try {
+      // Send message to users
+      const message = await slack.chat.postMessage({
+        channel: slackChannel,
+        ...newRequestMessageTemplate,
+      });
+    } catch (error) {
+      console.log(error);
+    }
 
-  return result;
+    return result;
+  });
+
+  return results;
 };
+
+const handleStudioRequestResponse = async (payload) =>
+  handleRequestResponse(payload, [
+    {
+      boardId: process.env.STUDIO_MONDAY_BOARD,
+      slackChannel: process.env.STUDIO_SLACK_CHANNEL,
+    },
+  ]);
+
+const handleCommTechRequestResponse = async (payload) =>
+  handleRequestResponse(payload, [
+    {
+      boardId: process.env.COMMTECH_MONDAY_BOARD,
+      slackChannel: process.env.COMMTECH_SLACK_CHANNEL,
+    },
+  ]);
+
+const handleMultipleTeamsRequestResponse = async (payload) =>
+  handleRequestResponse(payload, [
+    {
+      boardId: process.env.STUDIO_MONDAY_BOARD,
+      slackChannel: process.env.STUDIO_SLACK_CHANNEL,
+    },
+    {
+      boardId: process.env.COMMTECH_MONDAY_BOARD,
+      slackChannel: process.env.COMMTECH_SLACK_CHANNEL,
+    },
+  ]);
 
 /**
  * Claim task as user
@@ -221,8 +285,12 @@ const getUserById = async (id) => {
 module.exports = {
   slack,
   getMembers,
-  openDesignRequestForm,
-  handleDesignRequestResponse,
-  addDesignRequestInterfaceToSlack,
+  openStudioRequestForm,
+  openCommTechRequestForm,
+  openMultipleTeamsRequestForm,
+  handleStudioRequestResponse,
+  handleCommTechRequestResponse,
+  handleMultipleTeamsRequestResponse,
+  addWorkflowInterfaceToSlack,
   claimTask,
 };

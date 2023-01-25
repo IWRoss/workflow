@@ -32,6 +32,6 @@ server.listen(PORT, function () {
 /**
  * If any Slack events need to be run on app initialisation, run them here
  */
-const { addDesignRequestInterfaceToSlack } = require("./controllers/slack");
+const { addWorkflowInterfaceToSlack } = require("./controllers/slack");
 
-addDesignRequestInterfaceToSlack();
+addWorkflowInterfaceToSlack();

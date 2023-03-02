@@ -55,6 +55,7 @@ module.exports = [
   "Pratt Institute",
   "Red Bull",
   "Rede Partners",
+  "Renovo Home Partners",
   "SEND_Tutoring",
   "SIM",
   "Samford University",

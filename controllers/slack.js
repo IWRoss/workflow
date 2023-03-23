@@ -270,6 +270,7 @@ const claimTask = async (payload) => {
     slack.chat.postMessage({
       channel: posterID,
       text: `*<@${claimer}>* claimed your <${taskAddress}|task>.`,
+      unfurl_links: false,
     });  
 
   try {

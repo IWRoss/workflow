@@ -35,3 +35,5 @@ server.listen(PORT, function () {
 const { addWorkflowInterfaceToSlack } = require("./controllers/slack");
 
 addWorkflowInterfaceToSlack();
+
+console.log("Server started");

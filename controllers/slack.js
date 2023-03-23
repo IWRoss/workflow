@@ -265,7 +265,7 @@ const claimTask = async (payload) => {
 
     // Use Regex to get the user id from the first block
     const regex = /<@(.*)>/;
-    const posterID = regex.exec(poster)[1];
+    const posterID = poster.match(regex)[1];
 
     slack.chat.postMessage({
       channel: posterID,

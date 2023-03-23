@@ -261,7 +261,7 @@ const claimTask = async (payload) => {
 
     // Send confirmation message
     const claimer = payload.user.id;
-    const poster = payload.messages.blocks[0];
+    const poster = payload.message.blocks[0];
 
     // Use Regex to get the user id from the first block
     const regex = /<@(.*)>/;

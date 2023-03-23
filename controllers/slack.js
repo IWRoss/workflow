@@ -201,6 +201,7 @@ const handleRequestResponse = async (payload, locations) => {
   return results;
 };
 
+
 const handleStudioRequestResponse = async (payload) =>
   handleRequestResponse(payload, [
     {
@@ -239,6 +240,8 @@ const claimTask = async (payload) => {
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
+  const taskAddress = payload.message.blocks[4].elements[1].url;
+
   const { boardId, itemId } = JSON.parse(payload.actions[0].value);
 
   // Update the task
@@ -255,6 +258,19 @@ const claimTask = async (payload) => {
       text: `*<@${payload.user.id}>* claimed this task`,
     },
   });
+
+    // Send confirmation message
+    const claimer = payload.user.id;
+    const poster = payload.messages.blocks[0];
+
+    // Use Regex to get the user id from the first block
+    const regex = /<@(.*)>/;
+    const posterID = regex.exec(poster)[1];
+
+    slack.chat.postMessage({
+      channel: posterID,
+      text: `*<@${claimer}>* claimed your [task](${taskAddress}).`,
+    });  
 
   try {
     // Update the message

@@ -4,6 +4,7 @@ module.exports = {
     "Flyer",
     "Poster",
     "Infographic",
+    "Branding",
     "Job aid",
     "Brochure",
     "Toolkit",

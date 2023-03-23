@@ -33,6 +33,7 @@ module.exports = [
   "HCA Healthcare",
   "Hamilton Pyramid Europe",
   "Hamlyn-Williams",
+  "Harman",
   "IW Health and Wellness",
   "Inigo Insurance",
   "Integrated Labs Solutions",

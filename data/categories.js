@@ -16,6 +16,7 @@ module.exports = {
     "Mini mag",
     "Image creation/editing",
     "Photography",
+    "Quip",
     "Other",
   ],
   handleCommTechRequestResponse: [
@@ -24,6 +25,8 @@ module.exports = {
     "Sharepoint",
     "Microsite",
     "Diagnostic tool",
+    "Website amend",
+    "Slack bot amend",
     "Voiceover",
     "Podcast/sound editing",
     "Bug fix",

@@ -26,6 +26,7 @@ module.exports = [
   "Equifax",
   "FFX",
   "Farfetch",
+  "Fidelity",
   "FitFlop",
   "Future Farm",
   "GE Healthcare",

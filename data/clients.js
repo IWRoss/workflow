@@ -75,6 +75,7 @@ module.exports = [
   "Songkick",
   "Squarepoint",
   "St James's Place",
+  "Stewarts",
   "StoneX",
   "Stuart Dean",
   "Synechron",

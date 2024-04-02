@@ -8,5 +8,6 @@ const newRequestMessage = require("./newRequestMessage");
 module.exports = {
   appHome,
   requestModal,
+  invoiceRequestModal,
   newRequestMessage,
 };

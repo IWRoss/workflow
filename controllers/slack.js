@@ -128,6 +128,20 @@ const openCommTechRequestForm = async (payload) =>
 const openMultipleTeamsRequestForm = async (payload) =>
   openRequestForm(payload, "handleMultipleTeamsRequestResponse");
 
+const openInvoiceRequestForm = async (payload) => {
+  const invoiceRequestModal = _.cloneDeep(templates.invoiceRequestModal);
+
+  try {
+    // Send leave request form to Slack
+    const result = await slack.views.open({
+      trigger_id: payload.trigger_id,
+      view: invoiceRequestModal,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 /**
  * Find field
  */
@@ -201,7 +215,6 @@ const handleRequestResponse = async (payload, locations) => {
   return results;
 };
 
-
 const handleStudioRequestResponse = async (payload) =>
   handleRequestResponse(payload, [
     {
@@ -229,6 +242,71 @@ const handleMultipleTeamsRequestResponse = async (payload) =>
       slackChannel: process.env.COMMTECH_SLACK_CHANNEL,
     },
   ]);
+
+const handleInvoiceRequestResponse = async (payload) => {
+  const fields = Object.values(payload.view.state.values);
+
+  let newInvoiceRequestMessageTemplate = _.cloneDeep(
+    templates.newInvoiceRequestMessage
+  );
+
+  newInvoiceRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
+
+  newRequestMessageTemplate.blocks[1].fields[0].text += findField(
+    fields,
+    "projectClientInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[1].fields[1].text += findField(
+    fields,
+    "projectNameInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[2].text.text += findField(
+    fields,
+    "projectDescriptionInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[3].fields[0].text += findField(
+    fields,
+    "projectCodeInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[3].fields[1].text += findField(
+    fields,
+    "projectAmountInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[4].fields[0].text += findField(
+    fields,
+    "projectContactNameInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[4].fields[1].text += findField(
+    fields,
+    "projectContactEmailInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[4].fields[2].text += findField(
+    fields,
+    "projectDateInput"
+  ).value;
+
+  newRequestMessageTemplate.blocks[5].text.text += findField(
+    fields,
+    "projectNotesInput"
+  ).value;
+
+  try {
+    // Send message to users
+    const message = await slack.chat.postMessage({
+      channel: process.env.INVOICE_SLACK_CHANNEL,
+      ...newInvoiceRequestMessageTemplate,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 /**
  * Claim task as user
@@ -259,19 +337,19 @@ const claimTask = async (payload) => {
     },
   });
 
-    // Send confirmation message
-    const claimer = payload.user.id;
-    const poster = payload.message.blocks[0].text.text;
+  // Send confirmation message
+  const claimer = payload.user.id;
+  const poster = payload.message.blocks[0].text.text;
 
-    // Use Regex to get the user id from the first block
-    const regex = /<@(.*)>/;
-    const posterID = poster.match(regex)[1];
+  // Use Regex to get the user id from the first block
+  const regex = /<@(.*)>/;
+  const posterID = poster.match(regex)[1];
 
-    slack.chat.postMessage({
-      channel: posterID,
-      text: `*<@${claimer}>* claimed your <${taskAddress}|task>.`,
-      unfurl_links: false,
-    });  
+  slack.chat.postMessage({
+    channel: posterID,
+    text: `*<@${claimer}>* claimed your <${taskAddress}|task>.`,
+    unfurl_links: false,
+  });
 
   try {
     // Update the message
@@ -309,9 +387,11 @@ module.exports = {
   openStudioRequestForm,
   openCommTechRequestForm,
   openMultipleTeamsRequestForm,
+  openInvoiceRequestForm,
   handleStudioRequestResponse,
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,
+  handleInvoiceRequestResponse,
   addWorkflowInterfaceToSlack,
   claimTask,
 };

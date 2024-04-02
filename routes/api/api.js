@@ -5,10 +5,13 @@ const {
   openStudioRequestForm,
   openCommTechRequestForm,
   openMultipleTeamsRequestForm,
+  openInvoiceRequestForm,
   handleStudioRequestResponse,
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,
+  handleInvoiceRequestResponse,
   claimTask,
+  openInvoiceRequestForm,
 } = require("../../controllers/slack");
 
 /**
@@ -28,6 +31,9 @@ const actions = {
   openMultipleTeamsRequestForm: (payload) => {
     openMultipleTeamsRequestForm(payload);
   },
+  openInvoiceRequestForm: (payload) => {
+    openInvoiceRequestForm(payload);
+  },
   handleCommTechRequestResponse: (payload) => {
     handleCommTechRequestResponse(payload);
   },
@@ -36,6 +42,9 @@ const actions = {
   },
   handleMultipleTeamsRequestResponse: (payload) => {
     handleMultipleTeamsRequestResponse(payload);
+  },
+  handleInvoiceRequestResponse: (payload) => {
+    handleInvoiceRequestResponse(payload);
   },
   claimTask: (payload) => {
     claimTask(payload);

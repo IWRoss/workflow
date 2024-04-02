@@ -111,5 +111,30 @@ module.exports = {
         action_id: "openMultipleTeamsRequestForm",
       },
     },
+    {
+      type: "header",
+      text: {
+        type: "plain_text",
+        text: "Invoices",
+        emoji: true,
+      },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "If you need to submit an invoice, please use this form.",
+      },
+      accessory: {
+        type: "button",
+        text: {
+          type: "plain_text",
+          text: "Create invoice",
+          emoji: true,
+        },
+        value: "click_me_123",
+        action_id: "openInvoiceForm",
+      },
+    },
   ],
 };

@@ -191,5 +191,8 @@ module.exports = {
         emoji: true,
       },
     },
+    {
+      type: "divider",
+    },
   ],
 };

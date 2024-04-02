@@ -37,6 +37,9 @@ module.exports = {
       },
     },
     {
+      type: "divider",
+    },
+    {
       type: "header",
       text: {
         type: "plain_text",
@@ -110,6 +113,9 @@ module.exports = {
         value: "click_me_123",
         action_id: "openMultipleTeamsRequestForm",
       },
+    },
+    {
+      type: "divider",
     },
     {
       type: "header",

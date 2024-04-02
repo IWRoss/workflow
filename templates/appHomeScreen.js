@@ -129,11 +129,11 @@ module.exports = {
         type: "button",
         text: {
           type: "plain_text",
-          text: "Create invoice",
+          text: "Create ticket",
           emoji: true,
         },
         value: "click_me_123",
-        action_id: "openInvoiceForm",
+        action_id: "openInvoiceRequestForm",
       },
     },
   ],

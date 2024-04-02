@@ -252,47 +252,47 @@ const handleInvoiceRequestResponse = async (payload) => {
 
   newInvoiceRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
 
-  newRequestMessageTemplate.blocks[1].fields[0].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[1].fields[0].text += findField(
     fields,
     "projectClientInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[1].fields[1].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[1].fields[1].text += findField(
     fields,
     "projectNameInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[2].text.text += findField(
+  newInvoiceRequestMessageTemplate.blocks[2].text.text += findField(
     fields,
     "projectDescriptionInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[3].fields[0].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[3].fields[0].text += findField(
     fields,
     "projectCodeInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[3].fields[1].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[3].fields[1].text += findField(
     fields,
     "projectAmountInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[4].fields[0].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[4].fields[0].text += findField(
     fields,
     "projectContactNameInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[4].fields[1].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[4].fields[1].text += findField(
     fields,
     "projectContactEmailInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[4].fields[2].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[4].fields[2].text += findField(
     fields,
     "projectDateInput"
   ).value;
 
-  newRequestMessageTemplate.blocks[5].text.text += findField(
+  newInvoiceRequestMessageTemplate.blocks[5].text.text += findField(
     fields,
     "projectNotesInput"
   ).value;

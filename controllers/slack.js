@@ -255,7 +255,7 @@ const handleInvoiceRequestResponse = async (payload) => {
   newInvoiceRequestMessageTemplate.blocks[1].fields[0].text += findField(
     fields,
     "projectClientInput"
-  ).value;
+  ).selected_option.value;
 
   newInvoiceRequestMessageTemplate.blocks[1].fields[1].text += findField(
     fields,
@@ -287,12 +287,12 @@ const handleInvoiceRequestResponse = async (payload) => {
     "projectContactEmailInput"
   ).value;
 
-  newInvoiceRequestMessageTemplate.blocks[4].fields[2].text += findField(
+  newInvoiceRequestMessageTemplate.blocks[5].fields[0].text += findField(
     fields,
     "projectDateInput"
-  ).value;
+  ).selected_date;
 
-  newInvoiceRequestMessageTemplate.blocks[5].text.text += findField(
+  newInvoiceRequestMessageTemplate.blocks[6].text.text += findField(
     fields,
     "projectNotesInput"
   ).value;

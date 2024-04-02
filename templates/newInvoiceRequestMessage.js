@@ -51,6 +51,11 @@ module.exports = {
           type: "mrkdwn",
           text: "*Contact email address*\n",
         },
+      ],
+    },
+    {
+      type: "section",
+      fields: [
         {
           type: "mrkdwn",
           text: "*Date to send invoice*\n",

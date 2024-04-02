@@ -11,7 +11,6 @@ const {
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
   claimTask,
-  openInvoiceRequestForm,
 } = require("../../controllers/slack");
 
 /**

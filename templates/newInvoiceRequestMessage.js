@@ -64,21 +64,5 @@ module.exports = {
         text: "*Notes*\n",
       },
     },
-    {
-      type: "actions",
-      elements: [
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "Claim task",
-            emoji: true,
-          },
-          value: "",
-          action_id: "claimTask",
-          style: "primary",
-        },
-      ],
-    },
   ],
 };

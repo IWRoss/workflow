@@ -12,6 +12,7 @@ module.exports = [
   "Baker McKenzie",
   "Baloise Group",
   "Battersea Power Station",
+  "Bloomberg",
   "BlueBay Asset Management",
   "BlueCove",
   "CSSC",

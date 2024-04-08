@@ -38,6 +38,7 @@ module.exports = [
   "Hamilton Pyramid Europe",
   "Hamlyn-Williams",
   "Harman",
+  "Houseful",
   "Howden Group",
   "IW Health and Wellness",
   "Inigo Insurance",

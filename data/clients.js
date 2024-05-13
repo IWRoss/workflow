@@ -7,6 +7,7 @@ module.exports = [
   "Age UK",
   "Airbus",
   "Allen & Overy",
+  "Amazon Freight",
   "Atlantic",
   "BIS",
   "Baker McKenzie",

@@ -1,5 +1,6 @@
 module.exports = {
   handleStudioRequestResponse: [
+    "Amend",
     "Deck",
     "Flyer",
     "Poster",

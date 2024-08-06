@@ -34,6 +34,7 @@ module.exports = [
   "Farfetch",
   "Fidelity",
   "FitFlop",
+  "Fragoman",
   "Future Farm",
   "GE Healthcare",
   "Glanbia",

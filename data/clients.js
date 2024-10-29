@@ -35,6 +35,7 @@ module.exports = [
   "Fragoman",
   "Future Farm",
   "GE Healthcare",
+  "Gerald Eve",
   "Glanbia",
   "HCA Healthcare",
   "Hamilton Pyramid Europe",

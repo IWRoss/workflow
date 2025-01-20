@@ -46,30 +46,35 @@ module.exports = {
         //   }),
         // ],
         option_groups: [
-          ...clients
-            .reduce((acc, client) => {
-              const firstLetter = client.charAt(0).toUpperCase();
-              if (!acc[firstLetter]) {
-                acc[firstLetter] = [];
-              }
-              acc[firstLetter].push({
-                text: {
+          ...clients.reduce((acc, client) => {
+            const firstLetter = client.charAt(0).toUpperCase();
+
+            const groupIndex = acc.findIndex(
+              (group) => group.label.text === firstLetter
+            );
+
+            if (groupIndex === -1) {
+              acc.push({
+                label: {
                   type: "plain_text",
-                  text: client,
+                  text: firstLetter,
                   emoji: true,
                 },
-                value: client,
+                options: [],
               });
-              return acc;
-            }, [])
-            .map((group) => ({
-              label: {
+            }
+
+            acc[acc.length - 1].options.push({
+              text: {
                 type: "plain_text",
-                text: group[0].text.text,
+                text: client,
                 emoji: true,
               },
-              options: group,
-            })),
+              value: client,
+            });
+
+            return acc;
+          }, []),
         ],
         action_id: "clientSelect",
       },

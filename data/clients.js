@@ -1,5 +1,4 @@
 module.exports = [
-  "Interactive Workshops",
   "4G",
   "AFM",
   "AON",
@@ -46,6 +45,7 @@ module.exports = [
   "Inigo Insurance",
   "Instanda",
   "Integrated Labs Solutions",
+  "Interactive Workshops",
   "JDE",
   "Kennedy’s Law",
   "Kingswood-Group",

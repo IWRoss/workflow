@@ -33,17 +33,43 @@ module.exports = {
           text: "Select an item",
           emoji: true,
         },
-        options: [
-          ...clients.map((client) => {
-            return {
-              text: {
+        // options: [
+        //   ...clients.map((client) => {
+        //     return {
+        //       text: {
+        //         type: "plain_text",
+        //         text: client,
+        //         emoji: true,
+        //       },
+        //       value: client,
+        //     };
+        //   }),
+        // ],
+        option_groups: [
+          ...clients
+            .reduce((acc, client) => {
+              const firstLetter = client.charAt(0).toUpperCase();
+              if (!acc[firstLetter]) {
+                acc[firstLetter] = [];
+              }
+              acc[firstLetter].push({
+                text: {
+                  type: "plain_text",
+                  text: client,
+                  emoji: true,
+                },
+                value: client,
+              });
+              return acc;
+            }, [])
+            .map((group) => ({
+              label: {
                 type: "plain_text",
-                text: client,
+                text: group[0].text.text,
                 emoji: true,
               },
-              value: client,
-            };
-          }),
+              options: group,
+            })),
         ],
         action_id: "clientSelect",
       },

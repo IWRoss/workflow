@@ -58,6 +58,7 @@ module.exports = [
   "Nephila Advisors",
   "Nike",
   "Oerlikon",
+  "Panasonic",
   "Parcl",
   "Pearl and Dean",
   "Pilgrim Food Masters",

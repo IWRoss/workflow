@@ -32,17 +32,48 @@ module.exports = {
           text: "Select a client from the list",
           emoji: true,
         },
-        options: [
-          ...clients.map((client) => {
-            return {
+        // options: [
+        //   ...clients.map((client) => {
+        //     return {
+        //       text: {
+        //         type: "plain_text",
+        //         text: client,
+        //         emoji: true,
+        //       },
+        //       value: client,
+        //     };
+        //   }),
+        // ],
+        option_groups: [
+          ...clients.reduce((acc, client) => {
+            const firstLetter = client.charAt(0).toUpperCase();
+
+            const groupIndex = acc.findIndex(
+              (group) => group.label.text === firstLetter
+            );
+
+            if (groupIndex === -1) {
+              acc.push({
+                label: {
+                  type: "plain_text",
+                  text: firstLetter,
+                  emoji: true,
+                },
+                options: [],
+              });
+            }
+
+            acc[acc.length - 1].options.push({
               text: {
                 type: "plain_text",
                 text: client,
                 emoji: true,
               },
               value: client,
-            };
-          }),
+            });
+
+            return acc;
+          }, []),
         ],
         action_id: "projectClientInput",
       },

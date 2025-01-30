@@ -10,7 +10,6 @@ const studioOptions = {
     "Brochure",
     "Toolkit",
     "GIF",
-    "eLearning",
     "Book",
     "Mini mag",
     "Image creation/editing",
@@ -18,6 +17,7 @@ const studioOptions = {
     "Quip",
     "Other",
   ],
+  "RISE/Storyline eLearning": ["eLearning"],
   "Video Production": ["Animation", "Storyboard", "Live-action video"],
   "Audio Production": ["Voiceover", "Podcast/sound editing"],
 };
@@ -31,6 +31,7 @@ const webdevOptions = {
     "Bug fix",
     "Other",
   ],
+  "Custom Conversation eLearning": ["Custom Conversation eLearning"],
   Integration: ["Slack bot", "Slack bot amend", "Dashboard", "Dashboard amend"],
 };
 

@@ -5,6 +5,10 @@
 const clients = require("../data/clients");
 const categories = require("../data/categories");
 
+const tomorrowsDate = new Date(); // Get the current date
+tomorrowsDate.setDate(tomorrowsDate.getDate() + 1); // Add a day
+const tomorrowsDateString = tomorrowsDate.toISOString().split("T")[0]; // Format the date as a string
+
 module.exports = {
   type: "modal",
   callback_id: "",
@@ -33,18 +37,6 @@ module.exports = {
           text: "Select an item",
           emoji: true,
         },
-        // options: [
-        //   ...clients.map((client) => {
-        //     return {
-        //       text: {
-        //         type: "plain_text",
-        //         text: client,
-        //         emoji: true,
-        //       },
-        //       value: client,
-        //     };
-        //   }),
-        // ],
         option_groups: [
           ...clients.reduce((acc, client) => {
             const firstLetter = client.charAt(0).toUpperCase();
@@ -88,7 +80,7 @@ module.exports = {
       type: "input",
       element: {
         type: "datepicker",
-        initial_date: new Date().toISOString().split("T")[0],
+        initial_date: tomorrowsDateString,
         placeholder: {
           type: "plain_text",
           text: "Select a date",
@@ -106,7 +98,7 @@ module.exports = {
       type: "input",
       element: {
         type: "datepicker",
-        initial_date: new Date().toISOString().split("T")[0],
+        initial_date: tomorrowsDateString,
         placeholder: {
           type: "plain_text",
           text: "Select a date",
@@ -145,12 +137,12 @@ module.exports = {
         action_id: "dropboxLink",
         placeholder: {
           type: "plain_text",
-          text: "Paste a Dropbox link here. Must be a valid URL",
+          text: "Paste a Dropbox (or other) link here. Must be a valid URL",
         },
       },
       label: {
         type: "plain_text",
-        text: "Dropbox link",
+        text: "Project Assets/Content",
         emoji: true,
       },
     },

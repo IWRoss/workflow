@@ -93,20 +93,9 @@ const openRequestForm = async (payload, callbackName) => {
    * or, if that does not exist, flatten the categories object and return all values, removing duplicates
    */
 
-  const theCategories = categories[callbackName] || [
-    ...new Set(_.flatten(Object.values(categories))),
-  ];
+  const optionGroup = categories[callbackName];
 
-  requestModal.blocks[3].element.options = theCategories.map((category) => {
-    return {
-      text: {
-        type: "plain_text",
-        text: category,
-        emoji: true,
-      },
-      value: category,
-    };
-  });
+  requestModal.blocks[3].element.option_groups = _.cloneDeep(optionGroup);
 
   try {
     // Send leave request form to Slack

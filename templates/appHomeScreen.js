@@ -19,7 +19,7 @@ module.exports = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "Workflow bot allows producers to submit tickets directly through Slack, providing an easy and convenient way to request Studio and CommTech services. With Workflow, producers can submit tickets by filling out a form, including the client name, producer deadline, client deadline, media type, and a link to a Dropbox file containing all the content. ",
+        text: "Workflow bot allows producers to submit tickets directly through Slack, providing an easy and convenient way to request Studio and Webdev services. With Workflow, producers can submit tickets by filling out a form, including the client name, producer deadline, client deadline, media type, and a link to a Dropbox file containing all the content. ",
       },
     },
     {
@@ -51,7 +51,7 @@ module.exports = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "If your project involves *graphic design* or *animation*, please submit your ticket using this form.",
+        text: "If your project involves *graphic design*, *video*, or *animation*, please submit your ticket using this form.",
       },
       accessory: {
         type: "button",
@@ -68,7 +68,7 @@ module.exports = {
       type: "header",
       text: {
         type: "plain_text",
-        text: "CommTech",
+        text: "Webdev",
         emoji: true,
       },
     },
@@ -76,7 +76,7 @@ module.exports = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "If your project involves *video*, *web development*, or *internal marketing*, please submit your ticket using this form.",
+        text: "If your project involves *web development*, please submit your ticket using this form.",
       },
       accessory: {
         type: "button",
@@ -93,7 +93,7 @@ module.exports = {
       type: "header",
       text: {
         type: "plain_text",
-        text: "Does your project involve both Studio and CommTech?",
+        text: "Does your project involve both Studio and Webdev?",
         emoji: true,
       },
     },
@@ -101,7 +101,7 @@ module.exports = {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: "Please submit your ticket using this form to add it to both Studio and CommTech queues.",
+        text: "Please submit your ticket using this form to add it to both Studio and Webdev queues.",
       },
       accessory: {
         type: "button",

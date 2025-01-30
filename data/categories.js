@@ -1,5 +1,5 @@
-module.exports = {
-  handleStudioRequestResponse: [
+const studioOptions = {
+  "Graphic Design": [
     "Amend",
     "Deck",
     "Flyer",
@@ -11,8 +11,6 @@ module.exports = {
     "Toolkit",
     "GIF",
     "eLearning",
-    "Animation",
-    "Storyboard",
     "Book",
     "Mini mag",
     "Image creation/editing",
@@ -20,17 +18,77 @@ module.exports = {
     "Quip",
     "Other",
   ],
-  handleCommTechRequestResponse: [
-    "Live-action video",
-    "Blog upload",
-    "Sharepoint",
+  "Video Production": ["Animation", "Storyboard", "Live-action video"],
+  "Audio Production": ["Voiceover", "Podcast/sound editing"],
+};
+
+const webdevOptions = {
+  "Content Population": ["Blog upload", "Sharepoint"],
+  "Web Development": [
     "Microsite",
     "Diagnostic tool",
     "Website amend",
-    "Slack bot amend",
-    "Voiceover",
-    "Podcast/sound editing",
     "Bug fix",
     "Other",
   ],
+  Integration: ["Slack bot", "Slack bot amend", "Dashboard", "Dashboard amend"],
+};
+
+const createSlackOptionGroup = (options) => {
+  return Object.keys(options).reduce((acc, key) => {
+    const group = {
+      label: {
+        type: "plain_text",
+        text: key,
+        emoji: true,
+      },
+      options: options[key].map((option) => {
+        return {
+          text: {
+            type: "plain_text",
+            text: option,
+            emoji: true,
+          },
+          value: option,
+        };
+      }),
+    };
+
+    acc.push(group);
+    return acc;
+  }, []);
+};
+
+module.exports = {
+  // handleStudioRequestResponse: [
+  //   "Amend",
+  //   "Deck",
+  //   "Flyer",
+  //   "Poster",
+  //   "Infographic",
+  //   "Branding",
+  //   "Job aid",
+  //   "Brochure",
+  //   "Toolkit",
+  //   "GIF",
+  //   "eLearning",
+  //   "Book",
+  //   "Mini mag",
+  //   "Image creation/editing",
+  //   "Photography",
+  //   "Quip",
+  //   "Other",
+  // ],
+  // handleCommTechRequestResponse: [
+  //   "Blog upload",
+  //   "Sharepoint",
+  //   "Microsite",
+  //   "Diagnostic tool",
+  //   "Website amend",
+  //   "Slack bot amend",
+  //   "Bug fix",
+  //   "Other",
+  // ],
+  handleStudioRequestResponse: createSlackOptionGroup(studioOptions),
+  handleCommTechRequestResponse: createSlackOptionGroup(webdevOptions),
 };

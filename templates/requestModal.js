@@ -121,7 +121,6 @@ module.exports = {
           text: "Select options",
           emoji: true,
         },
-        options: [],
         action_id: "mediaSelect",
       },
       label: {

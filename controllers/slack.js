@@ -93,7 +93,9 @@ const openRequestForm = async (payload, callbackName) => {
    * or, if that does not exist, flatten the categories object and return all values, removing duplicates
    */
 
-  const optionGroup = categories[callbackName];
+  const optionGroup = categories[callbackName] ?? [
+    ...new Set(Object.values(categories).flat()),
+  ];
 
   requestModal.blocks[3].element.option_groups = _.cloneDeep(optionGroup);
 

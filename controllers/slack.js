@@ -153,7 +153,7 @@ const handleRequestResponse = async (payload, locations) => {
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
   const newTask = {
-    user: mondayUser.id,
+    user: mondayUser.id ?? "",
     client: findField(fields, "clientSelect").selected_option.value,
     producerDeadline: findField(fields, "producerDeadline").selected_date,
     clientDeadline: findField(fields, "clientDeadline").selected_date,

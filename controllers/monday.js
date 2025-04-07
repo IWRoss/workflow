@@ -6,24 +6,35 @@ const monday = mondaySdk();
 // Set token
 monday.setToken(process.env.MONDAY_TOKEN);
 
+const getMonday = async () => {
+  // Get the Monday.com instance
+  const monday = mondaySdk();
+
+  // Set token
+  monday.setToken(process.env.MONDAY_TOKEN);
+
+  return monday;
+};
+
 /**
  * Get Monday board
  */
 const getMondayBoard = async (boardId) => {
   // Get the board
-  const board = await monday.api(`query {
-    boards (ids: ${boardId}) {
-      name
-      items {
+  const board = await monday.api(
+    `query ($boardId: [ID!]) {
+      boards (ids: $boardId) {
         name
-        column_values {
-          id
-          title
-          text
+        items_page {
+          items {
+            id
+            name
+          }
         }
       }
-    }
-  }`);
+    }`,
+    { variables: { boardId } } // Adjust page and limit as needed
+  );
 
   return board;
 };
@@ -65,22 +76,23 @@ const addTaskToBoard = async (newTask, boardId) => {
         text: "Link",
       },
       dropdown8: newTask.media,
+      details: newTask.notes,
     }
   ).replace(/"/g, '\\"')}") {
       id
     }
   }`);
 
-  console.log("Create item request", JSON.stringify(result));
+  // console.log("Create item request", JSON.stringify(result));
 
-  // Add an update with the note
-  const addNoteRequest = await monday.api(`mutation {
-    create_update (item_id: ${result.data.create_item.id}, body: "${newTask.notes}") {
-      id
-    }
-  }`);
+  // // Add an update with the note
+  // const addNoteRequest = await monday.api(`mutation {
+  //   create_update (item_id: ${result.data.create_item.id}, body: "${newTask.notes}") {
+  //     id
+  //   }
+  // }`);
 
-  console.log("Add note request", JSON.stringify(addNoteRequest));
+  // console.log("Add note request", JSON.stringify(addNoteRequest));
 
   return result;
 };
@@ -152,6 +164,8 @@ const getMondayUserByEmail = async (email) => {
 };
 
 module.exports = {
+  getMonday,
+  getMondayBoard,
   getStudioRequestsBoard,
   getCommTechRequestsBoard,
   addTaskToStudioBoard,

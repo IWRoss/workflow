@@ -71,7 +71,7 @@ const addTaskToBoard = async (newTask, boardId) => {
     }
   }`);
 
-  console.log(result);
+  console.log("Create item request", JSON.stringify(result));
 
   // Add an update with the note
   const addNoteRequest = await monday.api(`mutation {
@@ -79,6 +79,8 @@ const addTaskToBoard = async (newTask, boardId) => {
       id
     }
   }`);
+
+  console.log("Add note request", JSON.stringify(addNoteRequest));
 
   return result;
 };

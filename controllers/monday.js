@@ -76,8 +76,6 @@ const addTaskToBoard = async (newTask, boardId) => {
     details: newTask.notes,
   }).replace(/"/g, '\\"');
 
-  console.log("Column values", column_values);
-
   // Add item to board with column values
   const result = await monday.api(`mutation {
     create_item (board_id: ${boardId}, item_name: "${taskTitle}", column_values: "${column_values}") {
@@ -85,7 +83,7 @@ const addTaskToBoard = async (newTask, boardId) => {
     }
   }`);
 
-  // console.log("Create item request", JSON.stringify(result));
+  console.log("Create item request", JSON.stringify(result));
 
   // // Add an update with the note
   // const addNoteRequest = await monday.api(`mutation {

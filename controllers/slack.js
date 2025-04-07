@@ -67,13 +67,48 @@ const addWorkflowInterfaceToSlack = async () => {
   const filteredMembers = filterMembers(members);
 
   // Send message to each member
-  filteredMembers.forEach(async (member) => {
-    // Send message
-    await slack.views.publish({
-      user_id: member.id,
-      view: appHomeTemplate,
-    });
-  });
+  const results = Promise.all(
+    filteredMembers.map(async (member) => {
+      // Send message
+      await slack.views.publish({
+        user_id: member.id,
+        view: appHomeTemplate,
+      });
+    })
+  );
+
+  return results;
+};
+
+/**
+ * Remove Workflow Interface when in maintenance mode, excluding the defined user
+ */
+const putAppIntoMaintenanceMode = async () => {
+  // Get templates
+  const appMaintenance = { ...templates.appMaintenance };
+
+  // Get list of members
+  const members = await getMembers();
+
+  // Filter members
+  const filteredMembers = members.filter(
+    (member) =>
+      member.id !== process.env.TEST_USER &&
+      member.id !== process.env.MAINTENANCE_USER
+  );
+
+  // Send message to each member
+  const results = Promise.all(
+    filteredMembers.map(async (member) => {
+      // Send message
+      return await slack.views.publish({
+        user_id: member.id,
+        view: appMaintenance,
+      });
+    })
+  );
+
+  return results;
 };
 
 /**
@@ -384,5 +419,6 @@ module.exports = {
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
   addWorkflowInterfaceToSlack,
+  putAppIntoMaintenanceMode,
   claimTask,
 };

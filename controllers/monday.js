@@ -74,7 +74,9 @@ const addTaskToBoard = async (newTask, boardId) => {
     },
     dropdown8: newTask.media,
     details: newTask.notes,
-  }).replace(/"/g, '\\"');
+  })
+    .replace(/"/g, '\\"')
+    .replace(/\\n/g, "\\\\n");
 
   // Add item to board with column values
   const result = await monday.api(`mutation {

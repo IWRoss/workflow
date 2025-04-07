@@ -38,6 +38,23 @@ module.exports = {
           emoji: true,
         },
         option_groups: [
+          {
+            label: {
+              type: "plain_text",
+              text: "Internal",
+              emoji: true,
+            },
+            options: [
+              {
+                text: {
+                  type: "plain_text",
+                  text: "Cegos",
+                  emoji: true,
+                },
+                value: "Cegos",
+              },
+            ],
+          },
           ...clients.reduce((acc, client) => {
             const firstLetter = client.charAt(0).toUpperCase();
 

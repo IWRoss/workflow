@@ -15,6 +15,7 @@ module.exports = [
   "Bloomberg",
   "BlueBay Asset Management",
   "BlueCove",
+  "Cegos",
   "CSSC",
   "Chubb Insurance",
   "Cisco Systems",

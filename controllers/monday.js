@@ -56,29 +56,31 @@ const addTaskToBoard = async (newTask, boardId) => {
     newTask.client
   }`;
 
+  const column_values = JSON.stringify({
+    person: {
+      personsAndTeams: [
+        {
+          id: newTask.user,
+          kind: "person",
+        },
+      ],
+    },
+    dropdown: newTask.client,
+    date4: newTask.producerDeadline,
+    date: newTask.clientDeadline,
+    link: {
+      url: newTask.dropboxLink,
+      text: "Link",
+    },
+    dropdown8: newTask.media,
+    details: newTask.notes,
+  }).replace(/"/g, '\\"');
+
+  console.log("Column values", column_values);
+
   // Add item to board with column values
   const result = await monday.api(`mutation {
-    create_item (board_id: ${boardId}, item_name: "${taskTitle}", column_values: "${JSON.stringify(
-    {
-      person: {
-        personsAndTeams: [
-          {
-            id: newTask.user,
-            kind: "person",
-          },
-        ],
-      },
-      dropdown: newTask.client,
-      date4: newTask.producerDeadline,
-      date: newTask.clientDeadline,
-      link: {
-        url: newTask.dropboxLink,
-        text: "Link",
-      },
-      dropdown8: newTask.media,
-      details: newTask.notes,
-    }
-  ).replace(/"/g, '\\"')}") {
+    create_item (board_id: ${boardId}, item_name: "${taskTitle}", column_values: "${column_values}") {
       id
     }
   }`);

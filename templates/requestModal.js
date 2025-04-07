@@ -168,6 +168,7 @@ module.exports = {
         type: "plain_text_input",
         multiline: true,
         action_id: "notes",
+        max_length: 2000,
         placeholder: {
           type: "plain_text",
           text: "Please include additional details, such as project name, branding, scope, etc.",

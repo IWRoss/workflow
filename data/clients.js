@@ -19,6 +19,7 @@ module.exports = [
   "Chubb Insurance",
   "Cisco Systems",
   "Convergint Technologies",
+  "CooperVision",
   "Cornerstone",
   "Coupang",
   "Credit Agricole",

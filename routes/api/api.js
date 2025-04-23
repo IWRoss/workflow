@@ -29,14 +29,14 @@ const actions = {
   openStudioRequestForm: (payload) => {
     openStudioRequestForm(payload);
   },
-  openOpsRequestForm: (payload) => {
-    openOpsRequestForm(payload);
-  },
   openMultipleTeamsRequestForm: (payload) => {
     openMultipleTeamsRequestForm(payload);
   },
   openInvoiceRequestForm: (payload) => {
     openInvoiceRequestForm(payload);
+  },
+  openOpsRequestForm: (payload) => {
+    openOpsRequestForm(payload);
   },
   handleCommTechRequestResponse: (payload) => {
     handleCommTechRequestResponse(payload);
@@ -79,7 +79,7 @@ router.post("/slack/receive", async (req, res) => {
     }
   } catch {
     // Dump action to console
-    console.log(payload);
+    console.dir(payload, { depth: null });
   }
 
   res.send();

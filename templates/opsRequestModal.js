@@ -1,6 +1,6 @@
 module.exports = {
   type: "modal",
-  callback_id: "handleInvoiceRequestResponse",
+  callback_id: "handleOpsRequestResponse",
   title: {
     type: "plain_text",
     text: "Post a request",

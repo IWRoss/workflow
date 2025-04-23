@@ -458,7 +458,7 @@ const openOpsRequestForm = async (payload) => {
       view: opsRequestModal,
     });
   } catch (error) {
-    console.log(error);
+    console.dir(error, { depth: null });
   }
 };
 

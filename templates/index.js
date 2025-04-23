@@ -7,12 +7,14 @@ const requestModal = require("./requestModal");
 const newRequestMessage = require("./newRequestMessage");
 const invoiceRequestModal = require("./invoiceRequestModal");
 const newInvoiceRequestMessage = require("./newInvoiceRequestMessage");
+const opsRequestModal = require("./opsRequestModal");
 
 module.exports = {
   appHome,
   appMaintenance,
   requestModal,
   invoiceRequestModal,
+  opsRequestModal,
   newRequestMessage,
   newInvoiceRequestMessage,
 };

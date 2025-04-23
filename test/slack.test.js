@@ -41,3 +41,43 @@ describe("#putAppIntoMaintenanceMode", function () {
     }
   });
 });
+
+describe("#getOpportunityOptions", function () {
+  it("should get opportunity options", async function () {
+    this.timeout(10000); // Increase timeout to 10 seconds
+
+    const { getOpportunityOptions } = require("../controllers/slack");
+
+    try {
+      const result = await getOpportunityOptions();
+
+      console.log("Opportunity options:", result);
+
+      assert(result);
+    } catch (error) {
+      console.error("Error getting opportunity options:", error);
+    }
+  });
+});
+
+describe("#addWorkflowInterfaceToSlackByUser", function () {
+  it("should add the workflow interface to Slack by user", async function () {
+    this.timeout(10000); // Increase timeout to 10 seconds
+
+    const {
+      addWorkflowInterfaceToSlackByUser,
+    } = require("../controllers/slack");
+
+    const userId = process.env.TEST_USER; // Replace with the actual user ID
+
+    try {
+      const result = await addWorkflowInterfaceToSlackByUser({ id: userId });
+
+      console.log("Workflow interface added by user:", result);
+
+      assert(result);
+    } catch (error) {
+      console.error("Error adding workflow interface by user:", error);
+    }
+  });
+});

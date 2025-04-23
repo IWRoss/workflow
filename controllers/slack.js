@@ -54,11 +54,25 @@ const filterMembers = (members) => {
 };
 
 /**
+ * Add Workflow Interface to Slack for a user
+ */
+const addWorkflowInterfaceToSlackByUser = async (user) => {
+  // Get templates
+  const appHomeTemplate = { ...templates.appHome };
+
+  // Send message
+  return await slack.views.publish({
+    user_id: user.id,
+    view: appHomeTemplate,
+  });
+};
+
+/**
  *
  */
 const addWorkflowInterfaceToSlack = async () => {
   // Get templates
-  const appHomeTemplate = { ...templates.appHome };
+  // const appHomeTemplate = { ...templates.appHome };
 
   // Get list of members
   const members = await getMembers();
@@ -69,11 +83,7 @@ const addWorkflowInterfaceToSlack = async () => {
   // Send message to each member
   const results = Promise.all(
     filteredMembers.map(async (member) => {
-      // Send message
-      await slack.views.publish({
-        user_id: member.id,
-        view: appHomeTemplate,
-      });
+      await addWorkflowInterfaceToSlackByUser(member);
     })
   );
 
@@ -407,11 +417,57 @@ const getUserById = async (id) => {
   return user.user;
 };
 
+const getOpportunityOptions = async () => {
+  const { getOpportunities } = require("./copper");
+
+  const opportunities = await getOpportunities();
+
+  const options = opportunities
+    .sort((a, b) => {
+      if (a.projectCode && b.projectCode) {
+        return a.projectCode.localeCompare(b.projectCode);
+      } else if (a.projectCode) {
+        return -1;
+      } else if (b.projectCode) {
+        return 1;
+      }
+      return 0;
+    })
+    .map((opportunity) => {
+      return {
+        text: {
+          type: "plain_text",
+          text: `${opportunity.projectCode ?? "No code set"} | ${
+            opportunity.name
+          } | ${opportunity.stageName}`,
+        },
+        value: opportunity.id,
+      };
+    });
+
+  return options;
+};
+
+const openOpsRequestForm = async (payload) => {
+  const opsRequestModal = _.cloneDeep(templates.opsRequestModal);
+
+  try {
+    // Send leave request form to Slack
+    const result = await slack.views.open({
+      trigger_id: payload.trigger_id,
+      view: opsRequestModal,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 module.exports = {
   slack,
   getMembers,
   openStudioRequestForm,
   openCommTechRequestForm,
+  openOpsRequestForm,
   openMultipleTeamsRequestForm,
   openInvoiceRequestForm,
   handleStudioRequestResponse,
@@ -419,6 +475,8 @@ module.exports = {
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
   addWorkflowInterfaceToSlack,
+  addWorkflowInterfaceToSlackByUser,
   putAppIntoMaintenanceMode,
   claimTask,
+  getOpportunityOptions,
 };

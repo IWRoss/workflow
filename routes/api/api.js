@@ -78,6 +78,10 @@ router.post("/slack/receive", async (req, res) => {
       await actions[payload.view.callback_id](payload);
     }
 
+    if (payload.type === "block_suggestion") {
+      await actions[payload.action_id](payload);
+    }
+
     console.dir(payload, { depth: null });
   } catch {
     // Dump action to console

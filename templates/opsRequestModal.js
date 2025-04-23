@@ -26,6 +26,7 @@ module.exports = {
       },
       element: {
         type: "external_select",
+        action_id: "getOpportunityOptions",
         placeholder: {
           type: "plain_text",
           text: "Type to search",

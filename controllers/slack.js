@@ -445,7 +445,9 @@ const getOpportunityOptions = async () => {
       };
     });
 
-  return options;
+  return {
+    options,
+  };
 };
 
 const openOpsRequestForm = async (payload) => {

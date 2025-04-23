@@ -77,6 +77,8 @@ router.post("/slack/receive", async (req, res) => {
       // Call the appropriate action handler
       await actions[payload.view.callback_id](payload);
     }
+
+    console.dir(payload, { depth: null });
   } catch {
     // Dump action to console
     console.dir(payload, { depth: null });

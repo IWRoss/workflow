@@ -13,6 +13,8 @@ const {
   updateAssignedUser,
 } = require("./monday");
 
+const { getOpportunities } = require("./copper");
+
 const { setCache, getCache } = require("./cache");
 
 const { isValidHttpUrl } = require("../helpers/helpers.js");
@@ -350,7 +352,7 @@ const handleInvoiceRequestResponse = async (payload) => {
  *
  */
 const handleOpsRequestResponse = async (payload) => {
-  const cachedOpportunities = getCache("copperOpportunities");
+  const cachedOpportunities = await getOpportunities();
 
   // const opportunity = cachedOpportunities.find(
   //   (opportunity) =>
@@ -363,7 +365,7 @@ const handleOpsRequestResponse = async (payload) => {
   const selectedOpportunity = cachedOpportunities.find(
     (opportunity) =>
       opportunity.id ===
-      fieldValues[0].getOpportunityOptions.selected_option.value
+      parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
   );
 
   console.dir(selectedOpportunity, { depth: null });
@@ -443,7 +445,7 @@ const getUserById = async (id) => {
 };
 
 const getOpportunityOptions = async (payload) => {
-  const { getOpportunities } = require("./copper");
+  const { getOpportunities, getOpportunities } = require("./copper");
 
   console.log("Search term", payload.value);
 

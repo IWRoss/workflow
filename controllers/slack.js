@@ -445,8 +445,6 @@ const getUserById = async (id) => {
 };
 
 const getOpportunityOptions = async (payload) => {
-  const { getOpportunities, getOpportunities } = require("./copper");
-
   console.log("Search term", payload.value);
 
   const opportunities = await getOpportunities();

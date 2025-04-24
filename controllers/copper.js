@@ -17,7 +17,7 @@ const copperCustomFieldMap = {
   689554: "projectFees",
   689552: "consultingFees",
   689553: "studioFees",
-  689557: "invoicingContact",
+  692218: "invoicingEmail",
 };
 
 const selectCustomFieldIDByName = (name) => {

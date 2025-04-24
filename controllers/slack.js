@@ -368,22 +368,36 @@ const handleOpsRequestResponse = async (payload) => {
       parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
   );
 
-  // const newTask = {
-  //   name: selectedOpportunity.name,
-  //   "Project Code": selectedOpportunity.projectCode,
-  //   "Likely Invoice Date": new Date(selectedOpportunity.likelyInvoiceDate)
-  //     .toISOString()
-  //     .split("T")[0],
-  //   "Submitted Date": new Date(selectedOpportunity.submittedOn)
-  //     .toISOString()
-  //     .split("T")[0],
-  //   "Consulting Fees": parseInt(selectedOpportunity.consultingFees),
-  //   "Studio Fees": parseInt(selectedOpportunity.studioFees),
-  //   "Project Fees": parseInt(selectedOpportunity.projectFees),
-  //   "Invoicing Email": `${selectedOpportunity.invoicingContact[0]} Link`,
-  // };
+  const newTask = {
+    name: selectedOpportunity.name,
+    "Project Code": selectedOpportunity.projectCode ?? "No ID",
+    "Likely Invoice Date": selectedOpportunity.likelyInvoiceDate
+      ? new Date(selectedOpportunity.likelyInvoiceDate)
+          .toISOString()
+          .split("T")[0]
+      : null,
+    "Submitted Date": selectedOpportunity.submittedOn
+      ? new Date(selectedOpportunity.submittedOn).toISOString().split("T")[0]
+      : null,
+    "Consulting Fees":
+      selectedOpportunity.consultingFees !== null
+        ? parseInt(selectedOpportunity.consultingFees)
+        : null,
+    "Studio Fees":
+      selectedOpportunity.studioFees !== null
+        ? parseInt(selectedOpportunity.studioFees)
+        : null,
+    "Project Fees":
+      selectedOpportunity.projectFees !== null
+        ? parseInt(selectedOpportunity.projectFees)
+        : null,
+    "Invoicing Email": selectedOpportunity.invoicingEmail
+      ? `${selectedOpportunity.invoicingEmail} Link`
+      : null,
+    "Invoice Detail": selectedOpportunity.invoiceDetail ?? null,
+  };
 
-  console.dir(selectedOpportunity, { depth: null });
+  console.dir(newTask, { depth: null });
 };
 
 /**

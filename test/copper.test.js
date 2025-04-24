@@ -48,7 +48,10 @@ describe("#getOpportunities", function () {
     try {
       const result = await getOpportunities();
 
-      console.dir(result, { depth: null });
+      console.dir(
+        result.find((opp) => opp.id === 33576360),
+        { depth: null }
+      );
 
       assert(result);
     } catch (error) {

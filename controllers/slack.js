@@ -352,13 +352,15 @@ const handleInvoiceRequestResponse = async (payload) => {
 const handleOpsRequestResponse = async (payload) => {
   const cachedOpportunities = getCache("opportunities");
 
-  const opportunity = cachedOpportunities.find(
-    (opportunity) =>
-      opportunity.id ===
-      payload.view.state.values.opportunitySelect.selected_option.value
-  );
+  // const opportunity = cachedOpportunities.find(
+  //   (opportunity) =>
+  //     opportunity.id ===
+  //     payload.view.state.values.opportunitySelect.selected_option.value
+  // );
 
-  console.dir(opportunity, { depth: null });
+  console.dir(JSON.stringify(cachedOpportunities), { depth: null });
+
+  console.dir(JSON.stringify(payload.view.state.values), { depth: null });
 };
 
 /**

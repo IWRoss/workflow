@@ -358,12 +358,6 @@ const handleInvoiceRequestResponse = async (payload) => {
 const handleOpsRequestResponse = async (payload) => {
   const cachedOpportunities = await getOpportunities();
 
-  // const opportunity = cachedOpportunities.find(
-  //   (opportunity) =>
-  //     opportunity.id ===
-  //     payload.view.state.values.opportunitySelect.selected_option.value
-  // );
-
   const fieldValues = Object.values(payload.view.state.values);
 
   const selectedOpportunity = cachedOpportunities.find(
@@ -395,30 +389,17 @@ const handleOpsRequestResponse = async (payload) => {
   const newTask = {
     name: selectedOpportunity.name,
     "Project Code": selectedOpportunity.projectCode ?? "No ID",
-    "Likely Invoice Date": selectedOpportunity.likelyInvoiceDate
-      ? new Date(selectedOpportunity.likelyInvoiceDate)
-          .toISOString()
-          .split("T")[0]
-      : null,
-    "Submitted Date": selectedOpportunity.submittedOn
-      ? new Date(selectedOpportunity.submittedOn).toISOString().split("T")[0]
-      : null,
-    "Consulting Fees":
-      selectedOpportunity.consultingFees !== null
-        ? parseInt(selectedOpportunity.consultingFees)
-        : null,
-    "Studio Fees":
-      selectedOpportunity.studioFees !== null
-        ? parseInt(selectedOpportunity.studioFees)
-        : null,
-    "Project Fees":
-      selectedOpportunity.projectFees !== null
-        ? parseInt(selectedOpportunity.projectFees)
-        : null,
-    "Invoicing Email": selectedOpportunity.invoicingEmail
-      ? `${selectedOpportunity.invoicingEmail} Link`
-      : null,
-    "Invoice Detail": selectedOpportunity.invoiceDetail ?? null,
+    "Likely Invoice Date": new Date(selectedOpportunity.likelyInvoiceDate)
+      .toISOString()
+      .split("T")[0],
+    "Submitted Date": new Date(selectedOpportunity.submittedOn)
+      .toISOString()
+      .split("T")[0],
+    "Consulting Fees": parseInt(selectedOpportunity.consultingFees),
+    "Studio Fees": parseInt(selectedOpportunity.studioFees),
+    "Project Fees": parseInt(selectedOpportunity.projectFees),
+    "Invoicing Email": `${selectedOpportunity.invoicingEmail} Link`,
+    "Invoice Detail": selectedOpportunity.invoiceDetail,
   };
 
   await addTaskToOpsBoard(newTask);
@@ -532,7 +513,10 @@ const getOpportunityOptions = async (payload) => {
       optionGroup.options.push({
         text: {
           type: "plain_text",
-          text: `${option.name} (${option.projectCode})`,
+          text: `${option.name} (${option.projectCode || "No ID"})`.substring(
+            0,
+            75
+          ),
           emoji: true,
         },
         value: String(option.id),

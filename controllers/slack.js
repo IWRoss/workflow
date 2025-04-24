@@ -18,7 +18,10 @@ const { getOpportunities } = require("./copper");
 
 const { setCache, getCache } = require("./cache");
 
-const { isValidHttpUrl } = require("../helpers/helpers.js");
+const {
+  isValidHttpUrl,
+  camelCaseToCapitalCase,
+} = require("../helpers/helpers.js");
 
 const templates = require("../templates");
 
@@ -377,9 +380,9 @@ const handleOpsRequestResponse = async (payload) => {
   );
 
   if (nullFields.length > 0) {
-    const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields.join(
-      "\n- "
-    )}\n\nPlease check the opportunity and try again.`;
+    const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields
+      .map((el) => camelCaseToCapitalCase(el))
+      .join("\n- ")}\n\nPlease check the opportunity and try again.`;
 
     await slack.chat.postMessage({
       channel: payload.user.id,

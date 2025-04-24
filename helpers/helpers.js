@@ -22,7 +22,17 @@ const clearRequireCache = () => {
   });
 };
 
+/**
+ * Camel case to capital case
+ */
+const camelCaseToCapitalCase = (str) => {
+  return str
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (str) => str.toUpperCase());
+};
+
 module.exports = {
   isValidHttpUrl,
   clearRequireCache,
+  camelCaseToCapitalCase,
 };

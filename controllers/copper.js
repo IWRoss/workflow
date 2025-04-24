@@ -13,11 +13,10 @@ const copperCustomFieldMap = {
   22023: "likelyInvoiceDate",
   681214: "internationalProject",
   681471: "submittedOn",
-  689549: "invoiceDetail",
+  692217: "invoiceDetail",
   689554: "projectFees",
   689552: "consultingFees",
   689553: "studioFees",
-  689556: "invoicingEmail",
   689557: "invoicingContact",
 };
 

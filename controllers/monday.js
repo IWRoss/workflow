@@ -29,7 +29,34 @@ const getMondayBoard = async (boardId) => {
           items {
             id
             name
+            column_values {
+              column {
+                id
+                title
+              }
+              value
+            }
           }
+        }
+      }
+    }`,
+    { variables: { boardId } } // Adjust page and limit as needed
+  );
+
+  return board;
+};
+
+/**
+ * Get the columns in a Monday board
+ */
+const getMondayBoardColumns = async (boardId) => {
+  // Get the board
+  const board = await monday.api(
+    `query ($boardId: [ID!]) {
+      boards (ids: $boardId) {
+        columns {
+          id
+          title
         }
       }
     }`,
@@ -110,6 +137,38 @@ const addTaskToCommTechBoard = async (newTask) => {
   return addTaskToBoard(newTask, process.env.COMMTECH_MONDAY_BOARD);
 };
 
+const addTaskToOpsBoard = async (newTask) => {
+  const response = await getMondayBoardColumns(process.env.OPS_MONDAY_BOARD);
+
+  const columns = response.data.boards[0].columns;
+
+  const taskColumns = Object.keys(newTask);
+
+  const columnValues = {};
+  const columnIds = columns.map((column) => column.id);
+  const columnTitles = columns.map((column) => column.title);
+
+  taskColumns.forEach((column) => {
+    const columnId = columnIds[columnTitles.indexOf(column)];
+
+    if (columnId) {
+      columnValues[columnId] = newTask[column];
+    }
+  });
+
+  const column_values = JSON.stringify(columnValues)
+    .replace(/"/g, '\\"')
+    .replace(/\\n/g, "\\\\n");
+
+  const result = await monday.api(`mutation {
+    create_item (board_id: ${process.env.OPS_MONDAY_BOARD}, item_name: "${newTask.name}", column_values: "${column_values}") {
+      id
+    }
+  }`);
+
+  return result;
+};
+
 /**
  * Update assigned user on task
  */
@@ -168,11 +227,13 @@ const getMondayUserByEmail = async (email) => {
 module.exports = {
   getMonday,
   getMondayBoard,
+  getMondayBoardColumns,
   getStudioRequestsBoard,
   getCommTechRequestsBoard,
   addTaskToStudioBoard,
   addTaskToCommTechBoard,
   addTaskToBoard,
+  addTaskToOpsBoard,
   getMondayUserByEmail,
   updateAssignedUser,
 };

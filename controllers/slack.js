@@ -368,6 +368,21 @@ const handleOpsRequestResponse = async (payload) => {
       parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
   );
 
+  // const newTask = {
+  //   name: selectedOpportunity.name,
+  //   "Project Code": selectedOpportunity.projectCode,
+  //   "Likely Invoice Date": new Date(selectedOpportunity.likelyInvoiceDate)
+  //     .toISOString()
+  //     .split("T")[0],
+  //   "Submitted Date": new Date(selectedOpportunity.submittedOn)
+  //     .toISOString()
+  //     .split("T")[0],
+  //   "Consulting Fees": parseInt(selectedOpportunity.consultingFees),
+  //   "Studio Fees": parseInt(selectedOpportunity.studioFees),
+  //   "Project Fees": parseInt(selectedOpportunity.projectFees),
+  //   "Invoicing Email": `${selectedOpportunity.invoicingContact[0]} Link`,
+  // };
+
   console.dir(selectedOpportunity, { depth: null });
 };
 

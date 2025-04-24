@@ -33,3 +33,46 @@ describe("#addTaskToCommTechBoard", function () {
     }
   });
 });
+
+describe("#getMondayBoard", function () {
+  it("should get the Monday board", async function () {
+    const { getMondayBoard } = require("../controllers/monday");
+
+    try {
+      const result = await getMondayBoard(process.env.OPS_MONDAY_BOARD);
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error getting Monday board:", error);
+    }
+  });
+});
+
+describe("#addTaskToOpsBoard", function () {
+  it("should add a task to the Ops board", async function () {
+    const { addTaskToOpsBoard } = require("../controllers/monday");
+
+    const newTask = {
+      name: "Panasonic Benefits Team Offsite",
+      "Project Code": "PBT-2023",
+      "Likely Invoice Date": "2023-10-01",
+      "Submitted Date": "2023-10-01",
+      "Consulting Fees": 1000,
+      "Studio Fees": 1000,
+      "Project Fees": 1000,
+      "Invoicing Email": `${"ross.hardy@cegos.uk"} Link`,
+    };
+
+    try {
+      const result = await addTaskToOpsBoard(newTask);
+
+      console.log("Task added:", result);
+
+      assert(result);
+    } catch (error) {
+      console.error("Error adding task:", error);
+    }
+  });
+});

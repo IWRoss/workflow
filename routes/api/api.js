@@ -11,6 +11,7 @@ const {
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
+  handleOpsRequestResponse,
   claimTask,
   getOpportunityOptions,
 } = require("../../controllers/slack");
@@ -50,11 +51,14 @@ const actions = {
   handleInvoiceRequestResponse: (payload) => {
     handleInvoiceRequestResponse(payload);
   },
+  handleOpsRequestResponse: (payload) => {
+    handleOpsRequestResponse(payload);
+  },
   claimTask: (payload) => {
     claimTask(payload);
   },
-  getOpportunityOptions: (payload) => {
-    getOpportunityOptions(payload);
+  getOpportunityOptions: async (payload) => {
+    return await getOpportunityOptions(payload);
   },
 };
 
@@ -79,7 +83,12 @@ router.post("/slack/receive", async (req, res) => {
     }
 
     if (payload.type === "block_suggestion") {
-      await actions[payload.action_id](payload);
+      const suggestions = await actions[payload.action_id](payload);
+
+      console.dir(suggestions, { depth: null });
+      // Send the suggestions back to Slack
+      res.json(suggestions);
+      return;
     }
 
     console.dir(payload, { depth: null });

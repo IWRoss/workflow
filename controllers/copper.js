@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { setCache, getCache } = require("./cache");
 
 const copperHeaders = {
   "X-PW-AccessToken": process.env.COPPER_API_KEY,
@@ -79,6 +80,15 @@ const getOpportunities = async () => {
   // const firstDayOfYearTimestamp =
   //   new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
 
+  const cachedOpportunities = getCache("copperOpportunities");
+
+  if (cachedOpportunities) {
+    console.log(
+      `Using cached opportunities. Cache size: ${cachedOpportunities.length}`
+    );
+    return cachedOpportunities;
+  }
+
   const oneMonthAgoTodayTimestamp = Math.floor(
     new Date(new Date().setMonth(new Date().getMonth() - 1)).setHours(
       0,
@@ -117,7 +127,7 @@ const getOpportunities = async () => {
     page++;
   }
 
-  return allOpportunities.map((opportunity) => {
+  const formattedOpportunities = allOpportunities.map((opportunity) => {
     const customFields = opportunity.custom_fields.reduce((acc, field) => {
       if (copperCustomFieldMap[field.custom_field_definition_id]) {
         acc[copperCustomFieldMap[field.custom_field_definition_id]] =
@@ -136,6 +146,14 @@ const getOpportunities = async () => {
       ...customFields,
     };
   });
+
+  setCache(
+    "copperOpportunities",
+    formattedOpportunities,
+    1000 * 60 * 3 // Cache for 3 minutes
+  );
+
+  return formattedOpportunities;
 };
 
 module.exports = {

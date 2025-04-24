@@ -13,6 +13,8 @@ const {
   updateAssignedUser,
 } = require("./monday");
 
+const { setCache, getCache } = require("./cache");
+
 const { isValidHttpUrl } = require("../helpers/helpers.js");
 
 const templates = require("../templates");
@@ -345,6 +347,21 @@ const handleInvoiceRequestResponse = async (payload) => {
 };
 
 /**
+ *
+ */
+const handleOpsRequestResponse = async (payload) => {
+  const cachedOpportunities = getCache("opportunities");
+
+  const opportunity = cachedOpportunities.find(
+    (opportunity) =>
+      opportunity.id ===
+      payload.view.state.values.opportunitySelect.selected_option.value
+  );
+
+  console.dir(opportunity, { depth: null });
+};
+
+/**
  * Claim task as user
  */
 const claimTask = async (payload) => {
@@ -417,8 +434,10 @@ const getUserById = async (id) => {
   return user.user;
 };
 
-const getOpportunityOptions = async () => {
+const getOpportunityOptions = async (payload) => {
   const { getOpportunities } = require("./copper");
+
+  console.log("Search term", payload.value);
 
   const opportunities = await getOpportunities();
 
@@ -433,20 +452,60 @@ const getOpportunityOptions = async () => {
       }
       return 0;
     })
-    .map((opportunity) => {
-      return {
+    .filter((opportunity) => {
+      const searchTerm = payload.value.toLowerCase();
+      return (
+        opportunity.name.toLowerCase().includes(searchTerm) ||
+        opportunity.projectCode?.toLowerCase().includes(searchTerm) ||
+        opportunity.stageName.toLowerCase().includes(searchTerm)
+      );
+    })
+    .slice(0, 100);
+
+  const option_groups = options.reduce((acc, option) => {
+    const optionGroup = acc.find(
+      (optionGroup) => optionGroup.label.text === option.stageName
+    );
+
+    if (optionGroup) {
+      optionGroup.options.push({
         text: {
           type: "plain_text",
-          text: `${opportunity.projectCode ?? "No code set"} | ${
-            opportunity.name
-          } | ${opportunity.stageName}`,
+          text: `${option.name} (${option.projectCode})`,
+          emoji: true,
         },
-        value: opportunity.id,
-      };
+        value: String(option.id),
+      });
+
+      return acc;
+    }
+
+    acc.push({
+      label: {
+        type: "plain_text",
+        text: option.stageName,
+        emoji: true,
+      },
+      options: [
+        {
+          text: {
+            type: "plain_text",
+            text: `${option.name} (${option.projectCode || "No ID"})`.substring(
+              0,
+              75
+            ),
+            emoji: true,
+          },
+          value: String(option.id),
+        },
+      ],
     });
 
+    return acc;
+  }, []);
+
   return {
-    options,
+    option_groups,
   };
 };
 
@@ -476,6 +535,7 @@ module.exports = {
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
+  handleOpsRequestResponse,
   addWorkflowInterfaceToSlack,
   addWorkflowInterfaceToSlackByUser,
   putAppIntoMaintenanceMode,

@@ -85,13 +85,10 @@ router.post("/slack/receive", async (req, res) => {
     if (payload.type === "block_suggestion") {
       const suggestions = await actions[payload.action_id](payload);
 
-      console.dir(suggestions, { depth: null });
-      // Send the suggestions back to Slack
       res.json(suggestions);
+
       return;
     }
-
-    console.dir(payload, { depth: null });
   } catch {
     // Dump action to console
     console.dir(payload, { depth: null });

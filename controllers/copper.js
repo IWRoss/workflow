@@ -83,9 +83,6 @@ const getOpportunities = async () => {
   const cachedOpportunities = getCache("copperOpportunities");
 
   if (cachedOpportunities) {
-    console.log(
-      `Using cached opportunities. Cache size: ${cachedOpportunities.length}`
-    );
     return cachedOpportunities;
   }
 

@@ -350,7 +350,7 @@ const handleInvoiceRequestResponse = async (payload) => {
  *
  */
 const handleOpsRequestResponse = async (payload) => {
-  const cachedOpportunities = getCache("opportunities");
+  const cachedOpportunities = getCache("copperOpportunities");
 
   // const opportunity = cachedOpportunities.find(
   //   (opportunity) =>
@@ -358,9 +358,15 @@ const handleOpsRequestResponse = async (payload) => {
   //     payload.view.state.values.opportunitySelect.selected_option.value
   // );
 
-  console.dir(JSON.stringify(cachedOpportunities), { depth: null });
+  const fieldValues = Object.values(payload.view.state.values);
 
-  console.dir(JSON.stringify(payload.view.state.values), { depth: null });
+  const selectedOpportunity = cachedOpportunities.find(
+    (opportunity) =>
+      opportunity.id ===
+      fieldValues[0].getOpportunityOptions.selected_option.value
+  );
+
+  console.dir(selectedOpportunity, { depth: null });
 };
 
 /**

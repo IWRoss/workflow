@@ -11,6 +11,7 @@ const {
   addTaskToBoard,
   getMondayUserByEmail,
   updateAssignedUser,
+  addTaskToOpsBoard,
 } = require("./monday");
 
 const { getOpportunities } = require("./copper");
@@ -397,7 +398,7 @@ const handleOpsRequestResponse = async (payload) => {
     "Invoice Detail": selectedOpportunity.invoiceDetail ?? null,
   };
 
-  console.dir(newTask, { depth: null });
+  await addTaskToOpsBoard(newTask);
 };
 
 /**

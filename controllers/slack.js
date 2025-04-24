@@ -369,6 +369,26 @@ const handleOpsRequestResponse = async (payload) => {
       parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
   );
 
+  const nullFields = Object.keys(selectedOpportunity).filter(
+    (key) =>
+      selectedOpportunity[key] === null ||
+      selectedOpportunity[key] === undefined ||
+      selectedOpportunity[key] === ""
+  );
+
+  if (nullFields.length > 0) {
+    const errorMessage = `The following fields are null: ${nullFields.join(
+      ", "
+    )}. Please check the opportunity in Copper and try again.`;
+
+    await slack.chat.postMessage({
+      channel: payload.user.id,
+      text: errorMessage,
+    });
+
+    return;
+  }
+
   const newTask = {
     name: selectedOpportunity.name,
     "Project Code": selectedOpportunity.projectCode ?? "No ID",

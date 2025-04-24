@@ -377,9 +377,9 @@ const handleOpsRequestResponse = async (payload) => {
   );
 
   if (nullFields.length > 0) {
-    const errorMessage = `The following fields are null: ${nullFields.join(
-      ", "
-    )}. Please check the opportunity in Copper and try again.`;
+    const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields.join(
+      "\n- "
+    )}\n\nPlease check the opportunity and try again.`;
 
     await slack.chat.postMessage({
       channel: payload.user.id,

@@ -75,3 +75,55 @@ describe("#getCustomFieldDefinitions", function () {
     }
   });
 });
+
+describe("#subscribeToCopperWebhook", function () {
+  it("should subscribe to Copper webhook", async function () {
+    const { subscribeToCopperWebhook } = require("../controllers/copper");
+
+    try {
+      const result = await subscribeToCopperWebhook(
+        process.env.COPPER_WEBHOOK_URL
+      );
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error subscribing to Copper webhook:", error);
+    }
+  });
+});
+
+describe("#unsubscribeFromCopperWebhook", function () {
+  it("should unsubscribe from Copper webhook", async function () {
+    const { unsubscribeFromCopperWebhook } = require("../controllers/copper");
+
+    try {
+      const result = await unsubscribeFromCopperWebhook(
+        process.env.COPPER_WEBHOOK_ID
+      );
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error unsubscribing from Copper webhook:", error);
+    }
+  });
+});
+
+describe("#listAllCopperWebhooks", function () {
+  it("should list all Copper webhooks", async function () {
+    const { listAllCopperWebhooks } = require("../controllers/copper");
+
+    try {
+      const result = await listAllCopperWebhooks();
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error listing all Copper webhooks:", error);
+    }
+  });
+});

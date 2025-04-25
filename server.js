@@ -36,4 +36,8 @@ const { addWorkflowInterfaceToSlack } = require("./controllers/slack");
 
 addWorkflowInterfaceToSlack();
 
+const { setupCopperWebhook } = require("./controllers/copper");
+
+setupCopperWebhook();
+
 console.log("Server started");

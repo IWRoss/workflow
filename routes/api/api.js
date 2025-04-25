@@ -115,4 +115,35 @@ router.post("/slack/command", async (req, res) => {
   res.send();
 });
 
+const {
+  handleCopperUpdateOpportunityWebhook,
+} = require("../../controllers/copper");
+
+const copperActions = {
+  opportunity: {
+    update: async (payload) => {
+      console.dir(payload, { depth: null });
+
+      await handleCopperUpdateOpportunityWebhook(payload);
+    },
+  },
+};
+
+/**
+ * Copper endpoint
+ */
+router.post("/copper/receive", async (req, res) => {
+  const payload = req.body;
+
+  try {
+    // console.dir(payload, { depth: null });
+    await copperActions[payload.type][payload.event](payload);
+  } catch {
+    // Dump action to console
+    console.dir(payload, { depth: null });
+  }
+
+  res.send();
+});
+
 module.exports = router;

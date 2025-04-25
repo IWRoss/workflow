@@ -272,17 +272,14 @@ const setupCopperWebhook = async () => {
       webhook.target === `${process.env.COPPER_WEBHOOK_URL}/copper/receive`
   );
 
-  if (!webhooksToUnsubscribe.length) {
-    return;
+  if (webhooksToUnsubscribe.length) {
+    const unsubscribePromises = webhooksToUnsubscribe.map((webhook) => {
+      console.log("Unsubscribing from webhook", webhook.id);
+      return unsubscribeFromCopperWebhook(webhook.id);
+    });
+
+    await Promise.all(unsubscribePromises);
   }
-
-  // Unsubscribe from all webhooks that have "ngrok-free.app" in the target
-  const unsubscribePromises = webhooksToUnsubscribe.map((webhook) => {
-    console.log("Unsubscribing from webhook", webhook.id);
-    return unsubscribeFromCopperWebhook(webhook.id);
-  });
-
-  await Promise.all(unsubscribePromises);
 
   const response = await subscribeToCopperWebhook(
     `${process.env.COPPER_WEBHOOK_URL}/copper/receive`

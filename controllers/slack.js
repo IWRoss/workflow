@@ -459,11 +459,16 @@ const claimTask = async (payload) => {
   // Update the task
   await updateAssignedUser(mondayUser.id, itemId, boardId);
 
+  // Find the actions block location
+  const actionsBlockIndex = payload.message.blocks.findIndex(
+    (block) => block.type === "actions"
+  );
+
   // Remove the claim button
-  payload.message.blocks[4].elements.splice(0, 1);
+  payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
 
   // Add a block showing the user who claimed the task
-  payload.message.blocks.splice(4, 0, {
+  payload.message.blocks.splice(actionsBlockIndex, 0, {
     type: "section",
     text: {
       type: "mrkdwn",

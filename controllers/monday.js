@@ -173,20 +173,18 @@ const addTaskToOpsBoard = async (newTask) => {
  * Update assigned user on task
  */
 const updateAssignedUser = async (userId, taskId, boardId) => {
-  const columnValue = JSON.stringify({
-    personsAndTeams: [
-      {
-        id: userId,
-        kind: "person",
-      },
-    ],
-  }).replace(/"/g, '\\"');
+  const response = await getMondayBoardColumns(process.env.OPS_MONDAY_BOARD);
 
-  console.log(String(taskId));
+  const columns = response.data.boards[0].columns;
+
+  // Get the column ID for the "Assigned to" column
+  const assignedToColumn = columns.find(
+    (column) => column.title === "Assigned to"
+  );
 
   // Update the task
   const result = await monday.api(`mutation {
-    change_simple_column_value (item_id: ${taskId}, board_id: ${boardId}, column_id: "people", value: "${userId}") 
+    change_simple_column_value (item_id: ${taskId}, board_id: ${boardId}, column_id: "${assignedToColumn.id}", value: "${userId}") 
     {
       id
     }

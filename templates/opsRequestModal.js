@@ -21,7 +21,7 @@ module.exports = {
       type: "input",
       label: {
         type: "plain_text",
-        text: "Select an opportunity from the list",
+        text: "Select an opportunity from the list.",
         emoji: true,
       },
       element: {

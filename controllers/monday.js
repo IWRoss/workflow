@@ -173,7 +173,7 @@ const addTaskToOpsBoard = async (newTask) => {
  * Update assigned user on task
  */
 const updateAssignedUser = async (userId, taskId, boardId) => {
-  const response = await getMondayBoardColumns(process.env.OPS_MONDAY_BOARD);
+  const response = await getMondayBoardColumns(boardId);
 
   const columns = response.data.boards[0].columns;
 

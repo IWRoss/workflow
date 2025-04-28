@@ -412,6 +412,33 @@ const handleOpsRequestResponse = async (payload) => {
   };
 
   const addTaskRequest = await addTaskToOpsBoard(newTask);
+
+  const newOpsRequestMessageTemplate = _.cloneDeep(
+    templates.newOpsRequestMessage
+  );
+
+  newOpsRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Ops Request:`;
+  newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
+    selectedOpportunity.name;
+  newOpsRequestMessageTemplate.blocks[1].fields[1].text +=
+    selectedOpportunity.projectCode ?? "No ID";
+
+  newOpsRequestMessageTemplate.blocks[2].elements[0].value = JSON.stringify({
+    boardId: process.env.OPS_MONDAY_BOARD,
+    itemId: addTaskRequest.data.create_item.id,
+  });
+  newOpsRequestMessageTemplate.blocks[2].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.OPS_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
+  newOpsRequestMessageTemplate.blocks[2].elements[2].url = `https://app.copper.com/opportunity/${selectedOpportunity.id}`;
+
+  try {
+    // Send message to users
+    const message = await slack.chat.postMessage({
+      channel: process.env.OPS_SLACK_CHANNEL,
+      ...newOpsRequestMessageTemplate,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**

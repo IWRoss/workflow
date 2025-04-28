@@ -452,19 +452,17 @@ const claimTask = async (payload) => {
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
-  const taskAddress = payload.message.blocks[4].elements[1].url;
+  // Find the actions block location
+  const actionsBlockIndex = payload.message.blocks.findIndex(
+    (block) => block.type === "actions"
+  );
+
+  const taskAddress = payload.message.blocks[actionsBlockIndex].elements[1].url;
 
   const { boardId, itemId } = JSON.parse(payload.actions[0].value);
 
   // Update the task
   await updateAssignedUser(mondayUser.id, itemId, boardId);
-
-  console.dir(payload.message.blocks, { depth: null });
-
-  // Find the actions block location
-  const actionsBlockIndex = payload.message.blocks.findIndex(
-    (block) => block.type === "actions"
-  );
 
   // Remove the claim button
   payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);

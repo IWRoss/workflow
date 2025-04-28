@@ -402,6 +402,8 @@ const handleOpsRequestResponse = async (payload) => {
     "Invoice Detail": selectedOpportunity.invoiceDetail,
   };
 
+  console.dir(newTask, { depth: null });
+
   await addTaskToOpsBoard(newTask);
 };
 

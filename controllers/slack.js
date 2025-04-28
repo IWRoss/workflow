@@ -404,7 +404,7 @@ const handleOpsRequestResponse = async (payload) => {
 
   console.dir(newTask, { depth: null });
 
-  await addTaskToOpsBoard(newTask);
+  return await addTaskToOpsBoard(newTask);
 };
 
 /**

@@ -360,6 +360,12 @@ const handleOpsRequestResponse = async (payload) => {
 
   const fieldValues = Object.values(payload.view.state.values);
 
+  // Get the user
+  const user = await getUserById(payload.user.id);
+
+  // Get the Monday user
+  const mondayUser = await getMondayUserByEmail(user.profile.email);
+
   const selectedOpportunity = cachedOpportunities.find(
     (opportunity) =>
       opportunity.id ===
@@ -388,6 +394,7 @@ const handleOpsRequestResponse = async (payload) => {
 
   const newTask = {
     name: selectedOpportunity.name,
+    Consultant: mondayUser.id,
     "Project Code": selectedOpportunity.projectCode ?? "No ID",
     "Likely Invoice Date": new Date(
       parseInt(selectedOpportunity.likelyInvoiceDate) * 1000
@@ -404,11 +411,7 @@ const handleOpsRequestResponse = async (payload) => {
     "Invoice Detail": selectedOpportunity.invoiceDetail,
   };
 
-  console.dir(newTask, { depth: null });
-
   const addTaskRequest = await addTaskToOpsBoard(newTask);
-
-  console.log("Add task request", JSON.stringify(addTaskRequest));
 };
 
 /**

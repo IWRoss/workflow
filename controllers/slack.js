@@ -459,6 +459,8 @@ const claimTask = async (payload) => {
   // Update the task
   await updateAssignedUser(mondayUser.id, itemId, boardId);
 
+  console.dir(payload.message.blocks, { depth: null });
+
   // Find the actions block location
   const actionsBlockIndex = payload.message.blocks.findIndex(
     (block) => block.type === "actions"

@@ -9,6 +9,7 @@ module.exports = [
   "Amazon Freight",
   "Atkore",
   "Atlantic",
+  "Axis Capital",
   "BIS",
   "Baker McKenzie",
   "Baloise Group",

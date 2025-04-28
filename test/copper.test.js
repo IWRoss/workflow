@@ -127,3 +127,81 @@ describe("#listAllCopperWebhooks", function () {
     }
   });
 });
+
+describe("#assignCompanyCode", function () {
+  it("should assign company code", async function () {
+    const { assignCompanyCode } = require("../controllers/copper");
+
+    const clientTestData = require("../data/clientsTestData");
+
+    clientTestData.forEach(async (company) => {
+      try {
+        const result = await assignCompanyCode(company);
+
+        console.log(company.name, result);
+
+        assert(result);
+      } catch (error) {
+        console.error("Error assigning company code:", error);
+      }
+    });
+  });
+});
+
+describe("#createCompanyCode", function () {
+  it("should create company code", async function () {
+    const { createCompanyCode } = require("../controllers/copper");
+
+    const companyName = "Schindler";
+
+    try {
+      const result = await createCompanyCode(companyName);
+
+      console.log(companyName, result);
+
+      assert(result);
+    } catch (error) {
+      console.error("Error creating company code:", error);
+    }
+  });
+});
+
+describe("assignCompaniesCompanyCodes", function () {
+  it("should assign company codes to companies", async function () {
+    this.timeout(10000); // Increase timeout to 10 seconds
+
+    // Get all companies
+    const {
+      getCompanies,
+      assignCompanyCode,
+    } = require("../controllers/copper");
+
+    const companies = await getCompanies();
+
+    for (const company of companies) {
+      try {
+        const result = await assignCompanyCode(company, true);
+
+        console.log(company.name, result);
+      } catch (error) {
+        console.error("Error assigning company code:", error);
+      }
+    }
+  });
+});
+
+describe("#getValidContactTypes", function () {
+  it("should get valid contact types", async function () {
+    const { getValidContactTypes } = require("../controllers/copper");
+
+    try {
+      const result = await getValidContactTypes();
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error getting valid contact types:", error);
+    }
+  });
+});

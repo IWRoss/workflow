@@ -82,11 +82,37 @@ const getValidPipelineStageIDs = async () => {
   // .map((stage) => stage.id);
 };
 
+const getValidContactTypes = async () => {
+  const response = await axios.get(
+    `${process.env.COPPER_API_URL}/contact_types`,
+    {
+      headers: copperHeaders,
+    }
+  );
+
+  return response.data;
+};
+
 const getOpportunity = async (opportunityId) => {
   const response = await axios.get(
     `${process.env.COPPER_API_URL}/opportunities/${opportunityId}`,
     {
       headers: copperHeaders,
+    }
+  );
+
+  return response.data;
+};
+
+const getOpportunityByProjectCode = async (projectCode) => {
+  const response = await axios.get(
+    `${process.env.COPPER_API_URL}/opportunities/search`,
+    {
+      headers: copperHeaders,
+      params: {
+        custom_field_definition_id: selectCustomFieldIDByName("projectCode"),
+        custom_field_value: projectCode,
+      },
     }
   );
 
@@ -172,6 +198,70 @@ const getOpportunities = async () => {
 };
 
 /**
+ * Get companies
+ */
+const getCompanies = async () => {
+  /**
+   * Get companies with Contact Type of "3. Current Client", "4. Previous Client", "5. Potential Client"
+   */
+
+  let page = 1;
+  let allCompanies = [];
+  let validCompanyTypes = await getValidContactTypes();
+
+  const validCompanyTypesIds = validCompanyTypes
+    .filter((type) => {
+      return [
+        "3. Current Client",
+        "4. Previous Client",
+        "5. Potential Client",
+      ].includes(type.name);
+    })
+    .map((type) => type.id);
+
+  const payload = {
+    page_size: 100,
+    contact_type_ids: validCompanyTypesIds,
+  };
+
+  while (true) {
+    const response = await axios.post(
+      `${process.env.COPPER_API_URL}/companies/search`,
+      { ...payload, page_number: page },
+      {
+        headers: copperHeaders,
+      }
+    );
+
+    const companies = response.data;
+
+    if (companies.length === 0) {
+      break;
+    }
+
+    allCompanies = [...allCompanies, ...companies];
+    page++;
+  }
+  const formattedCompanies = allCompanies.map((company) => {
+    const customFields = company.custom_fields.reduce((acc, field) => {
+      if (companyCustomFieldMap[field.custom_field_definition_id]) {
+        acc[companyCustomFieldMap[field.custom_field_definition_id]] =
+          field.value;
+      }
+      return acc;
+    }, {});
+
+    return {
+      id: company.id,
+      name: company.name,
+      ...customFields,
+    };
+  });
+
+  return formattedCompanies;
+};
+
+/**
  * Get the company from the company ID
  */
 const getCompany = async (companyId) => {
@@ -183,6 +273,81 @@ const getCompany = async (companyId) => {
   );
 
   return response.data;
+};
+
+const getCompanyByCompanyCode = async (companyCode) => {
+  const response = await axios.get(
+    `${process.env.COPPER_API_URL}/companies/search`,
+    {
+      headers: copperHeaders,
+      params: {
+        custom_field_definition_id: selectCustomFieldIDByName(
+          "companyCode",
+          companyCustomFieldMap
+        ),
+        custom_field_value: companyCode,
+      },
+    }
+  );
+
+  return response.data;
+};
+
+const assignCompanyCode = async (companyData, dryRun = false) => {
+  const companyCode = await createCompanyCode(companyData.name);
+
+  if (dryRun) {
+    return {
+      companyCode,
+      companyName: companyData.name,
+    };
+  }
+
+  const response = await axios.post(
+    `${process.env.COPPER_API_URL}/companies`,
+    {
+      name: companyData.name,
+      custom_fields: [
+        {
+          custom_field_definition_id: selectCustomFieldIDByName(
+            "companyCode",
+            companyCustomFieldMap
+          ),
+          value: companyCode,
+        },
+      ],
+    },
+    {
+      headers: copperHeaders,
+    }
+  );
+
+  return response.data;
+};
+
+const createCompanyCode = (companyName) => {
+  let companyCode = false;
+
+  // First check if company name is a three letter initialism
+  if (companyName.length === 3 && companyName.match(/^[A-Z]{3}$/)) {
+    companyCode = companyName;
+  }
+
+  // Then check if company name has multiple words and can be converted to a three letter initialism
+  if (!companyCode && companyName.split(" ").length > 2) {
+    const words = companyName.split(" ");
+    companyCode = words
+      .map((word) => word[0].toUpperCase())
+      .join("")
+      .substr(0, 3);
+  }
+
+  // If not, then take the first three letters of the company name
+  if (!companyCode) {
+    companyCode = companyName.split(" ").join("").substr(0, 3).toUpperCase();
+  }
+
+  return companyCode;
 };
 
 const updateCompanyOpportunityCount = async (companyId, count) => {
@@ -357,11 +522,15 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 module.exports = {
   getPipelines,
   getValidPipelineStageIDs,
+  getValidContactTypes,
   getOpportunities,
+  getCompanies,
   getCustomFieldDefinitions,
   subscribeToCopperWebhook,
   unsubscribeFromCopperWebhook,
   listAllCopperWebhooks,
   setupCopperWebhook,
   handleCopperUpdateOpportunityWebhook,
+  createCompanyCode,
+  assignCompanyCode,
 };

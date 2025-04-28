@@ -224,6 +224,22 @@ const getMondayUserByEmail = async (email) => {
   return member;
 };
 
+const assignCompanyCode = async (companyId, companyCode) => {
+  const columnId = "companyCode"; // Replace with the actual column ID for company code
+
+  const columnValue = JSON.stringify({
+    value: companyCode,
+  }).replace(/"/g, '\\"');
+
+  const result = await monday.api(`mutation {
+    change_column_value (board_id: ${process.env.COMPANY_BOARD_ID}, item_id: ${companyId}, column_id: "${columnId}", value: "${columnValue}") {
+      id
+    }
+  }`);
+
+  return result;
+};
+
 module.exports = {
   getMonday,
   getMondayBoard,
@@ -236,4 +252,5 @@ module.exports = {
   addTaskToOpsBoard,
   getMondayUserByEmail,
   updateAssignedUser,
+  assignCompanyCode,
 };

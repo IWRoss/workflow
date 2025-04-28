@@ -428,7 +428,8 @@ const handleOpsRequestResponse = async (payload) => {
     itemId: addTaskRequest.data.create_item.id,
   });
   newOpsRequestMessageTemplate.blocks[2].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.OPS_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
-  newOpsRequestMessageTemplate.blocks[2].elements[2].url = `https://app.copper.com/opportunity/${selectedOpportunity.id}`;
+  newOpsRequestMessageTemplate.blocks[2].elements[2].url =
+    process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
 
   try {
     // Send message to users

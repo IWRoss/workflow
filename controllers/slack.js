@@ -389,10 +389,12 @@ const handleOpsRequestResponse = async (payload) => {
   const newTask = {
     name: selectedOpportunity.name,
     "Project Code": selectedOpportunity.projectCode ?? "No ID",
-    "Likely Invoice Date": new Date(selectedOpportunity.likelyInvoiceDate)
+    "Likely Invoice Date": new Date(
+      parseInt(selectedOpportunity.likelyInvoiceDate) * 1000
+    )
       .toISOString()
       .split("T")[0],
-    "Submitted Date": new Date(selectedOpportunity.submittedOn)
+    "Submitted Date": new Date(parseInt(selectedOpportunity.submittedOn) * 1000)
       .toISOString()
       .split("T")[0],
     "Consulting Fees": parseInt(selectedOpportunity.consultingFees),

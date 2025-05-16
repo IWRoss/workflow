@@ -113,7 +113,7 @@ const addTaskToBoard = async (newTask, boardId) => {
 
   // Add item to board with column values
   const result = await monday.api(
-    `mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
+    `mutation ($boardId: ID!, $itemName: String!, $columnValues: String!) {
       create_item (
         board_id: $boardId,
         item_name: $itemName,

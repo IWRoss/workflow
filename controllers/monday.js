@@ -105,7 +105,7 @@ const addTaskToBoard = async (newTask, boardId) => {
     details: safeNotes,
   }).replace(/"/g, '\\"');
 
-  const values = {
+  const variables = {
     boardId: boardId.toString(),
     itemName: taskTitle.toString(),
     columnValues: columnValues.toString(),
@@ -122,7 +122,7 @@ const addTaskToBoard = async (newTask, boardId) => {
         id
       }
     }`,
-    { values }
+    { variables }
   );
 
   console.log("Create item request", JSON.stringify(result));

@@ -103,7 +103,7 @@ const addTaskToBoard = async (newTask, boardId) => {
     },
     dropdown8: newTask.media,
     details: safeNotes,
-  }).replace(/"/g, '\\"');
+  });
 
   const variables = {
     boardId: boardId.toString(),
@@ -113,7 +113,7 @@ const addTaskToBoard = async (newTask, boardId) => {
 
   // Add item to board with column values
   const result = await monday.api(
-    `mutation ($boardId: ID!, $itemName: String!, $columnValues: String!) {
+    `mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
       create_item (
         board_id: $boardId,
         item_name: $itemName,

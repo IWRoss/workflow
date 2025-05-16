@@ -106,9 +106,9 @@ const addTaskToBoard = async (newTask, boardId) => {
   }).replace(/"/g, '\\"');
 
   const values = {
-    boardId,
-    itemName: taskTitle,
-    columnValues: columnValues,
+    boardId: boardId.toString(),
+    itemName: taskTitle.toString(),
+    columnValues: columnValues.toString(),
   };
 
   // Add item to board with column values

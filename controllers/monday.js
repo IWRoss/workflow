@@ -83,12 +83,9 @@ const addTaskToBoard = async (newTask, boardId) => {
     newTask.client
   }`;
 
-  const safeNotes =
-    typeof newTask.notes === "string"
-      ? newTask.notes.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
-      : newTask.notes;
+  const safeNotes = typeof newTask.notes === "string" ? newTask.notes : "";
 
-  const column_values = JSON.stringify({
+  const columnValues = JSON.stringify({
     person: {
       personsAndTeams: [
         {
@@ -106,16 +103,27 @@ const addTaskToBoard = async (newTask, boardId) => {
     },
     dropdown8: newTask.media,
     details: safeNotes,
-  })
-    .replace(/"/g, '\\"')
-    .replace(/\\n/g, "\\\\n");
+  }).replace(/"/g, '\\"');
+
+  const values = {
+    boardId,
+    itemName: taskTitle,
+    columnValues: columnValues,
+  };
 
   // Add item to board with column values
-  const result = await monday.api(`mutation {
-    create_item (board_id: ${boardId}, item_name: "${taskTitle}", column_values: "${column_values}") {
-      id
-    }
-  }`);
+  const result = await monday.api(
+    `mutation ($boardId: Int!, $itemName: String!, $columnValues: JSON!) {
+      create_item (
+        board_id: $boardId,
+        item_name: $itemName,
+        column_values: $columnValues 
+      ) {
+        id
+      }
+    }`,
+    { values }
+  );
 
   console.log("Create item request", JSON.stringify(result));
 

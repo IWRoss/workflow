@@ -83,6 +83,11 @@ const addTaskToBoard = async (newTask, boardId) => {
     newTask.client
   }`;
 
+  const safeNotes =
+    typeof newTask.notes === "string"
+      ? newTask.notes.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+      : newTask.notes;
+
   const column_values = JSON.stringify({
     person: {
       personsAndTeams: [
@@ -100,7 +105,7 @@ const addTaskToBoard = async (newTask, boardId) => {
       text: "Link",
     },
     dropdown8: newTask.media,
-    details: newTask.notes,
+    details: safeNotes,
   })
     .replace(/"/g, '\\"')
     .replace(/\\n/g, "\\\\n");

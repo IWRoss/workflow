@@ -23,6 +23,10 @@ const apiRoutes = require("./routes/api/api");
 
 // Use routes
 app.post("*", apiRoutes);
+app.get("*", (req, res) => {
+  // Return something if it's live
+  res.send("Hello world");
+});
 
 // Start the server
 server.listen(PORT, function () {

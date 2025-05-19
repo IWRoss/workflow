@@ -15,6 +15,7 @@ const studioOptions = {
     "Image creation/editing",
     "Photography",
     "Quip",
+    "One-pager",
     "Other",
   ],
   "RISE/Storyline eLearning": ["eLearning"],

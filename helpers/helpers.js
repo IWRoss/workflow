@@ -31,8 +31,24 @@ const camelCaseToCapitalCase = (str) => {
     .replace(/^./, (str) => str.toUpperCase());
 };
 
+/**
+ * Is beta user on Slack
+ */
+const isSlackBetaUser = (userId) => {
+  const betaUsers = process.env.SLACK_BETA_USERS;
+
+  if (!betaUsers) {
+    return false;
+  }
+
+  const betaUsersArray = betaUsers.split(",");
+
+  return betaUsersArray.includes(userId);
+};
+
 module.exports = {
   isValidHttpUrl,
   clearRequireCache,
   camelCaseToCapitalCase,
+  isSlackBetaUser,
 };

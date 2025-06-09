@@ -4,7 +4,9 @@
  * This template is used on the App Home screen.
  */
 
-module.exports = {
+const isBetaUser = require("../utils/isBetaUser");
+
+const blocks = {
   type: "home",
   blocks: [
     {
@@ -161,3 +163,36 @@ module.exports = {
     },
   ],
 };
+
+if (isBetaUser()) {
+  blocks.blocks.push({
+    type: "divider",
+  });
+  blocks.blocks.push({
+    type: "header",
+    text: {
+      type: "plain_text",
+      text: "Marketing",
+      emoji: true,
+    },
+  });
+  blocks.blocks.push({
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: "If you need to submit a Marketing request, please use this form.",
+    },
+    accessory: {
+      type: "button",
+      text: {
+        type: "plain_text",
+        text: "Create ticket",
+        emoji: true,
+      },
+      value: "click_me_123",
+      action_id: "openMarketingRequestForm",
+    },
+  });
+}
+
+module.exports = blocks;

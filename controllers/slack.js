@@ -610,6 +610,20 @@ const openOpsRequestForm = async (payload) => {
   }
 };
 
+const openMarketingRequestForm = async (payload) => {
+  const marketingRequestModal = _.cloneDeep(templates.marketingRequestModal);
+
+  try {
+    // Send leave request form to Slack
+    const result = await slack.views.open({
+      trigger_id: payload.trigger_id,
+      view: marketingRequestModal,
+    });
+  } catch (error) {
+    console.dir(error, { depth: null });
+  }
+};
+
 module.exports = {
   slack,
   getMembers,
@@ -618,6 +632,7 @@ module.exports = {
   openOpsRequestForm,
   openMultipleTeamsRequestForm,
   openInvoiceRequestForm,
+  openMarketingRequestForm,
   handleStudioRequestResponse,
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,

@@ -7,6 +7,7 @@ const {
   openMultipleTeamsRequestForm,
   openInvoiceRequestForm,
   openOpsRequestForm,
+  openMarketingRequestForm,
   handleStudioRequestResponse,
   handleCommTechRequestResponse,
   handleMultipleTeamsRequestResponse,
@@ -38,6 +39,9 @@ const actions = {
   },
   openOpsRequestForm: (payload) => {
     openOpsRequestForm(payload);
+  },
+  openMarketingRequestForm: (payload) => {
+    openMarketingRequestForm(payload);
   },
   handleCommTechRequestResponse: (payload) => {
     handleCommTechRequestResponse(payload);

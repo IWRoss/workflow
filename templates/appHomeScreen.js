@@ -4,7 +4,7 @@
  * This template is used on the App Home screen.
  */
 
-const isBetaUser = require("../utils/isBetaUser");
+const { isBetaUser } = require("../helpers/helpers");
 
 const blocks = {
   type: "home",

@@ -86,24 +86,6 @@ module.exports = {
           text: "Select a date",
           emoji: true,
         },
-        action_id: "reviewDateInput",
-      },
-      label: {
-        type: "plain_text",
-        text: "Review date",
-        emoji: true,
-      },
-    },
-    {
-      type: "input",
-      element: {
-        type: "datepicker",
-        initial_date: new Date().toISOString().split("T")[0],
-        placeholder: {
-          type: "plain_text",
-          text: "Select a date",
-          emoji: true,
-        },
         action_id: "goLiveDateInput",
       },
       label: {

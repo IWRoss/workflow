@@ -35,7 +35,7 @@ const camelCaseToCapitalCase = (str) => {
  * Is beta user on Slack
  */
 const isSlackBetaUser = (userId) => {
-  const betaUsers = process.env.SLACK_BETA_USERS;
+  const betaUsers = process.env.BETA_USERS;
 
   if (!betaUsers) {
     return false;

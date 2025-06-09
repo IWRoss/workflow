@@ -34,7 +34,7 @@ const camelCaseToCapitalCase = (str) => {
 /**
  * Is beta user on Slack
  */
-const isSlackBetaUser = (userId) => {
+const isBetaUser = (userId) => {
   const betaUsers = process.env.BETA_USERS;
 
   if (!betaUsers) {
@@ -50,5 +50,5 @@ module.exports = {
   isValidHttpUrl,
   clearRequireCache,
   camelCaseToCapitalCase,
-  isSlackBetaUser,
+  isBetaUser,
 };

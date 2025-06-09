@@ -164,35 +164,80 @@ const blocks = {
   ],
 };
 
-if (isBetaUser()) {
-  blocks.blocks.push({
-    type: "divider",
-  });
-  blocks.blocks.push({
-    type: "header",
-    text: {
-      type: "plain_text",
-      text: "Marketing",
-      emoji: true,
+// if (isBetaUser()) {
+//   blocks.blocks.push({
+//     type: "divider",
+//   });
+//   blocks.blocks.push({
+//     type: "header",
+//     text: {
+//       type: "plain_text",
+//       text: "Marketing",
+//       emoji: true,
+//     },
+//   });
+//   blocks.blocks.push({
+//     type: "section",
+//     text: {
+//       type: "mrkdwn",
+//       text: "If you need to submit a Marketing request, please use this form.",
+//     },
+//     accessory: {
+//       type: "button",
+//       text: {
+//         type: "plain_text",
+//         text: "Create ticket",
+//         emoji: true,
+//       },
+//       value: "click_me_123",
+//       action_id: "openMarketingRequestForm",
+//     },
+//   });
+// }
+
+const betaBlocks = {
+  blocks: [
+    {
+      type: "divider",
     },
-  });
-  blocks.blocks.push({
-    type: "section",
-    text: {
-      type: "mrkdwn",
-      text: "If you need to submit a Marketing request, please use this form.",
-    },
-    accessory: {
-      type: "button",
+    {
+      type: "header",
       text: {
         type: "plain_text",
-        text: "Create ticket",
+        text: "Marketing",
         emoji: true,
       },
-      value: "click_me_123",
-      action_id: "openMarketingRequestForm",
     },
-  });
-}
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: "If you need to submit a Marketing request, please use this form.",
+      },
+      accessory: {
+        type: "button",
+        text: {
+          type: "plain_text",
+          text: "Create ticket",
+          emoji: true,
+        },
+        value: "click_me_123",
+        action_id: "openMarketingRequestForm",
+      },
+    },
+  ],
+};
 
-module.exports = blocks;
+const buildAppHomeScreen = (user) => {
+  const appHomeScreen = JSON.parse(JSON.stringify(blocks));
+
+  const isBeta = isBetaUser(user.id);
+
+  if (isBeta) {
+    appHomeScreen.blocks.push(...betaBlocks.blocks);
+  }
+
+  return appHomeScreen;
+};
+
+module.exports = buildAppHomeScreen;

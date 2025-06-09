@@ -1,7 +1,7 @@
 /**
  * Creates an object of templates which can be imported into the controller
  */
-const appHome = require("./appHomeScreen");
+const buildAppHomeScreen = require("./appHomeScreen");
 const appMaintenance = require("./appMaintenanceScreen");
 const requestModal = require("./requestModal");
 const newRequestMessage = require("./newRequestMessage");
@@ -12,7 +12,7 @@ const opsRequestModal = require("./opsRequestModal");
 const marketingRequestModal = require("./marketingRequestModal");
 
 module.exports = {
-  appHome,
+  buildAppHomeScreen,
   appMaintenance,
   requestModal,
   invoiceRequestModal,

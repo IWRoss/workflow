@@ -66,7 +66,9 @@ const filterMembers = (members) => {
  */
 const addWorkflowInterfaceToSlackByUser = async (user) => {
   // Get templates
-  const appHomeTemplate = { ...templates.appHome };
+  const buildAppHomeScreen = { ...templates.buildAppHomeScreen };
+
+  const appHomeTemplate = buildAppHomeScreen(user);
 
   // Send message
   return await slack.views.publish({

@@ -16,7 +16,6 @@ const {
   handleMarketingRequestResponse,
   claimTask,
   getOpportunityOptions,
-  handleMarketingRequestResponse,
 } = require("../../controllers/slack");
 
 /**

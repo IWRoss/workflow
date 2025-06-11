@@ -12,6 +12,7 @@ const {
   getMondayUserByEmail,
   updateAssignedUser,
   addTaskToOpsBoard,
+  addTaskToMarketingBoard,
 } = require("./monday");
 
 const { getOpportunities } = require("./copper");
@@ -445,6 +446,37 @@ const handleOpsRequestResponse = async (payload) => {
 };
 
 /**
+ *
+ */
+const handleMarketingRequestResponse = async (payload) => {
+  const fieldValues = Object.values(payload.view.state.values);
+
+  console.log("Field values", fieldValues);
+
+  return;
+
+  // Get the user
+  const user = await getUserById(payload.user.id);
+
+  // Get the Monday user
+  const mondayUser = await getMondayUserByEmail(user.profile.email);
+
+  const newTask = {
+    name: "Abc",
+    "Assigned to": "",
+    "Requested by": mondayUser.id,
+    Reviewer: "",
+    "Review Date": "",
+    "Go-Live Date": "",
+    Description: "",
+    Files: "",
+    Channel: "",
+  };
+
+  // const addTaskRequest = await addTaskToMarketingBoard(newTask);
+};
+
+/**
  * Claim task as user
  */
 const claimTask = async (payload) => {
@@ -640,6 +672,7 @@ module.exports = {
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
   handleOpsRequestResponse,
+  handleMarketingRequestResponse,
   addWorkflowInterfaceToSlack,
   addWorkflowInterfaceToSlackByUser,
   putAppIntoMaintenanceMode,

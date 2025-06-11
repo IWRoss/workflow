@@ -139,19 +139,8 @@ const addTaskToBoard = async (newTask, boardId) => {
   return result;
 };
 
-/**
- * Add item to studio requests board
- */
-const addTaskToStudioBoard = async (newTask) => {
-  return addTaskToBoard(newTask, process.env.STUDIO_MONDAY_BOARD);
-};
-
-const addTaskToCommTechBoard = async (newTask) => {
-  return addTaskToBoard(newTask, process.env.COMMTECH_MONDAY_BOARD);
-};
-
-const addTaskToOpsBoard = async (newTask) => {
-  const response = await getMondayBoardColumns(process.env.OPS_MONDAY_BOARD);
+const addTaskToBoardWithColumns = async (newTask, boardId) => {
+  const response = await getMondayBoardColumns(boardId);
 
   const columns = response.data.boards[0].columns;
 
@@ -174,12 +163,31 @@ const addTaskToOpsBoard = async (newTask) => {
     .replace(/\\n/g, "\\\\n");
 
   const result = await monday.api(`mutation {
-    create_item (board_id: ${process.env.OPS_MONDAY_BOARD}, item_name: "${newTask.name}", column_values: "${column_values}") {
+    create_item (board_id: ${boardId}, item_name: "${newTask.name}", column_values: "${column_values}") {
       id
     }
   }`);
 
   return result;
+};
+
+/**
+ * Add item to studio requests board
+ */
+const addTaskToStudioBoard = async (newTask) => {
+  return addTaskToBoard(newTask, process.env.STUDIO_MONDAY_BOARD);
+};
+
+const addTaskToCommTechBoard = async (newTask) => {
+  return addTaskToBoard(newTask, process.env.COMMTECH_MONDAY_BOARD);
+};
+
+const addTaskToOpsBoard = async (newTask) => {
+  return addTaskToBoardWithColumns(newTask, process.env.OPS_MONDAY_BOARD);
+};
+
+const addTaskToMarketingBoard = async (newTask) => {
+  return addTaskToBoardWithColumns(newTask, process.env.MARKETING_MONDAY_BOARD);
 };
 
 /**
@@ -261,6 +269,7 @@ module.exports = {
   addTaskToCommTechBoard,
   addTaskToBoard,
   addTaskToOpsBoard,
+  addTaskToMarketingBoard,
   getMondayUserByEmail,
   updateAssignedUser,
   assignCompanyCode,

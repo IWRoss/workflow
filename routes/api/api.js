@@ -13,8 +13,10 @@ const {
   handleMultipleTeamsRequestResponse,
   handleInvoiceRequestResponse,
   handleOpsRequestResponse,
+  handleMarketingRequestResponse,
   claimTask,
   getOpportunityOptions,
+  handleMarketingRequestResponse,
 } = require("../../controllers/slack");
 
 /**
@@ -57,6 +59,9 @@ const actions = {
   },
   handleOpsRequestResponse: (payload) => {
     handleOpsRequestResponse(payload);
+  },
+  handleMarketingRequestResponse: (payload) => {
+    handleMarketingRequestResponse(payload);
   },
   claimTask: (payload) => {
     claimTask(payload);

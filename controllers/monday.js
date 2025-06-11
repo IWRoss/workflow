@@ -162,6 +162,15 @@ const addTaskToBoardWithColumns = async (newTask, boardId) => {
     .replace(/"/g, '\\"')
     .replace(/\\n/g, "\\\\n");
 
+  console.log(
+    "Payload",
+    JSON.stringify({
+      boardId,
+      newTask: newTask.name,
+      column_values: column_values,
+    })
+  );
+
   const result = await monday.api(`mutation {
     create_item (board_id: ${boardId}, item_name: "${newTask.name}", column_values: "${column_values}") {
       id

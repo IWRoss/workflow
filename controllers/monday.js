@@ -168,6 +168,8 @@ const addTaskToBoardWithColumns = async (newTask, boardId) => {
     }
   }`);
 
+  console.log("Create item request", JSON.stringify(result));
+
   return result;
 };
 

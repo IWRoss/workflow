@@ -451,10 +451,6 @@ const handleOpsRequestResponse = async (payload) => {
 const handleMarketingRequestResponse = async (payload) => {
   const fieldValues = Object.values(payload.view.state.values);
 
-  console.log("Field values", fieldValues);
-
-  return;
-
   // Get the user
   const user = await getUserById(payload.user.id);
 
@@ -462,16 +458,25 @@ const handleMarketingRequestResponse = async (payload) => {
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
   const newTask = {
-    name: "Abc",
-    "Assigned to": "",
+    name: fieldValues.find((f) => f.hasOwnProperty("projectNameInput"))
+      .projectNameInput.value,
     "Requested by": mondayUser.id,
-    Reviewer: "",
-    "Review Date": "",
-    "Go-Live Date": "",
-    Description: "",
-    Files: "",
-    Channel: "",
+    "Review Date": fieldValues.find((f) => f.hasOwnProperty("reviewDateInput"))
+      .reviewDateInput.selected_date,
+    "Go-Live Date": fieldValues.find((f) => f.hasOwnProperty("goLiveDateInput"))
+      .goLiveDateInput.selected_date,
+    Description: fieldValues.find((f) =>
+      f.hasOwnProperty("projectDescriptionInput")
+    ).projectDescriptionInput.value,
+    Files: fieldValues.find((f) => f.hasOwnProperty("dropboxLinkInput"))
+      .dropboxLinkInput.value,
+    Channel: fieldValues
+      .find((f) => f.hasOwnProperty("channelSelect"))
+      .channelSelect.selected_options.map((m) => m.value)
+      .join(", "),
   };
+
+  console.log("New task", newTask);
 
   // const addTaskRequest = await addTaskToMarketingBoard(newTask);
 };

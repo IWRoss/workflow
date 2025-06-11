@@ -476,9 +476,9 @@ const handleMarketingRequestResponse = async (payload) => {
       .join(", "),
   };
 
-  console.log("New task", newTask);
+  // console.log("New task", newTask);
 
-  // const addTaskRequest = await addTaskToMarketingBoard(newTask);
+  const addTaskRequest = await addTaskToMarketingBoard(newTask);
 };
 
 /**

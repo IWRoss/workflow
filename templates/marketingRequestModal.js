@@ -126,6 +126,11 @@ module.exports = {
         action_id: "campaignSelect",
         options: [],
       },
+      label: {
+        type: "plain_text",
+        text: "Campaign or Initiative",
+        emoji: true,
+      },
     },
     {
       type: "input",

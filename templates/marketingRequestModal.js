@@ -116,7 +116,7 @@ module.exports = {
     {
       type: "input",
       element: {
-        type: "multi_static_select",
+        type: "static_select",
         placeholder: {
           type: "plain_text",
           text: "Select channels",

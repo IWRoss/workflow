@@ -698,8 +698,10 @@ const openMarketingRequestForm = async (payload) => {
       block.type === "input" && block.element.action_id === "campaignSelect"
   );
 
+  const marketingCampaignOptions = await getMarketingCampaignOptions();
+
   marketingRequestModal.blocks[campaignSelectFieldIndex].element.options =
-    await getMarketingCampaignOptions().map((option) => ({
+    marketingCampaignOptions.map((option) => ({
       text: {
         type: "plain_text",
         text: option.name,

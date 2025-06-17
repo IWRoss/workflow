@@ -295,7 +295,7 @@ const getMarketingCampaignOptions = async () => {
     ? JSON.parse(campaignColumn.settings_str).labels
     : [];
 
-  return options.map((option) => option.name);
+  return options;
 };
 
 module.exports = {

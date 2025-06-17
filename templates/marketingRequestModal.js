@@ -41,6 +41,25 @@ module.exports = {
         emoji: true,
       },
     },
+    // Campaign selection
+    {
+      type: "input",
+      element: {
+        type: "static_select",
+        placeholder: {
+          type: "plain_text",
+          text: "Select a campaign",
+          emoji: true,
+        },
+        action_id: "campaignSelect",
+        options: [],
+      },
+      label: {
+        type: "plain_text",
+        text: "Campaign or Initiative",
+        emoji: true,
+      },
+    },
     {
       type: "input",
       element: {
@@ -110,25 +129,6 @@ module.exports = {
       label: {
         type: "plain_text",
         text: "Dropbox link",
-        emoji: true,
-      },
-    },
-    // Campaign selection
-    {
-      type: "input",
-      element: {
-        type: "static_select",
-        placeholder: {
-          type: "plain_text",
-          text: "Select a campaign",
-          emoji: true,
-        },
-        action_id: "campaignSelect",
-        options: [],
-      },
-      label: {
-        type: "plain_text",
-        text: "Campaign or Initiative",
         emoji: true,
       },
     },

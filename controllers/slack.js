@@ -685,8 +685,27 @@ const openOpsRequestForm = async (payload) => {
   }
 };
 
+const getReviewerOptions = async (payload) => {};
+
 const openMarketingRequestForm = async (payload) => {
   const marketingRequestModal = _.cloneDeep(templates.marketingRequestModal);
+
+  // Add select field for marketing campaigns
+
+  const campaignSelectFieldIndex = marketingRequestModal.blocks.findIndex(
+    (block) =>
+      block.type === "input" && block.element.action_id === "campaignSelect"
+  );
+
+  marketingRequestModal.blocks[campaignSelectFieldIndex].element.options =
+    await getMarketingCampaignOptions().map((option) => ({
+      text: {
+        type: "plain_text",
+        text: option.name,
+        emoji: true,
+      },
+      value: option.id.toString(),
+    }));
 
   try {
     // Send leave request form to Slack

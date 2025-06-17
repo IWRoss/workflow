@@ -57,6 +57,7 @@ const getMondayBoardColumns = async (boardId) => {
         columns {
           id
           title
+          settings_str
         }
       }
     }`,
@@ -270,6 +271,33 @@ const assignCompanyCode = async (companyId, companyCode) => {
   return result;
 };
 
+/**
+ *
+ */
+const getMarketingCampaignOptions = async () => {
+  const response = await getMondayBoardColumns(
+    process.env.MARKETING_MONDAY_BOARD
+  );
+
+  const columns = response.data.boards[0].columns;
+
+  // Find the column with title "Campaign"
+  const campaignColumn = columns.find(
+    (column) => column.title === "Campaign or Initiative"
+  );
+
+  if (!campaignColumn) {
+    throw new Error("Campaign column not found");
+  }
+
+  // Get the options for the Campaign column
+  const options = campaignColumn.settings_str
+    ? JSON.parse(campaignColumn.settings_str).labels
+    : [];
+
+  return options.map((option) => option.name);
+};
+
 module.exports = {
   getMonday,
   getMondayBoard,
@@ -284,4 +312,5 @@ module.exports = {
   getMondayUserByEmail,
   updateAssignedUser,
   assignCompanyCode,
+  getMarketingCampaignOptions,
 };

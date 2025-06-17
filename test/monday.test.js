@@ -76,3 +76,19 @@ describe("#addTaskToOpsBoard", function () {
     }
   });
 });
+
+describe("#getMarketingCampaignOptions", function () {
+  it("should get marketing campaign options", async function () {
+    const { getMarketingCampaignOptions } = require("../controllers/monday");
+
+    try {
+      const result = await getMarketingCampaignOptions();
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error getting marketing campaign options:", error);
+    }
+  });
+});

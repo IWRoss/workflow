@@ -3,6 +3,7 @@
  */
 
 const clients = require("../data/clients");
+const { type } = require("./appMaintenanceScreen");
 
 module.exports = {
   type: "modal",
@@ -112,7 +113,20 @@ module.exports = {
         emoji: true,
       },
     },
-    // Channel select field: YouTube, Events, Content, Email, Instagram, Internal, LinkedIn, Print, Website
+    // Campaign selection
+    {
+      type: "input",
+      element: {
+        type: "static_select",
+        placeholder: {
+          type: "plain_text",
+          text: "Select a campaign",
+          emoji: true,
+        },
+        action_id: "campaignSelect",
+        options: [],
+      },
+    },
     {
       type: "input",
       element: {

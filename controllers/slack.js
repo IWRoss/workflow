@@ -498,8 +498,13 @@ const handleMarketingRequestResponse = async (payload) => {
       itemId: addTaskRequest.data.create_item.id,
     });
   newMarketingRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MARKETING_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
-  newMarketingRequestMessageTemplate.blocks[4].elements[2].url =
-    newTask["Dropbox Link"];
+
+  if (isValidHttpUrl(newTask["Dropbox Link"])) {
+    newMarketingRequestMessageTemplate.blocks[4].elements[2].url =
+      newTask["Dropbox Link"];
+  } else {
+    newMarketingRequestMessageTemplate.blocks[4].elements.splice(2, 1);
+  }
 
   try {
     // Send message to users

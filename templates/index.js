@@ -8,6 +8,7 @@ const newRequestMessage = require("./newRequestMessage");
 const invoiceRequestModal = require("./invoiceRequestModal");
 const newInvoiceRequestMessage = require("./newInvoiceRequestMessage");
 const newOpsRequestMessage = require("./newOpsRequestMessage");
+const newMarketingRequestMessage = require("./newMarketingRequestMessage");
 const opsRequestModal = require("./opsRequestModal");
 const marketingRequestModal = require("./marketingRequestModal");
 
@@ -17,8 +18,9 @@ module.exports = {
   requestModal,
   invoiceRequestModal,
   opsRequestModal,
+  marketingRequestModal,
   newRequestMessage,
   newInvoiceRequestMessage,
   newOpsRequestMessage,
-  marketingRequestModal,
+  newMarketingRequestMessage,
 };

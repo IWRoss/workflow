@@ -480,6 +480,38 @@ const handleMarketingRequestResponse = async (payload) => {
   // console.log("New task", newTask);
 
   const addTaskRequest = await addTaskToMarketingBoard(newTask);
+
+  const newMarketingRequestMessageTemplate = _.cloneDeep(
+    templates.newMarketingRequestMessage
+  );
+
+  newMarketingRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Marketing Request:`;
+  newMarketingRequestMessageTemplate.blocks[1].fields[0].text += newTask.name;
+  newMarketingRequestMessageTemplate.blocks[1].fields[1].text +=
+    newTask.Channel;
+  newMarketingRequestMessageTemplate.blocks[2].text.text += newTask.Description;
+  newMarketingRequestMessageTemplate.blocks[3].fields[0].text +=
+    newTask["Review Date"];
+  newMarketingRequestMessageTemplate.blocks[3].fields[1].text +=
+    newTask["Go-Live Date"];
+  newMarketingRequestMessageTemplate.blocks[4].elements[0].value =
+    JSON.stringify({
+      boardId: process.env.MARKETING_MONDAY_BOARD,
+      itemId: addTaskRequest.data.create_item.id,
+    });
+  newMarketingRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MARKETING_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
+  newMarketingRequestMessageTemplate.blocks[4].elements[2].url =
+    newTask["Dropbox Link"];
+
+  try {
+    // Send message to users
+    const message = await slack.chat.postMessage({
+      channel: process.env.MARKETING_SLACK_CHANNEL,
+      ...newMarketingRequestMessageTemplate,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**

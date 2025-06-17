@@ -13,6 +13,7 @@ const {
   updateAssignedUser,
   addTaskToOpsBoard,
   addTaskToMarketingBoard,
+  getMarketingCampaignOptions,
 } = require("./monday");
 
 const { getOpportunities } = require("./copper");

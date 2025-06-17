@@ -471,10 +471,8 @@ const handleMarketingRequestResponse = async (payload) => {
     "Dropbox Link":
       fieldValues.find((f) => f.hasOwnProperty("dropboxLinkInput"))
         .dropboxLinkInput.value + " Link",
-    Channel: fieldValues
-      .find((f) => f.hasOwnProperty("channelSelect"))
-      .channelSelect.selected_options.map((m) => m.value)
-      .join(", "),
+    Channel: fieldValues.find((f) => f.hasOwnProperty("channelSelect"))
+      .channelSelect.selected_option.value,
   };
 
   // console.log("New task", newTask);

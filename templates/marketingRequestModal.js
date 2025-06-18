@@ -81,6 +81,23 @@ module.exports = {
     {
       type: "input",
       element: {
+        type: "users_select",
+        placeholder: {
+          type: "plain_text",
+          text: "Select a reviewer",
+          emoji: true,
+        },
+        action_id: "reviewerSelect",
+      },
+      label: {
+        type: "plain_text",
+        text: "Reviewer",
+        emoji: true,
+      },
+    },
+    {
+      type: "input",
+      element: {
         type: "datepicker",
         initial_date: new Date().toISOString().split("T")[0],
         placeholder: {

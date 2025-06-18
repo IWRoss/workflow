@@ -475,14 +475,13 @@ const handleMarketingRequestResponse = async (payload) => {
       .selected_user
   );
 
+  console.log("Reviewer Slack user", reviewerSlackUser);
+
   const reviewerMondayUser = await getMondayUserByEmail(
     reviewerSlackUser.email
   );
 
-  console.log(
-    "Reviewer user",
-    fieldValues.find((f) => f.hasOwnProperty("reviewerSelect")).reviewerSelect
-  );
+  console.log("Reviewer Monday user", reviewerMondayUser);
 
   const newTask = {
     name: fieldValues.find((f) => f.hasOwnProperty("projectNameInput"))

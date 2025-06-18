@@ -463,6 +463,11 @@ const handleMarketingRequestResponse = async (payload) => {
       .selected_user.email
   );
 
+  console.log(
+    "Reviewer user",
+    fieldValues.find((f) => f.hasOwnProperty("reviewerSelect")).reviewerSelect
+  );
+
   const newTask = {
     name: fieldValues.find((f) => f.hasOwnProperty("projectNameInput"))
       .projectNameInput.value,

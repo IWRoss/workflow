@@ -458,10 +458,16 @@ const handleMarketingRequestResponse = async (payload) => {
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
+  const reviewerUser = await getMondayUserByEmail(
+    fieldValues.find((f) => f.hasOwnProperty("reviewerSelect")).reviewerSelect
+      .selected_user.email
+  );
+
   const newTask = {
     name: fieldValues.find((f) => f.hasOwnProperty("projectNameInput"))
       .projectNameInput.value,
     "Requested by": mondayUser.id,
+    Reviewer: reviewerUser.id,
     "Review Date": fieldValues.find((f) => f.hasOwnProperty("reviewDateInput"))
       .reviewDateInput.selected_date,
     "Go-Live Date": fieldValues.find((f) => f.hasOwnProperty("goLiveDateInput"))
@@ -685,8 +691,6 @@ const openOpsRequestForm = async (payload) => {
     console.dir(error, { depth: null });
   }
 };
-
-const getReviewerOptions = async (payload) => {};
 
 const openMarketingRequestForm = async (payload) => {
   const marketingRequestModal = _.cloneDeep(templates.marketingRequestModal);

@@ -478,7 +478,7 @@ const handleMarketingRequestResponse = async (payload) => {
   console.log("Reviewer Slack user", reviewerSlackUser);
 
   const reviewerMondayUser = await getMondayUserByEmail(
-    reviewerSlackUser.email
+    reviewerSlackUser.profile.email
   );
 
   console.log("Reviewer Monday user", reviewerMondayUser);

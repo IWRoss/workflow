@@ -43,6 +43,18 @@ const getMembers = async () => {
   );
 };
 
+const getMemberById = async (id) => {
+  const members = await getMembers();
+
+  const member = members.find((m) => m.id === id);
+
+  if (!member) {
+    throw new Error(`Member with ID ${id} not found`);
+  }
+
+  return member;
+};
+
 /**
  * Filter members
  */
@@ -458,9 +470,13 @@ const handleMarketingRequestResponse = async (payload) => {
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
-  const reviewerUser = await getMondayUserByEmail(
+  const reviewerSlackUser = await getUserById(
     fieldValues.find((f) => f.hasOwnProperty("reviewerSelect")).reviewerSelect
-      .selected_user.email
+      .selected_user
+  );
+
+  const reviewerMondayUser = await getMondayUserByEmail(
+    reviewerSlackUser.email
   );
 
   console.log(
@@ -472,7 +488,7 @@ const handleMarketingRequestResponse = async (payload) => {
     name: fieldValues.find((f) => f.hasOwnProperty("projectNameInput"))
       .projectNameInput.value,
     "Requested by": mondayUser.id,
-    Reviewer: reviewerUser.id,
+    Reviewer: reviewerMondayUser.id,
     "Review Date": fieldValues.find((f) => f.hasOwnProperty("reviewDateInput"))
       .reviewDateInput.selected_date,
     "Go-Live Date": fieldValues.find((f) => f.hasOwnProperty("goLiveDateInput"))
@@ -733,6 +749,7 @@ const openMarketingRequestForm = async (payload) => {
 module.exports = {
   slack,
   getMembers,
+  getMemberById,
   openStudioRequestForm,
   openCommTechRequestForm,
   openOpsRequestForm,

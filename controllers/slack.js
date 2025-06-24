@@ -27,6 +27,20 @@ const {
 
 const templates = require("../templates");
 
+//Oportunity custom field map
+// This map is used to convert Copper custom field IDs
+const opportunityCustomFieldMap = {
+  631912: "projectCode",
+  22023: "likelyInvoiceDate",
+  681214: "internationalProject",
+  681471: "submittedOn",
+  692217: "invoiceDetail",
+  689554: "projectFees",
+  689552: "consultingFees",
+  689553: "studioFees",
+  692218: "invoicingEmail",
+};
+
 /**
  * Initialise Slack
  */
@@ -372,68 +386,74 @@ const handleInvoiceRequestResponse = async (payload) => {
  *
  */
 const handleOpsRequestResponse = async (payload) => {
-  const cachedOpportunities = await getOpportunities();
-
-  const fieldValues = Object.values(payload.view.state.values);
-
   // Get the user
-  const user = await getUserById(payload.user.id);
+  const user = await getUserById(payload.slackUserId);
 
   // Get the Monday user
   const mondayUser = await getMondayUserByEmail(user.profile.email);
 
-  const selectedOpportunity = cachedOpportunities.find(
-    (opportunity) =>
-      opportunity.id ===
-      parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
-  );
+  const selectedOpportunity = payload.opportunityObject;
 
-  const nullFields = Object.keys(selectedOpportunity).filter(
-    (key) =>
-      selectedOpportunity[key] === null ||
-      selectedOpportunity[key] === undefined ||
-      selectedOpportunity[key] === ""
-  );
+  // const nullFields = Object.keys(selectedOpportunity).filter(
+  //   (key) =>
+  //     selectedOpportunity[key] === null ||
+  //     selectedOpportunity[key] === undefined ||
+  //     selectedOpportunity[key] === ""
+  // );
 
-  if (nullFields.length > 0) {
-    const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields
-      .map((el) => camelCaseToCapitalCase(el))
-      .join("\n- ")}\n\nPlease check the opportunity and try again.`;
+  // if (nullFields.length > 0) {
+  //   const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields
+  //     .map((el) => camelCaseToCapitalCase(el))
+  //     .join("\n- ")}\n\nPlease check the opportunity and try again.`;
 
-    await slack.chat.postMessage({
-      channel: payload.user.id,
-      text: errorMessage,
-    });
+  //   await slack.chat.postMessage({
+  //     channel: payload.user.id,
+  //     text: errorMessage,
+  //   });
 
-    return;
-  }
+  //   return;
+  // }
+
+  //Select the custom fields from the opportunity object
+  const customFieldsObject = selectedOpportunity.customFields;
+
+  // Map the custom fields to the opportunityCustomFieldMap
+  const customFields = customFieldsObject.reduce((acc, field) => {
+    if (opportunityCustomFieldMap[field.custom_field_definition_id]) {
+      acc[opportunityCustomFieldMap[field.custom_field_definition_id]] =
+        field.value;
+    }
+    return acc;
+  }, {});
+
+  console.log("Custom fields", customFields);
 
   const newTask = {
     name: selectedOpportunity.name,
     Consultant: mondayUser.id,
-    "Project Code": selectedOpportunity.projectCode ?? "No ID",
+    "Project Code": customFields.projectCode ?? "No ID",
     "Likely Invoice Date": new Date(
-      parseInt(selectedOpportunity.likelyInvoiceDate) * 1000
+      parseInt(customFields.likelyInvoiceDate) * 1000
     )
       .toISOString()
       .split("T")[0],
-    "Submitted Date": new Date(parseInt(selectedOpportunity.submittedOn) * 1000)
+    "Submitted Date": new Date(parseInt(customFields.submittedOn) * 1000)
       .toISOString()
       .split("T")[0],
-    "Consulting Fees": parseInt(selectedOpportunity.consultingFees),
-    "Studio Fees": parseInt(selectedOpportunity.studioFees),
-    "Project Fees": parseInt(selectedOpportunity.projectFees),
-    "Invoicing Email": `${selectedOpportunity.invoicingEmail} Link`,
-    "Invoice Detail": selectedOpportunity.invoiceDetail,
+    "Consulting Fees": parseInt(customFields.consultingFees),
+    "Studio Fees": parseInt(customFields.studioFees),
+    "Project Fees": parseInt(customFields.projectFees),
+    "Invoicing Email": `${customFields.invoicingEmail} Link`,
+    "Invoice Detail": customFields.invoiceDetail,
   };
 
-  const addTaskRequest = await addTaskToOpsBoard(newTask);
+  // const addTaskRequest = await addTaskToOpsBoard(newTask);
 
   const newOpsRequestMessageTemplate = _.cloneDeep(
     templates.newOpsRequestMessage
   );
 
-  newOpsRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Ops Request:`;
+  //newOpsRequestMessageTemplate.blocks[0].text.text = `*<@${payload.slackUserId}>* submitted a new Ops Request:`;
   newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
     selectedOpportunity.name;
   newOpsRequestMessageTemplate.blocks[1].fields[1].text +=

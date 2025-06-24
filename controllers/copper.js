@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { setCache, getCache } = require("./cache");
+const {handleOpsRequestResponse} = require("./slack")
 
 const copperHeaders = {
   "X-PW-AccessToken": process.env.COPPER_API_KEY,
@@ -478,6 +479,17 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     return;
   }
 
+
+   // 1. Create a payload for opsRequest 
+  const opsRequestPayload = {
+    opportunityId: opportunity.id,
+    slackUserId:"U087XQSQUDV",
+    opportunityObject: opportunity
+  }
+
+  // 2. Send the payload to the opsRequest endpoint
+  await handleOpsRequestResponse(opsRequestPayload);
+
   /**
    * Let's create a code. Get the company from the company id
    */
@@ -511,6 +523,9 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
   const updateOpportunityProjectCodeResponse =
     await updateOpportunityProjectCode(opportunity.id, newProjectCode);
+
+
+ 
 
   return {
     companyCode,

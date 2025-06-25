@@ -19,6 +19,7 @@ const opportunityCustomFieldMap = {
   689552: "consultingFees",
   689553: "studioFees",
   692218: "invoicingEmail",
+  699619: "totalDays",
 };
 
 const companyCustomFieldMap = {
@@ -460,6 +461,7 @@ const setupCopperWebhook = async () => {
  * Handle subscription to Copper update opportunity events
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
+  console.log("Payload before checking stage:", payload);
   if (
     !payload.updated_attributes.stage ||
     payload.updated_attributes.stage[1] !== "Proposal Submitted"

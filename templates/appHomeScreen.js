@@ -144,23 +144,7 @@ const blocks = {
         action_id: "openInvoiceRequestForm",
       },
     },
-    {
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: "If you need to submit an Ops request, please use this form.",
-      },
-      accessory: {
-        type: "button",
-        text: {
-          type: "plain_text",
-          text: "Create ticket",
-          emoji: true,
-        },
-        value: "click_me_123",
-        action_id: "openOpsRequestForm",
-      },
-    },
+    
   ],
 };
 

@@ -39,6 +39,7 @@ const opportunityCustomFieldMap = {
   689552: "consultingFees",
   689553: "studioFees",
   692218: "invoicingEmail",
+  699619: "totalDays",
 };
 
 /**
@@ -442,6 +443,7 @@ const handleOpsRequestResponse = async (payload) => {
     "Project Fees": parseInt(customFields.projectFees),
     "Invoicing Email": `${customFields.invoicingEmail} Link`,
     "Invoice Detail": customFields.invoiceDetail,
+    "Total Days": customFields.totalDays,
   };
 
    
@@ -595,20 +597,24 @@ const handleMarketingRequestResponse = async (payload) => {
 const createTask = async (payload) => {
   console.log("Going through createTask", payload);
 
-  //1. Get Slack user
-  const user = await getUserById(payload.user.id);
-
-  //2. Get the Monday user
-  const mondayUser = await getMondayUserByEmail(user.profile.email);
-
-  //3. Parse the payload actions
+  //1. Parse the payload actions
   const parsedPayload = JSON.parse(payload.actions[0].value);
   console.log("Parsed payload", parsedPayload);
 
+  //2. Create a new task on Monday.com
+  const addTaskRequest = await addTaskToOpsBoard(parsedPayload.mondayNewTask);
+
+  //3. Get Slack user
+  const user = await getUserById(payload.user.id);
+
+  //4. Get the Monday user
+  const mondayUser = await getMondayUserByEmail(user.profile.email);
+
   
 
-  //5. Create a new task on Monday.com
-  const addTaskRequest = await addTaskToOpsBoard(parsedPayload.mondayNewTask);
+  
+
+  
 
   await updateAssignedUser(mondayUser.id, 
     addTaskRequest.data.create_item.id,

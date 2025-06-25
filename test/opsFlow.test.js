@@ -26,7 +26,7 @@ describe("#handleCopperUpdatesToProposalSubmittedWebHook", function () {
     };
     try {
       const result = await handleCopperUpdateOpportunityWebhook(payload);
-      console.dir(result, { depth: null });
+      console.dir(result, { depth: null }); 
     } catch (error) {
       console.error("Error getting valid contact types:", error);
     }

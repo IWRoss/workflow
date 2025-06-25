@@ -18,6 +18,7 @@ module.exports = {
           type: "mrkdwn",
           text: "*Project Code*\n",
         },
+         
       ],
     },
     {
@@ -27,23 +28,14 @@ module.exports = {
           type: "button",
           text: {
             type: "plain_text",
-            text: "Claim task",
+            text: "Create Monday Task",
             emoji: true,
           },
           value: "",
-          action_id: "claimTask",
+          action_id: "createTask",
           style: "primary",
         },
-        {
-          type: "button",
-          text: {
-            type: "plain_text",
-            text: "View on Monday.com",
-            emoji: true,
-          },
-          url: "",
-          action_id: "viewOnMonday",
-        },
+       
         {
           type: "button",
           text: {

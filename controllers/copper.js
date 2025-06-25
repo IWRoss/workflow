@@ -20,7 +20,7 @@ const opportunityCustomFieldMap = {
   689553: "studioFees",
   692218: "invoicingEmail",
   699619: "totalDays",
-};
+}; 
 
 const companyCustomFieldMap = {
   630949: "companyCode",

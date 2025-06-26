@@ -46,6 +46,17 @@ module.exports = {
           url: "",
           action_id: "viewOnCopper",
         },
+       {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "No action required",
+            emoji: true,
+          },
+          value: "no_action", 
+          action_id: "noActionRequired",
+          style: "danger",
+        },
       ],
     },
   ],

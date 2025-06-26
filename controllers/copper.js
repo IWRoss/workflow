@@ -20,7 +20,7 @@ const opportunityCustomFieldMap = {
   689553: "studioFees",
   692218: "invoicingEmail",
   699619: "totalDays",
-}; 
+};
 
 const companyCustomFieldMap = {
   630949: "companyCode",
@@ -457,11 +457,104 @@ const setupCopperWebhook = async () => {
   return response;
 };
 
+//Function to create a project code for an opportunity
+const checkForProjectCodeInOpportunity = async (opp) => {
+  //1. Check if the opportunity has a project code
+  console.log("Checking if opportunity has a project code");
+
+  const projectCode = opp.custom_fields.find(
+    (field) =>
+      field.custom_field_definition_id ==
+      selectCustomFieldIDByName("projectCode")
+  )?.value;
+
+  console.log("Project code already exists:", projectCode);
+
+  //2. If it has a project code, return it
+  if (projectCode) {
+    return projectCode;
+  }
+
+  return false;
+};
+
+//Check if the opportunity has a company code, if not, create one
+const checkForCompanyCodeInOpportunity = async (comp) => {
+  // Get the company code from the company custom fields
+  const companyCode = comp.custom_fields.find(
+    (field) =>
+      field.custom_field_definition_id ==
+      selectCustomFieldIDByName("companyCode", companyCustomFieldMap)
+  )?.value;
+
+  // If the company code exists, return it
+  if (companyCode) {
+    console.log("Company code already exists:", companyCode);
+    return companyCode;
+  }
+
+  // If the company code does not exist, create one
+  console.log("Company code does not exist, creating one...");
+
+  const newCompanyCode = createCompanyCode(comp.name);
+  return newCompanyCode;
+};
+
+//Function to update the opportunity counter for a company
+const updateOpportunityCounter = async (opp, comp) => {
+  //1. Check if the opportunity has a opportunityCounter
+  const opportunityCounter = comp.custom_fields.find(
+    (field) =>
+      field.custom_field_definition_id ==
+      selectCustomFieldIDByName("opportunityCounter", companyCustomFieldMap)
+  )?.value;
+
+  //2. If it has a opportunityCounter, increment it by 1
+  const opportunityIndex = parseInt(opportunityCounter || 0) + 1;
+
+  //3. Update the opportunityCounter for the company
+  try {
+    const updateCompanyOpportunityCountResponse =
+      await updateCompanyOpportunityCount(opp.company_id, opportunityIndex);
+
+    console.log(
+      "Updated company opportunity count:",
+      updateCompanyOpportunityCountResponse
+    );
+
+    return opportunityIndex;
+  } catch (error) {
+    console.error("Error updating company opportunity count:", error);
+  }
+};
+
+//Function to create a new project code for an opportunity
+const createProjectCodeForOpportunity = async (compCode, oppIndex, opp) => {
+  //1. Generate a new project code
+  const newProjectCode = compCode + String(oppIndex).padStart(3, "0");
+
+  //2. Update the opportunity with the new project code
+  try {
+    const updateOpportunityProjectCodeResponse =
+      await updateOpportunityProjectCode(opp.id, newProjectCode);
+
+    console.log(
+      "Updated opportunity project code:",
+      updateOpportunityProjectCodeResponse
+    );
+
+    return newProjectCode;
+  } catch (error) {
+    console.error("Error updating opportunity project code:", error);
+  }
+};
+
 /**
  * Handle subscription to Copper update opportunity events
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
   console.log("Payload before checking stage:", payload);
+
   if (
     !payload.updated_attributes.stage ||
     payload.updated_attributes.stage[1] !== "Proposal Submitted"
@@ -471,84 +564,62 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
   const opportunity = await getOpportunity(payload.ids[0]);
 
-  console.log("Opportunity data:", opportunity);
-
-  const projectCode = opportunity.custom_fields.find(
-    (field) =>
-      field.custom_field_definition_id ==
-      selectCustomFieldIDByName("projectCode")
-  )?.value;
-
-  if (projectCode) {
-    console.log("Project code found:", projectCode);
-   
-
-    //1. Request all the copper users
-    const copperUsers = await getCopperUsers();
-
-     // 2. Create a payload for opsRequest
-    const opsRequestPayload = {
-      opportunityObject: opportunity,
-      copperUsers,
-    };
-    await handleOpsRequestResponse(opsRequestPayload);
-
-    return;
-  }
-
   console.log("Opportunity", opportunity);
 
-  /**
-   * Let's create a code. Get the company from the company id
-   */
+  // Get the company from the opportunity
   const company = await getCompany(opportunity.company_id);
 
-  const companyCode = company.custom_fields.find(
-    (field) =>
-      field.custom_field_definition_id ==
-      selectCustomFieldIDByName("companyCode", companyCustomFieldMap)
-  )?.value;
+  //Creates ops ticket for the opportunity, wether it has a project code or not
+  const projectCodeExists = checkForProjectCodeInOpportunity(opportunity);
 
-  const opportunityCounter = company.custom_fields.find(
-    (field) =>
-      field.custom_field_definition_id ==
-      selectCustomFieldIDByName("opportunityCounter", companyCustomFieldMap)
-  )?.value;
+  const compCode = checkForCompanyCodeInOpportunity(company);
+  const oppIndex = updateOpportunityCounter(opportunity, company);
 
-  if (!companyCode) {
-    console.error("Company code not found");
-
+  // If the project code already exists, return it
+  if (projectCodeExists) {
+    //Create OPS request
     //1. Request all the copper users
     const copperUsers = await getCopperUsers();
 
-     // 2. Create a payload for opsRequest
+    // 2. Create a payload for opsRequest
     const opsRequestPayload = {
       opportunityObject: opportunity,
       copperUsers,
     };
+
     await handleOpsRequestResponse(opsRequestPayload);
-    return;
+
+    return {
+      compCode,
+      opportunityCounter: oppIndex,
+      newProjectCode: projectCodeExists,
+    };
   }
+  // If the project code does not exist, create a new one
+  const generateProjectCode = await createProjectCodeForOpportunity(
+    compCode,
+    oppIndex,
+    opportunity
+  );
 
-  const opportunityIndex = parseInt(opportunityCounter || 0) + 1;
+  //Create OPS request
+  //1. Request all the copper users
+  const copperUsers = await getCopperUsers();
 
-  // Set company opportunity index
-  const updateCompanyOpportunityCountResponse =
-    await updateCompanyOpportunityCount(company.id, opportunityIndex);
+  // 2. Create a payload for opsRequest
+  const opsRequestPayload = {
+    opportunityObject: opportunity,
+    copperUsers,
+  };
 
-  const newProjectCode =
-    companyCode + String(opportunityIndex).padStart(3, "0");
-
-  const updateOpportunityProjectCodeResponse =
-    await updateOpportunityProjectCode(opportunity.id, newProjectCode);
+  await handleOpsRequestResponse(opsRequestPayload);
 
   return {
-    companyCode,
-    opportunityCounter: opportunityIndex,
-    newProjectCode,
+    compCode,
+    opportunityCounter: oppIndex,
+    newProjectCode: generateProjectCode,
   };
 };
-
 
 //Get a list of all the copper users
 const getCopperUsers = async () => {

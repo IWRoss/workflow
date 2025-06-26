@@ -491,6 +491,10 @@ const handleOpsRequestResponse = async (payload) => {
   newOpsRequestMessageTemplate.blocks[2].elements[1].url =
     process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
 
+    //No action required button
+  newOpsRequestMessageTemplate.blocks[2].elements[2].value = "some_value";
+
+
   try {
     // Send message to users
     const message = await slack.chat.postMessage({
@@ -589,6 +593,40 @@ const handleMarketingRequestResponse = async (payload) => {
     console.log(error);
   }
 };
+
+
+//No action required
+const noActionRequired = async (payload) => {
+  // Find the actions block location
+  const actionsBlockIndex = payload.message.blocks.findIndex(
+    (block) => block.type === "actions"
+  );
+
+  // Remove the claim button
+  payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
+  // Remove the no action required button
+  payload.message.blocks[actionsBlockIndex].elements.splice(1, 1);
+
+  // Add a block showing that no action is required
+  payload.message.blocks.splice(actionsBlockIndex, 0, {
+    type: "section",
+    text: {
+      type: "mrkdwn",
+      text: `*<@${payload.user.id}>* marked this task as no action required`,
+    },
+  });
+
+  try {
+    // Update the message
+    const message = await slack.chat.update({
+      channel: payload.channel.id,
+      ts: payload.message.ts,
+      blocks: [...payload.message.blocks],
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 /**
  * Create a task on Monday for user (DevOps)
@@ -883,5 +921,6 @@ module.exports = {
   putAppIntoMaintenanceMode,
   claimTask,
   createTask,
+  noActionRequired,
  
 };

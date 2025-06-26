@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { setCache, getCache } = require("./cache");
+const { handleOpsRequestResponse } = require("./slack");
 
 const copperHeaders = {
   "X-PW-AccessToken": process.env.COPPER_API_KEY,
@@ -18,7 +19,8 @@ const opportunityCustomFieldMap = {
   689552: "consultingFees",
   689553: "studioFees",
   692218: "invoicingEmail",
-};
+  699619: "totalDays",
+}; 
 
 const companyCustomFieldMap = {
   630949: "companyCode",
@@ -459,6 +461,7 @@ const setupCopperWebhook = async () => {
  * Handle subscription to Copper update opportunity events
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
+  console.log("Payload before checking stage:", payload);
   if (
     !payload.updated_attributes.stage ||
     payload.updated_attributes.stage[1] !== "Proposal Submitted"
@@ -468,6 +471,8 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
   const opportunity = await getOpportunity(payload.ids[0]);
 
+  console.log("Opportunity data:", opportunity);
+
   const projectCode = opportunity.custom_fields.find(
     (field) =>
       field.custom_field_definition_id ==
@@ -475,8 +480,23 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
   )?.value;
 
   if (projectCode) {
+    console.log("Project code found:", projectCode);
+   
+
+    //1. Request all the copper users
+    const copperUsers = await getCopperUsers();
+
+     // 2. Create a payload for opsRequest
+    const opsRequestPayload = {
+      opportunityObject: opportunity,
+      copperUsers,
+    };
+    await handleOpsRequestResponse(opsRequestPayload);
+
     return;
   }
+
+  console.log("Opportunity", opportunity);
 
   /**
    * Let's create a code. Get the company from the company id
@@ -497,6 +517,16 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
   if (!companyCode) {
     console.error("Company code not found");
+
+    //1. Request all the copper users
+    const copperUsers = await getCopperUsers();
+
+     // 2. Create a payload for opsRequest
+    const opsRequestPayload = {
+      opportunityObject: opportunity,
+      copperUsers,
+    };
+    await handleOpsRequestResponse(opsRequestPayload);
     return;
   }
 
@@ -519,6 +549,16 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
   };
 };
 
+
+//Get a list of all the copper users
+const getCopperUsers = async () => {
+  const response = await axios.get(`${process.env.COPPER_API_URL}/users`, {
+    headers: copperHeaders,
+  });
+
+  return response.data;
+};
+
 module.exports = {
   getPipelines,
   getValidPipelineStageIDs,
@@ -533,4 +573,5 @@ module.exports = {
   handleCopperUpdateOpportunityWebhook,
   createCompanyCode,
   assignCompanyCode,
+  getCopperUsers,
 };

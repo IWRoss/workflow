@@ -16,7 +16,7 @@ const {
   getMarketingCampaignOptions,
 } = require("./monday");
 
-const { getOpportunities } = require("./copper");
+//const { getOpportunities } = require("./copper");
 
 const { setCache, getCache } = require("./cache");
 
@@ -26,6 +26,21 @@ const {
 } = require("../helpers/helpers.js");
 
 const templates = require("../templates");
+
+//Oportunity custom field map
+// This map is used to convert Copper custom field IDs
+const opportunityCustomFieldMap = {
+  631912: "projectCode",
+  22023: "likelyInvoiceDate",
+  681214: "internationalProject",
+  681471: "submittedOn",
+  692217: "invoiceDetail",
+  689554: "projectFees",
+  689552: "consultingFees",
+  689553: "studioFees",
+  692218: "invoicingEmail",
+  699619: "totalDays",
+};
 
 /**
  * Initialise Slack
@@ -372,85 +387,116 @@ const handleInvoiceRequestResponse = async (payload) => {
  *
  */
 const handleOpsRequestResponse = async (payload) => {
-  const cachedOpportunities = await getOpportunities();
+  
+  
+  console.log("Payload inside handleOpsRequestResponse", payload);
 
-  const fieldValues = Object.values(payload.view.state.values);
+  
 
-  // Get the user
-  const user = await getUserById(payload.user.id);
+  //3. Get the opportunity object from the payload
+  const selectedOpportunity = payload.opportunityObject;
 
-  // Get the Monday user
-  const mondayUser = await getMondayUserByEmail(user.profile.email);
+  console.log("Selected opportunity", selectedOpportunity);
 
-  const selectedOpportunity = cachedOpportunities.find(
-    (opportunity) =>
-      opportunity.id ===
-      parseInt(fieldValues[0].getOpportunityOptions.selected_option.value)
-  );
+  
 
-  const nullFields = Object.keys(selectedOpportunity).filter(
-    (key) =>
-      selectedOpportunity[key] === null ||
-      selectedOpportunity[key] === undefined ||
-      selectedOpportunity[key] === ""
-  );
+  //4. Select the custom fields from the opportunity object
+  const customFieldsObject = selectedOpportunity.custom_fields;
 
-  if (nullFields.length > 0) {
-    const errorMessage = `*Sorry, we weren’t able to process this Ops Request.*\n\nThe following Copper fields are empty:\n\n- ${nullFields
-      .map((el) => camelCaseToCapitalCase(el))
-      .join("\n- ")}\n\nPlease check the opportunity and try again.`;
+  console.log("Custom fields object", customFieldsObject);
 
-    await slack.chat.postMessage({
-      channel: payload.user.id,
-      text: errorMessage,
-    });
+  //5. Map the custom fields to the opportunityCustomFieldMap
+  const customFields = customFieldsObject.reduce((acc, field) => {
+    if (opportunityCustomFieldMap[field.custom_field_definition_id]) {
+      acc[opportunityCustomFieldMap[field.custom_field_definition_id]] =
+        field.value;
+    }
+    return acc;
+  }, {});
 
-    return;
-  }
+  console.log("Custom fields", customFields);
 
+
+  //7. Filter copper users to the user that moved the opportunity to the "Proposal Submitted" stage
+  const copperUser = payload.copperUsers.filter((user)=> user.id === selectedOpportunity.assignee_id);
+
+  //8. Get the Monday user by email
+  const mondayUser = await getMondayUserByEmail(copperUser[0].email);
+
+   
+
+  //9. Create a new task object for Monday.com
   const newTask = {
     name: selectedOpportunity.name,
     Consultant: mondayUser.id,
-    "Project Code": selectedOpportunity.projectCode ?? "No ID",
+    "Project Code": customFields.projectCode ?? "No ID",
     "Likely Invoice Date": new Date(
-      parseInt(selectedOpportunity.likelyInvoiceDate) * 1000
+      parseInt(customFields.likelyInvoiceDate) * 1000
     )
       .toISOString()
       .split("T")[0],
-    "Submitted Date": new Date(parseInt(selectedOpportunity.submittedOn) * 1000)
+    "Submitted Date": new Date(parseInt(customFields.submittedOn) * 1000)
       .toISOString()
       .split("T")[0],
-    "Consulting Fees": parseInt(selectedOpportunity.consultingFees),
-    "Studio Fees": parseInt(selectedOpportunity.studioFees),
-    "Project Fees": parseInt(selectedOpportunity.projectFees),
-    "Invoicing Email": `${selectedOpportunity.invoicingEmail} Link`,
-    "Invoice Detail": selectedOpportunity.invoiceDetail,
+    "Consulting Fees": parseInt(customFields.consultingFees),
+    "Studio Fees": parseInt(customFields.studioFees),
+    "Project Fees": parseInt(customFields.projectFees),
+    "Invoicing Email": `${customFields.invoicingEmail} Link`,
+    "Invoice Detail": customFields.invoiceDetail,
+    "Total Days": customFields.totalDays,
   };
 
-  const addTaskRequest = await addTaskToOpsBoard(newTask);
-
+   
+  //7. Create a new Ops Request message template
   const newOpsRequestMessageTemplate = _.cloneDeep(
     templates.newOpsRequestMessage
   );
 
-  newOpsRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Ops Request:`;
+  //8. Check if there are any null fields in the selectedOpportunity object
+  const nullFields = Object.keys(customFields).filter(
+    (key) =>
+      customFields[key] === null ||
+      customFields[key] === undefined ||
+      customFields[key] === ""
+  );
+
+   
+  // If there are, add a warning block with the null fields
+  if (nullFields.length > 0) {
+    const warningMessage = `*Missing Fields:*\n - ${nullFields.map((el) => camelCaseToCapitalCase(el)).join("\n - ")}`;
+       
+      //Add a text block to the message
+    newOpsRequestMessageTemplate.blocks[1].fields.push({
+    type: "mrkdwn",
+    text: warningMessage
+  });
+
+     
+  }
+
+  //Initial top text
+  newOpsRequestMessageTemplate.blocks[0].text.text = `A proposal was moved to "Proposal Submitted":`;
+  //Name of the opportunity
   newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
     selectedOpportunity.name;
+  //Project code
   newOpsRequestMessageTemplate.blocks[1].fields[1].text +=
-    selectedOpportunity.projectCode ?? "No ID";
+    customFields.projectCode ?? "No ID";
 
+  //Create a monday task button
   newOpsRequestMessageTemplate.blocks[2].elements[0].value = JSON.stringify({
-    boardId: process.env.OPS_MONDAY_BOARD,
-    itemId: addTaskRequest.data.create_item.id,
+    mondayNewTask: newTask,
   });
-  newOpsRequestMessageTemplate.blocks[2].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.OPS_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
-  newOpsRequestMessageTemplate.blocks[2].elements[2].url =
+
+  newOpsRequestMessageTemplate.blocks[2].elements[1].url =
     process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
 
   try {
     // Send message to users
     const message = await slack.chat.postMessage({
       channel: process.env.OPS_SLACK_CHANNEL,
+      text: `A proposal was moved to "Proposal Submitted": ${selectedOpportunity.name}`,
+
       ...newOpsRequestMessageTemplate,
     });
   } catch (error) {
@@ -545,6 +591,77 @@ const handleMarketingRequestResponse = async (payload) => {
 };
 
 /**
+ * Create a task on Monday for user (DevOps)
+ */
+
+const createTask = async (payload) => {
+  console.log("Going through createTask", payload);
+
+  //1. Parse the payload actions
+  const parsedPayload = JSON.parse(payload.actions[0].value);
+  console.log("Parsed payload", parsedPayload);
+
+  //2. Create a new task on Monday.com
+  const addTaskRequest = await addTaskToOpsBoard(parsedPayload.mondayNewTask);
+
+  //3. Get Slack user
+  const user = await getUserById(payload.user.id);
+
+  //4. Get the Monday user
+  const mondayUser = await getMondayUserByEmail(user.profile.email);
+
+  
+
+  
+
+  
+
+  await updateAssignedUser(mondayUser.id, 
+    addTaskRequest.data.create_item.id,
+    process.env.OPS_MONDAY_BOARD
+  );
+
+  console.log("Add task request", addTaskRequest);
+
+  //6. Find the actions block location
+  const actionsBlockIndex = payload.message.blocks.findIndex(
+    (block) => block.type === "actions"
+  );
+
+  //7. Remove the claim button
+  payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
+
+  //8. Add a button block to view on Monday.com after the task is created
+  payload.message.blocks[actionsBlockIndex].elements.push({
+    type: "button",
+    text: {
+      type: "plain_text",
+      text: "📋 View on Monday",
+    },
+    url: `https://iwcrew.monday.com/boards/${process.env.MARKETING_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`,
+    action_id: "view_monday",
+  });
+
+  await slack.chat.postMessage({
+    channel: payload.channel.id,
+
+    text: `*<@${payload.user.id}>* created a task on Monday`,
+    unfurl_links: false,
+  });
+
+  try {
+    // Update the message
+    const message = await slack.chat.update({
+      channel: payload.channel.id,
+      ts: payload.message.ts,
+      blocks: [...payload.message.blocks],
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+/**
  * Claim task as user
  */
 const claimTask = async (payload) => {
@@ -622,81 +739,81 @@ const getUserById = async (id) => {
   return user.user;
 };
 
-const getOpportunityOptions = async (payload) => {
-  console.log("Search term", payload.value);
+// const getOpportunityOptions = async (payload) => {
+//   console.log("Search term", payload.value);
 
-  const opportunities = await getOpportunities();
+//   const opportunities = await getOpportunities();
 
-  const options = opportunities
-    .sort((a, b) => {
-      if (a.projectCode && b.projectCode) {
-        return a.projectCode.localeCompare(b.projectCode);
-      } else if (a.projectCode) {
-        return -1;
-      } else if (b.projectCode) {
-        return 1;
-      }
-      return 0;
-    })
-    .filter((opportunity) => {
-      const searchTerm = payload.value.toLowerCase();
-      return (
-        opportunity.name.toLowerCase().includes(searchTerm) ||
-        opportunity.projectCode?.toLowerCase().includes(searchTerm) ||
-        opportunity.stageName.toLowerCase().includes(searchTerm)
-      );
-    })
-    .slice(0, 100);
+//   const options = opportunities
+//     .sort((a, b) => {
+//       if (a.projectCode && b.projectCode) {
+//         return a.projectCode.localeCompare(b.projectCode);
+//       } else if (a.projectCode) {
+//         return -1;
+//       } else if (b.projectCode) {
+//         return 1;
+//       }
+//       return 0;
+//     })
+//     .filter((opportunity) => {
+//       const searchTerm = payload.value.toLowerCase();
+//       return (
+//         opportunity.name.toLowerCase().includes(searchTerm) ||
+//         opportunity.projectCode?.toLowerCase().includes(searchTerm) ||
+//         opportunity.stageName.toLowerCase().includes(searchTerm)
+//       );
+//     })
+//     .slice(0, 100);
 
-  const option_groups = options.reduce((acc, option) => {
-    const optionGroup = acc.find(
-      (optionGroup) => optionGroup.label.text === option.stageName
-    );
+//   const option_groups = options.reduce((acc, option) => {
+//     const optionGroup = acc.find(
+//       (optionGroup) => optionGroup.label.text === option.stageName
+//     );
 
-    if (optionGroup) {
-      optionGroup.options.push({
-        text: {
-          type: "plain_text",
-          text: `${option.name} (${option.projectCode || "No ID"})`.substring(
-            0,
-            75
-          ),
-          emoji: true,
-        },
-        value: String(option.id),
-      });
+//     if (optionGroup) {
+//       optionGroup.options.push({
+//         text: {
+//           type: "plain_text",
+//           text: `${option.name} (${option.projectCode || "No ID"})`.substring(
+//             0,
+//             75
+//           ),
+//           emoji: true,
+//         },
+//         value: String(option.id),
+//       });
 
-      return acc;
-    }
+//       return acc;
+//     }
 
-    acc.push({
-      label: {
-        type: "plain_text",
-        text: option.stageName,
-        emoji: true,
-      },
-      options: [
-        {
-          text: {
-            type: "plain_text",
-            text: `${option.name} (${option.projectCode || "No ID"})`.substring(
-              0,
-              75
-            ),
-            emoji: true,
-          },
-          value: String(option.id),
-        },
-      ],
-    });
+//     acc.push({
+//       label: {
+//         type: "plain_text",
+//         text: option.stageName,
+//         emoji: true,
+//       },
+//       options: [
+//         {
+//           text: {
+//             type: "plain_text",
+//             text: `${option.name} (${option.projectCode || "No ID"})`.substring(
+//               0,
+//               75
+//             ),
+//             emoji: true,
+//           },
+//           value: String(option.id),
+//         },
+//       ],
+//     });
 
-    return acc;
-  }, []);
+//     return acc;
+//   }, []);
 
-  return {
-    option_groups,
-  };
-};
+//   return {
+//     option_groups,
+//   };
+// };
 
 const openOpsRequestForm = async (payload) => {
   const opsRequestModal = _.cloneDeep(templates.opsRequestModal);
@@ -765,5 +882,6 @@ module.exports = {
   addWorkflowInterfaceToSlackByUser,
   putAppIntoMaintenanceMode,
   claimTask,
-  getOpportunityOptions,
+  createTask,
+ 
 };

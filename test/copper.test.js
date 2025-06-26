@@ -205,3 +205,21 @@ describe("#getValidContactTypes", function () {
     }
   });
 });
+
+//Get a list of all the copper users
+describe("#getCopperUsers", function () {
+  it("should get all Copper users", async function () {
+    const { getCopperUsers } = require("../controllers/copper");
+
+    try {
+      const result = await getCopperUsers();
+
+      console.dir(result, { depth: null });
+
+      assert(result);
+    } catch (error) {
+      console.error("Error getting Copper users:", error);
+    }
+  });
+}
+);

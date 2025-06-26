@@ -15,6 +15,7 @@ const {
   handleOpsRequestResponse,
   handleMarketingRequestResponse,
   claimTask,
+  createTask,
   getOpportunityOptions,
 } = require("../../controllers/slack");
 
@@ -67,6 +68,9 @@ const actions = {
   },
   getOpportunityOptions: async (payload) => {
     return await getOpportunityOptions(payload);
+  },
+  createTask: (payload) => {
+    createTask(payload);
   },
 };
 

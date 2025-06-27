@@ -645,4 +645,5 @@ module.exports = {
   createCompanyCode,
   assignCompanyCode,
   getCopperUsers,
+  getOpportunity,
 };

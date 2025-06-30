@@ -575,8 +575,11 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
   const compCode = checkForCompanyCodeInOpportunity(company);
   const oppIndex = updateOpportunityCounter(opportunity, company);
 
+  console.log("Right before checking if project code exists:")
   // If the project code already exists, return it
   if (projectCodeExists) {
+
+    console.log("Project code already exists:", projectCodeExists);
     //Create OPS request
     //1. Request all the copper users
     const copperUsers = await getCopperUsers();
@@ -602,6 +605,8 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     opportunity
   );
 
+
+  console.log("Should create a ticket now new project code:");
   //Create OPS request
   //1. Request all the copper users
   const copperUsers = await getCopperUsers();

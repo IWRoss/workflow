@@ -142,6 +142,7 @@ const clients = [
   { name: "Nephila Advisors" },
   { name: "New Wine" },
   { name: "Nike" },
+  { name: "Mony" },
   { name: "Novae Corp" },
   { name: "NYU" },
   { name: "Oerlikon" },

@@ -60,6 +60,7 @@ module.exports = [
   "Nephila Advisors",
   "Newmark",
   "Nike",
+  "Mony",
   "Nuveen Investments",
   "Oerlikon",
   "Panasonic",

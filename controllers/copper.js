@@ -1,6 +1,5 @@
 const axios = require("axios");
 const { setCache, getCache } = require("./cache");
-const { handleOpsRequestResponse } = require("./slack");
 
 const copperHeaders = {
   "X-PW-AccessToken": process.env.COPPER_API_KEY,
@@ -554,6 +553,9 @@ const createProjectCodeForOpportunity = async (compCode, oppIndex, opp) => {
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
   try {
+
+    const { handleOpsRequestResponse } = require("./slack");
+
     console.log("Payload before checking stage:", payload);
     
     if (

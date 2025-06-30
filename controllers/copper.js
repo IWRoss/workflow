@@ -554,7 +554,7 @@ const createProjectCodeForOpportunity = async (compCode, oppIndex, opp) => {
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
   console.log("Payload before checking stage:", payload);
-
+  
   if (
     !payload.updated_attributes.stage ||
     payload.updated_attributes.stage[1] !== "Proposal Submitted"
@@ -563,68 +563,51 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
   }
 
   const opportunity = await getOpportunity(payload.ids[0]);
-
   console.log("Opportunity", opportunity);
 
   // Get the company from the opportunity
   const company = await getCompany(opportunity.company_id);
 
-  //Creates ops ticket for the opportunity, wether it has a project code or not
+  //Creates ops ticket for the opportunity, whether it has a project code or not
   const projectCodeExists = checkForProjectCodeInOpportunity(opportunity);
-
   const compCode = checkForCompanyCodeInOpportunity(company);
   const oppIndex = updateOpportunityCounter(opportunity, company);
 
-  console.log("Right before checking if project code exists:")
-  // If the project code already exists, return it
-  if (projectCodeExists) {
-
-    console.log("Project code already exists:", projectCodeExists);
-    //Create OPS request
-    //1. Request all the copper users
-    const copperUsers = await getCopperUsers();
-
-    console.log("Got copper users:", copperUsers);
-    console.log("Creating ops request payload with existing project code");
-    // 2. Create a payload for opsRequest
-    const opsRequestPayload = {
-      opportunityObject: opportunity,
-      copperUsers,
-    };
-
-    await handleOpsRequestResponse(opsRequestPayload);
-
-    return {
-      compCode,
-      opportunityCounter: oppIndex,
-      newProjectCode: projectCodeExists,
-    };
-  }
-  // If the project code does not exist, create a new one
-  const generateProjectCode = await createProjectCodeForOpportunity(
-    compCode,
-    oppIndex,
-    opportunity
-  );
-
-
-  console.log("Should create a ticket now new project code:");
-  //Create OPS request
-  //1. Request all the copper users
+  console.log("Right before checking if project code exists:");
+  
+  // Get copper users 
   const copperUsers = await getCopperUsers();
+  console.log("Got copper users:", copperUsers);
 
-  // 2. Create a payload for opsRequest
+  // Create a payload for opsRequest 
   const opsRequestPayload = {
     opportunityObject: opportunity,
     copperUsers,
   };
 
+  let newProjectCode;
+
+  // If the project code already exists, use it
+  if (projectCodeExists) {
+    console.log("Project code already exists:", projectCodeExists);
+    newProjectCode = projectCodeExists;
+  } else {
+    // If the project code does not exist, create a new one
+    console.log("Should create a ticket now new project code:");
+    newProjectCode = await createProjectCodeForOpportunity(
+      compCode,
+      oppIndex,
+      opportunity
+    );
+  }
+
+  // Create OPS request (wait for completion before returning)
   await handleOpsRequestResponse(opsRequestPayload);
 
   return {
     compCode,
     opportunityCounter: oppIndex,
-    newProjectCode: generateProjectCode,
+    newProjectCode,
   };
 };
 

@@ -16,6 +16,7 @@ const {
   handleMarketingRequestResponse,
   claimTask,
   createTask,
+  noActionRequired,
   getOpportunityOptions,
 } = require("../../controllers/slack");
 
@@ -72,6 +73,11 @@ const actions = {
   createTask: (payload) => {
     createTask(payload);
   },
+  noActionRequired: (payload) => {
+   noActionRequired(payload);
+  }
+
+
 };
 
 /**

@@ -18,9 +18,12 @@ module.exports = {
           type: "mrkdwn",
           text: "*Project Code*\n",
         },
+        
          
       ],
+      
     },
+    
     {
       type: "actions",
       elements: [
@@ -45,6 +48,17 @@ module.exports = {
           },
           url: "",
           action_id: "viewOnCopper",
+        },
+       {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "No action required",
+            emoji: true,
+          },
+          value: "noActionRequired", 
+          action_id: "noActionRequired",
+          style: "danger",
         },
       ],
     },

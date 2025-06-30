@@ -568,12 +568,12 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
   // Get the company from the opportunity
   const company = await getCompany(opportunity.company_id);
 
-  //Creates ops ticket for the opportunity, whether it has a project code or not
-  const projectCodeExists = checkForProjectCodeInOpportunity(opportunity);
-  const compCode = checkForCompanyCodeInOpportunity(company);
-  const oppIndex = updateOpportunityCounter(opportunity, company);
+  //Creates a project code for the opportunity if it does not exist
+  const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity);
+  const compCode = await checkForCompanyCodeInOpportunity(company);
+  const oppIndex = await updateOpportunityCounter(opportunity, company);
 
-  console.log("Right before checking if project code exists:");
+  
   
   // Get copper users 
   const copperUsers = await getCopperUsers();
@@ -601,7 +601,7 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     );
   }
 
-  // Create OPS request (wait for completion before returning)
+  // Create OPS request 
   await handleOpsRequestResponse(opsRequestPayload);
 
   return {

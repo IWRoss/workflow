@@ -553,62 +553,67 @@ const createProjectCodeForOpportunity = async (compCode, oppIndex, opp) => {
  * Handle subscription to Copper update opportunity events
  */
 const handleCopperUpdateOpportunityWebhook = async (payload) => {
-  console.log("Payload before checking stage:", payload);
-  
-  if (
-    !payload.updated_attributes.stage ||
-    payload.updated_attributes.stage[1] !== "Proposal Submitted"
-  ) {
-    return;
-  }
+  try {
+    console.log("Payload before checking stage:", payload);
+    
+    if (
+      !payload.updated_attributes.stage ||
+      payload.updated_attributes.stage[1] !== "Proposal Submitted"
+    ) {
+      return;
+    }
 
-  const opportunity = await getOpportunity(payload.ids[0]);
-  console.log("Opportunity", opportunity);
+    const opportunity = await getOpportunity(payload.ids[0]);
+    console.log("Opportunity", opportunity);
 
-  // Get the company from the opportunity
-  const company = await getCompany(opportunity.company_id);
+    // Get the company from the opportunity
+    const company = await getCompany(opportunity.company_id);
 
-  //Creates a project code for the opportunity if it does not exist
-  const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity);
-  const compCode = await checkForCompanyCodeInOpportunity(company);
-  const oppIndex = await updateOpportunityCounter(opportunity, company);
+    //Creates a project code for the opportunity if it does not exist
+    const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity);
+    const compCode = await checkForCompanyCodeInOpportunity(company);
+    const oppIndex = await updateOpportunityCounter(opportunity, company);
 
-  
-  
-  // Get copper users 
-  const copperUsers = await getCopperUsers();
-  console.log("Got copper users:", copperUsers);
+    // Get copper users 
+    const copperUsers = await getCopperUsers();
+    console.log("Got copper users:", copperUsers);
 
-  // Create a payload for opsRequest 
-  const opsRequestPayload = {
-    opportunityObject: opportunity,
-    copperUsers,
-  };
+    // Create a payload for opsRequest 
+    const opsRequestPayload = {
+      opportunityObject: opportunity,
+      copperUsers,
+    };
 
-  let newProjectCode;
+    let newProjectCode;
 
-  // If the project code already exists, use it
-  if (projectCodeExists) {
-    console.log("Project code already exists:", projectCodeExists);
-    newProjectCode = projectCodeExists;
-  } else {
-    // If the project code does not exist, create a new one
-    console.log("Should create a ticket now new project code:");
-    newProjectCode = await createProjectCodeForOpportunity(
+    // If the project code already exists, use it
+    if (projectCodeExists) {
+      console.log("Project code already exists:", projectCodeExists);
+      newProjectCode = projectCodeExists;
+    } else {
+      // If the project code does not exist, create a new one
+      console.log("Should create a ticket now new project code:");
+      newProjectCode = await createProjectCodeForOpportunity(
+        compCode,
+        oppIndex,
+        opportunity
+      );
+    }
+
+    // Create OPS request 
+    console.log("About to call handleOpsRequestResponse");
+    await handleOpsRequestResponse(opsRequestPayload);
+    console.log("Successfully completed handleOpsRequestResponse");
+
+    return {
       compCode,
-      oppIndex,
-      opportunity
-    );
+      opportunityCounter: oppIndex,
+      newProjectCode,
+    };
+  } catch (error) {
+    console.error("Error in handleCopperUpdateOpportunityWebhook:", error);
+    throw error;
   }
-
-  // Create OPS request 
-  await handleOpsRequestResponse(opsRequestPayload);
-
-  return {
-    compCode,
-    opportunityCounter: oppIndex,
-    newProjectCode,
-  };
 };
 
 //Get a list of all the copper users

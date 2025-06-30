@@ -466,7 +466,7 @@ const handleOpsRequestResponse = async (payload) => {
     // Send message to users
     const message = await slack.chat.postMessage({
       channel: process.env.OPS_SLACK_CHANNEL,
-      text: `A proposal was moved to "Proposal Submitted": ${selectedOpportunity.name} by `,
+      text: `A proposal was moved to "Proposal Submitted": ${selectedOpportunity.name} `,
 
       ...newOpsRequestMessageTemplate,
     });

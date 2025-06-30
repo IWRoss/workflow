@@ -100,7 +100,7 @@ describe("#unsubscribeFromCopperWebhook", function () {
 
     try {
       const result = await unsubscribeFromCopperWebhook(
-        process.env.COPPER_WEBHOOK_ID
+        "462311"
       );
 
       console.dir(result, { depth: null });

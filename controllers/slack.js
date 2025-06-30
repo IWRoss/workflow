@@ -404,14 +404,20 @@ const handleOpsRequestResponse = async (payload) => {
     (user) => user.id === selectedOpportunity.assignee_id
   );
 
+  console.log("Selected copper user", copperUser);
+
   //5. Get the Consultant Monday user by email
   const mondayConsultantUser = await getMondayUserByEmail(copperUser[0].email);
+
+  console.log("Consultant Monday user", mondayConsultantUser);
 
   
   //6. Find the consultants slack user
   const consultantSlackUser = slackMembers.find(
     (member) => member.profile.email === copperUser[0].email
   );
+
+  console.log("Consultant Slack user", consultantSlackUser);
 
   //7. Create a new Ops Request message template
   const newOpsRequestMessageTemplate = _.cloneDeep(
@@ -440,7 +446,7 @@ const handleOpsRequestResponse = async (payload) => {
   }
 
   //Initial top text
-  newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}* moved a proposal to "Proposal Submitted":`;
+  newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "Proposal Submitted":`;
   //Name of the opportunity
   newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
     selectedOpportunity.name;

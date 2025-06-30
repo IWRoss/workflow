@@ -584,6 +584,8 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     //1. Request all the copper users
     const copperUsers = await getCopperUsers();
 
+    console.log("Got copper users:", copperUsers);
+    console.log("Creating ops request payload with existing project code");
     // 2. Create a payload for opsRequest
     const opsRequestPayload = {
       opportunityObject: opportunity,

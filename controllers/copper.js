@@ -457,7 +457,7 @@ const setupCopperWebhook = async () => {
 };
 
 //Function to create a project code for an opportunity
-const checkForProjectCodeInOpportunity = async (opp) => {
+const checkForProjectCodeInOpportunity = async (opp,compCode,oppIndex) => {
   //1. Check if the opportunity has a project code
   console.log("Checking if opportunity has a project code");
 
@@ -472,9 +472,16 @@ const checkForProjectCodeInOpportunity = async (opp) => {
   //2. If it has a project code, return it
   if (projectCode) {
     return projectCode;
+  }else{
+    const newProjectCode = await createProjectCodeForOpportunity(
+        compCode,
+        oppIndex,
+        opp
+      );
+
+    return newProjectCode;
   }
 
-  return false;
 };
 
 //Check if the opportunity has a company code, if not, create one
@@ -572,9 +579,9 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     const company = await getCompany(opportunity.company_id);
 
     //Creates a project code for the opportunity if it does not exist
-    const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity);
     const compCode = await checkForCompanyCodeInOpportunity(company);
     const oppIndex = await updateOpportunityCounter(opportunity, company);
+    const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity,compCode,oppIndex);
 
     // Get copper users 
     const copperUsers = await getCopperUsers();
@@ -586,21 +593,7 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
       copperUsers,
     };
 
-    let newProjectCode;
-
-    // If the project code already exists, use it
-    if (projectCodeExists) {
-      console.log("Project code already exists:", projectCodeExists);
-      newProjectCode = projectCodeExists;
-    } else {
-      // If the project code does not exist, create a new one
-      console.log("Should create a ticket now new project code:");
-      newProjectCode = await createProjectCodeForOpportunity(
-        compCode,
-        oppIndex,
-        opportunity
-      );
-    }
+     
 
     // Create OPS request 
     console.log("About to call handleOpsRequestResponse");
@@ -610,7 +603,7 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     return {
       compCode,
       opportunityCounter: oppIndex,
-      newProjectCode,
+      projectCodeExists,
     };
   } catch (error) {
     console.error("Error in handleCopperUpdateOpportunityWebhook:", error);

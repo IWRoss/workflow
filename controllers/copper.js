@@ -457,7 +457,7 @@ const setupCopperWebhook = async () => {
 };
 
 //Function to create a project code for an opportunity
-const checkForProjectCodeInOpportunity = async (opp,compCode,oppIndex) => {
+const checkForProjectCodeInOpportunity = async (opp,compCode,company) => {
   //1. Check if the opportunity has a project code
   console.log("Checking if opportunity has a project code");
 
@@ -467,20 +467,26 @@ const checkForProjectCodeInOpportunity = async (opp,compCode,oppIndex) => {
       selectCustomFieldIDByName("projectCode")
   )?.value;
 
-  console.log("Project code already exists:", projectCode);
 
   //2. If it has a project code, return it
   if (projectCode) {
-    return projectCode;
-  }else{
+      console.log("Project code already exists:", projectCode);
+
+    return [projectCode, null];
+  }
+
+  //3. If it does not have a project code, create one
+    const oppIndex = await updateOpportunityCounter(opp, company);
+
     const newProjectCode = await createProjectCodeForOpportunity(
         compCode,
         oppIndex,
         opp
       );
 
-    return newProjectCode;
-  }
+      console.log("New project code created:", newProjectCode);
+    return [newProjectCode,oppIndex];
+  
 
 };
 
@@ -502,9 +508,43 @@ const checkForCompanyCodeInOpportunity = async (comp) => {
   // If the company code does not exist, create one
   console.log("Company code does not exist, creating one...");
 
-  const newCompanyCode = createCompanyCode(comp.name);
-  return newCompanyCode;
+
+try {
+    const newCompanyCode = createCompanyCode(comp.name);
+   
+    //If the company code was not created, return null
+    if (!newCompanyCode) {
+      console.log("Failed to create company code");
+      return null; 
+    }
+
+    ///If successfully created, return the new company code
+    console.log("New company code created:", newCompanyCode);
+    return newCompanyCode;
+  } catch (error) {
+    console.error("Error creating company code:", error);
+    return null;  
+  }
+
+
 };
+
+//Get current opportunity counter for a company
+const getOpportunityCounter = async (comp) => {
+const opportunityCounter = comp.custom_fields.find(
+    (field) =>
+      field.custom_field_definition_id ==
+      selectCustomFieldIDByName("opportunityCounter", companyCustomFieldMap)
+  )?.value;
+  //If the opportunity counter does not exist, return 0
+  if (!opportunityCounter) {
+    console.log("Opportunity counter does not exist, returning 0");
+    return 0;
+  }
+  //If the opportunity counter exists, return it
+  console.log("Opportunity counter exists:", opportunityCounter);
+  return parseInt(opportunityCounter);
+}
 
 //Function to update the opportunity counter for a company
 const updateOpportunityCounter = async (opp, comp) => {
@@ -580,9 +620,9 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
     //Creates a project code for the opportunity if it does not exist
     const compCode = await checkForCompanyCodeInOpportunity(company);
-    const oppIndex = await updateOpportunityCounter(opportunity, company);
-    const projectCodeExists = await checkForProjectCodeInOpportunity(opportunity,compCode,oppIndex);
+    const [projectCode,oppIndex] = await checkForProjectCodeInOpportunity(opportunity,compCode,company);
 
+   
     // Get copper users 
     const copperUsers = await getCopperUsers();
     console.log("Got copper users:", copperUsers);
@@ -590,6 +630,7 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     // Create a payload for opsRequest 
     const opsRequestPayload = {
       opportunityObject: opportunity,
+      opportunityProjectCodeUpdated: projectCode,
       copperUsers,
     };
 
@@ -603,7 +644,7 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
     return {
       compCode,
       opportunityCounter: oppIndex,
-      projectCodeExists,
+      projectCode,
     };
   } catch (error) {
     console.error("Error in handleCopperUpdateOpportunityWebhook:", error);

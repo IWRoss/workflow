@@ -452,13 +452,14 @@ const handleOpsRequestResponse = async (payload) => {
     selectedOpportunity.name;
   //Project code
   newOpsRequestMessageTemplate.blocks[1].fields[1].text +=
-    customFields.projectCode ?? "No ID";
+    customFields.projectCode || payload.opportunityProjectCodeUpdated || "No ID";
 
   //Create a monday task button
   newOpsRequestMessageTemplate.blocks[2].elements[0].value = JSON.stringify({
      
     consultantSlackUser,
     oppId: selectedOpportunity.id,
+    opportunityProjectCodeUpdated:payload.opportunityProjectCodeUpdated,
     mondayConsultantUser,
   });
 
@@ -646,7 +647,7 @@ const createTask = async (payload) => {
   const newTask = {
     name: selectedOpportunity.name,
     Consultant: parsedPayload.mondayConsultantUser.id,
-    "Project Code": customFields.projectCode ?? "No ID",
+    "Project Code": customFields.projectCode ||parsedPayload.opportunityProjectCodeUpdated || "No ID",
     "Likely Invoice Date": new Date(
       parseInt(customFields.likelyInvoiceDate) * 1000
     )

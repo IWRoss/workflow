@@ -472,11 +472,11 @@ const handleOpsRequestResponse = async (payload) => {
         mondayConsultantUser,
     });
 
-    newOpsRequestMessageTemplate.blocks[2].elements[1].url =
+    newOpsRequestMessageTemplate.blocks[2].elements[2].url =
         process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
 
     //No action required button
-    newOpsRequestMessageTemplate.blocks[2].elements[2].value =
+    newOpsRequestMessageTemplate.blocks[2].elements[1].value =
         "noActionRequired";
 
     try {
@@ -594,10 +594,15 @@ const noActionRequired = async (payload) => {
         (block) => block.type === "actions"
     );
 
-    // Remove the claim button
-    payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
-    // Remove the no action required button
+    console.log(
+        "Actions block index",
+        payload.message.blocks[actionsBlockIndex].elements
+    );
+
+    // Remove the "No Action Required"
     payload.message.blocks[actionsBlockIndex].elements.splice(1, 1);
+    // Remove the "Create Task" button
+    payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
 
     // Add a block showing that no action is required
     payload.message.blocks.splice(actionsBlockIndex, 0, {

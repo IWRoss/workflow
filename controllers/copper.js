@@ -468,7 +468,7 @@ const setupCopperWebhook = async () => {
 };
 
 //Function to create a project code for an opportunity
-const checkForProjectCodeInOpportunity = async (opp, compCode, company) => {
+const getOrCreateProjectCode = async (opp, compCode, company) => {
     //1. Check if the opportunity has a project code
     console.log("Checking if opportunity has a project code");
 
@@ -499,7 +499,7 @@ const checkForProjectCodeInOpportunity = async (opp, compCode, company) => {
 };
 
 //Check if the opportunity has a company code, if not, create one
-const checkForCompanyCodeInOpportunity = async (comp) => {
+const getOrCreateCompanyCode = async (comp) => {
     // Get the company code from the company custom fields
     const companyCode = comp.custom_fields.find(
         (field) =>
@@ -630,19 +630,24 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
         /**
          * If opportunity has a company ID, check if it has a project code
-         *
-         *
          */
         // TODO: Handle if opportunity does not have a company ID
-        // Get the company from the opportunity
-        const company = await getCompany(opportunity.company_id);
+        //Catch if the opportunity does not have a company ID
+        let company;
+
+        try {
+            company = await getCompany(opportunity.company_id);
+        } catch (error) {
+            console.error("Error getting opportunity company:", error);
+            throw new Error("Opportunity does not have a company ID");
+        }
 
         //Creates a project code for the opportunity if it does not exist
         // TODO: Either split this into two functions or come up with a more descriptive function name
-        const compCode = await checkForCompanyCodeInOpportunity(company);
+        const compCode = await getOrCreateCompanyCode(company);
 
         // TODO: Either split this into two functions or come up with a more descriptive function name
-        const [projectCode, oppIndex] = await checkForProjectCodeInOpportunity(
+        const [projectCode, oppIndex] = await getOrCreateProjectCode(
             opportunity,
             compCode,
             company

@@ -26,6 +26,7 @@ const {
 } = require("../helpers/helpers.js");
 
 const templates = require("../templates");
+const { stringify } = require("nodemon/lib/utils/index.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -472,12 +473,8 @@ const handleOpsRequestResponse = async (payload) => {
         mondayConsultantUser,
     });
 
-    newOpsRequestMessageTemplate.blocks[2].elements[2].url =
+    newOpsRequestMessageTemplate.blocks[2].elements[1].url =
         process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
-
-    //No action required button
-    newOpsRequestMessageTemplate.blocks[2].elements[1].value =
-        "noActionRequired";
 
     try {
         // Send message to users
@@ -488,10 +485,37 @@ const handleOpsRequestResponse = async (payload) => {
             ...newOpsRequestMessageTemplate,
         });
 
+        console.log(
+            "Message sent to Ops Slack channel",
+            message.message.blocks[0]
+        );
+
         await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
             thread_ts: message.ts,
-            text: `<@${consultantSlackUser.id}> please state if there are any actions required for this task.`,
+            //text: `<@${consultantSlackUser.id}> please state if there are any actions required for this task.`,
+            blocks: [
+                {
+                    type: "actions",
+                    elements: [
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "No Action Required",
+                                emoji: true,
+                            },
+
+                            value: JSON.stringify({
+                                parentMessageTs: message.ts,
+                                parentChannelId: message.channel,
+                            }),
+                            action_id: "noActionRequired",
+                            style: "danger",
+                        },
+                    ],
+                },
+            ],
         });
     } catch (error) {
         console.log(error);
@@ -589,28 +613,63 @@ const handleMarketingRequestResponse = async (payload) => {
 
 //No action required
 const noActionRequired = async (payload) => {
-    // Find the actions block location
-    const actionsBlockIndex = payload.message.blocks.findIndex(
+    console.log("No action required payload", payload);
+
+    //Convert parent block payload from JSON string to object
+    const { parentMessageTs, parentChannelId } = JSON.parse(
+        payload.actions[0].value
+    );
+
+    //Look for parent history
+    const parentBlock = await slack.conversations.history({
+        channel: parentChannelId,
+        latest: parentMessageTs,
+        limit: 1,
+        inclusive: true,
+    });
+
+    //Get the parent message
+    const parentMessage = parentBlock.messages[0];
+    console.log("Parent message", parentMessage);
+
+    //Get the parent blocks
+    const parentBlocks = [...parentMessage.blocks];
+    console.log("Updated blocks", parentBlocks);
+
+    //Remove the actions block
+    const actionsBlockIndex = parentBlocks.findIndex(
         (block) => block.type === "actions"
     );
 
+    // Keep only the "View on Copper" button
+    if (actionsBlockIndex !== -1) {
+        parentBlocks[actionsBlockIndex].elements = parentBlocks[
+            actionsBlockIndex
+        ].elements.filter((element) => element.action_id === "viewOnCopper");
+    }
+
+    // Remove the "No Action Required" button from threads
     console.log(
-        "Actions block index",
-        payload.message.blocks[actionsBlockIndex].elements
+        "payload.message.blocks[actionsBlockIndex]",
+        payload.message.blocks[0].elements[0]
     );
 
-    // Remove the "No Action Required"
-    payload.message.blocks[actionsBlockIndex].elements.splice(1, 1);
-    // Remove the "Create Task" button
-    payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
+    // Remove the "No Action Required" button from the message
 
-    // Add a block showing that no action is required
-    payload.message.blocks.splice(actionsBlockIndex, 0, {
+    // Add the confirmation message block
+    parentBlocks.push({
         type: "section",
         text: {
             type: "mrkdwn",
             text: `*<@${payload.user.id}>* marked this task as no action required`,
         },
+    });
+
+    // Update the parent message
+    await slack.chat.update({
+        channel: parentChannelId,
+        ts: parentMessageTs,
+        blocks: parentBlocks,
     });
 
     try {

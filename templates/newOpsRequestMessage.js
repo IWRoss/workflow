@@ -35,17 +35,6 @@ module.exports = {
                     action_id: "createTask",
                     style: "primary",
                 },
-                {
-                    type: "button",
-                    text: {
-                        type: "plain_text",
-                        text: "No action required",
-                        emoji: true,
-                    },
-                    value: "noActionRequired",
-                    action_id: "noActionRequired",
-                    style: "danger",
-                },
 
                 {
                     type: "button",

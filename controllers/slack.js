@@ -14,6 +14,7 @@ const {
     addTaskToOpsBoard,
     addTaskToMarketingBoard,
     getMarketingCampaignOptions,
+    addTaskToBoardWithColumns,
 } = require("./monday");
 
 const { getOpportunity } = require("./copper");
@@ -169,6 +170,8 @@ const putAppIntoMaintenanceMode = async () => {
  * Open Studio Request Form
  */
 const openRequestForm = async (payload, callbackName) => {
+    console.log("Payload inside openRequestForm", payload);
+    console.log("Callback name inside openRequestForm", callbackName);
     // Get templates
     const requestModal = _.cloneDeep(templates.requestModal);
 
@@ -233,6 +236,11 @@ const findField = (fields, field) => {
  * Handle Request Response
  */
 const handleRequestResponse = async (payload, locations) => {
+    console.log(
+        "Payload inside handleRequestResponse",
+        payload.view.blocks[0].element
+    );
+    console.log("Locations inside handleRequestResponse", locations);
     const fields = Object.values(payload.view.state.values);
 
     // Get the user
@@ -241,34 +249,60 @@ const handleRequestResponse = async (payload, locations) => {
     // Get the Monday user
     const mondayUser = await getMondayUserByEmail(user.profile.email);
 
+    // const newTask = {
+    //     user: mondayUser.id ?? "",
+    //     client: findField(fields, "clientSelect").selected_option.value,
+    //     producerDeadline: findField(fields, "producerDeadline").selected_date,
+    //     clientDeadline: findField(fields, "clientDeadline").selected_date,
+    //     media: findField(fields, "mediaSelect")
+    //         .selected_options.map((m) => m.value)
+    //         .join(", "),
+    //     dropboxLink: findField(fields, "dropboxLink").value,
+    //     notes: findField(fields, "notes").value,
+    //     projectCode: findField(fields, "projectCode").value,
+    // };
+
     const newTask = {
-        user: mondayUser.id ?? "",
-        client: findField(fields, "clientSelect").selected_option.value,
-        producerDeadline: findField(fields, "producerDeadline").selected_date,
-        clientDeadline: findField(fields, "clientDeadline").selected_date,
-        media: findField(fields, "mediaSelect")
+        name: `${new Date().toISOString().split("T")[0]} – Request for ${
+            findField(fields, "clientSelect").selected_option.value
+        }`,
+
+        Producer: mondayUser.id ?? "",
+        "Project Code": findField(fields, "projectCode").value,
+        Client: findField(fields, "clientSelect").selected_option.value,
+
+        "Client Deadline": findField(fields, "clientDeadline").selected_date,
+        "Producer Deadline": findField(fields, "producerDeadline")
+            .selected_date,
+
+        Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
-        dropboxLink: findField(fields, "dropboxLink").value,
-        notes: findField(fields, "notes").value,
+        Dropbox: {
+            url: findField(fields, "dropboxLink").value,
+            text: "Link",
+        },
+        Details: findField(fields, "notes").value,
     };
 
     // Add task to boards
     const results = locations.map(async ({ boardId, slackChannel }) => {
-        const result = await addTaskToBoard(newTask, boardId);
+        const result = await addTaskToBoardWithColumns(newTask, boardId);
 
         let newRequestMessageTemplate = _.cloneDeep(
             templates.newRequestMessage
         );
 
         newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
-        newRequestMessageTemplate.blocks[1].fields[0].text += newTask.client;
-        newRequestMessageTemplate.blocks[1].fields[1].text += newTask.media;
+        newRequestMessageTemplate.blocks[1].fields[0].text += newTask.Client;
+        newRequestMessageTemplate.blocks[1].fields[1].text += newTask.Media;
         newRequestMessageTemplate.blocks[2].fields[0].text +=
-            newTask.producerDeadline;
+            newTask["Producer Deadline"];
         newRequestMessageTemplate.blocks[2].fields[1].text +=
-            newTask.clientDeadline;
-        newRequestMessageTemplate.blocks[3].text.text += newTask.notes;
+            newTask["Client Deadline"];
+        newRequestMessageTemplate.blocks[3].fields[0].text += newTask.Details;
+        newRequestMessageTemplate.blocks[3].fields[1].text +=
+            newTask["Project Code"];
         newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
             boardId,
             itemId: result.data.create_item.id,
@@ -1046,4 +1080,5 @@ module.exports = {
     claimTask,
     createTask,
     noActionRequired,
+    handleRequestResponse,
 };

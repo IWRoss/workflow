@@ -493,8 +493,14 @@ const handleOpsRequestResponse = async (payload) => {
         await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
             thread_ts: message.ts,
-            //text: `<@${consultantSlackUser.id}> please state if there are any actions required for this task.`,
             blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `*<@${consultantSlackUser.id}>* please state here if there are any actions required for this task.`,
+                    },
+                },
                 {
                     type: "actions",
                     elements: [
@@ -612,15 +618,22 @@ const handleMarketingRequestResponse = async (payload) => {
 };
 
 //No action required
+/*
+  * This function is called when the "No Action Required" button is clicked
+  1. Parses the payload to get the parent message timestamp and channel ID
+  2. Looks for the parent message in the channel history
+  3. Updates the parent message by removing the actions block and adding a confirmation message
+  4. Updates the current message to remove the "No Action Required" button and add a confirmation message
+ */
 const noActionRequired = async (payload) => {
     console.log("No action required payload", payload);
 
-    //Convert parent block payload from JSON string to object
+    //Parse parent payload
     const { parentMessageTs, parentChannelId } = JSON.parse(
         payload.actions[0].value
     );
 
-    //Look for parent history
+    //Look parent history
     const parentBlock = await slack.conversations.history({
         channel: parentChannelId,
         latest: parentMessageTs,
@@ -628,35 +641,24 @@ const noActionRequired = async (payload) => {
         inclusive: true,
     });
 
-    //Get the parent message
+    //Get the parent message and its blocks
     const parentMessage = parentBlock.messages[0];
-    console.log("Parent message", parentMessage);
-
-    //Get the parent blocks
     const parentBlocks = [...parentMessage.blocks];
-    console.log("Updated blocks", parentBlocks);
 
-    //Remove the actions block
+    //Look for all the actions blocks in the parent message
+    //FindIndex returns -1 for no match
     const actionsBlockIndex = parentBlocks.findIndex(
         (block) => block.type === "actions"
     );
 
-    // Keep only the "View on Copper" button
+    //Check if a block with type "actions" exists, if yes filter to find the "viewOnCopper" button
     if (actionsBlockIndex !== -1) {
         parentBlocks[actionsBlockIndex].elements = parentBlocks[
             actionsBlockIndex
         ].elements.filter((element) => element.action_id === "viewOnCopper");
     }
 
-    // Remove the "No Action Required" button from threads
-    console.log(
-        "payload.message.blocks[actionsBlockIndex]",
-        payload.message.blocks[0].elements[0]
-    );
-
-    // Remove the "No Action Required" button from the message
-
-    // Add the confirmation message block
+    // Add the confirmation message block to the parent blocks
     parentBlocks.push({
         type: "section",
         text: {
@@ -672,12 +674,35 @@ const noActionRequired = async (payload) => {
         blocks: parentBlocks,
     });
 
+    // Now update the threads message
+    // Get the threads message blocks
+    const threadBlocks = [...payload.message.blocks];
+
+    //Find if there is an actions block in the threads message
+    const threadActionsBlockIndex = threadBlocks.findIndex(
+        (block) => block.type === "actions"
+    );
+
+    //If there is an actions block, remove the "No Action Required" button
+    if (threadActionsBlockIndex !== -1) {
+        threadBlocks.splice(threadActionsBlockIndex, 1);
+    }
+
+    // Add a confirmation message block to the thread blocks
+    threadBlocks.push({
+        type: "section",
+        text: {
+            type: "mrkdwn",
+            text: `*<@${payload.user.id}>* confirmed this proposal requires no additional action.`,
+        },
+    });
+
     try {
         // Update the message
         const message = await slack.chat.update({
             channel: payload.channel.id,
             ts: payload.message.ts,
-            blocks: [...payload.message.blocks],
+            blocks: threadBlocks,
         });
     } catch (error) {
         console.log(error);

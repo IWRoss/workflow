@@ -618,61 +618,83 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
         console.log("Payload before checking stage:", payload);
 
-        if (
-            !payload.updated_attributes.stage ||
-            payload.updated_attributes.stage[1] !== "Proposal Submitted"
-        ) {
-            return;
-        }
-
-        const opportunity = await getOpportunity(payload.ids[0]);
-        console.log("Opportunity", opportunity);
-
-        /**
-         * If opportunity has a company ID, check if it has a project code
-         */
-        // TODO: Handle if opportunity does not have a company ID
-        //Catch if the opportunity does not have a company ID
-        let company;
-
-        try {
-            company = await getCompany(opportunity.company_id);
-        } catch (error) {
-            console.error("Error getting opportunity company:", error);
-            throw new Error("Opportunity does not have a company ID");
-        }
-
-        //Creates a project code for the opportunity if it does not exist
-        // TODO: Either split this into two functions or come up with a more descriptive function name
-        const compCode = await getOrCreateCompanyCode(company);
-
-        // TODO: Either split this into two functions or come up with a more descriptive function name
-        const [projectCode, oppIndex] = await getOrCreateProjectCode(
-            opportunity,
-            compCode,
-            company
-        );
-
-        // Get copper users
-        const copperUsers = await getCopperUsers();
-        console.log("Got copper users:", copperUsers);
-
-        // Create a payload for opsRequest
-        const opsRequestPayload = {
-            opportunityObject: opportunity,
-            opportunityProjectCodeUpdated: projectCode,
-            copperUsers,
+        //Object to store details
+        const config = {
+            compCode: null,
+            opportunityCounter: null,
+            projectCode: null,
+            opportunity: null,
         };
 
-        // Create OPS request
-        console.log("About to call handleOpsRequestResponse");
-        await handleOpsRequestResponse(opsRequestPayload);
-        console.log("Successfully completed handleOpsRequestResponse");
+        //Any stage past proposal creation, create a project code and company code
+        if (
+            payload.updated_attributes.stage[1] == "Won" ||
+            payload.updated_attributes.stage[1] == "Proposal Submitted" ||
+            payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
+            payload.updated_attributes.stage[1] == "Completed"
+        ) {
+            const opportunity = await getOpportunity(payload.ids[0]);
+            console.log("Opportunity", opportunity);
+
+            /**
+             * If opportunity has a company ID, check if it has a project code
+             */
+
+            //Catch if the opportunity does not have a company ID
+            let company;
+
+            try {
+                company = await getCompany(opportunity.company_id);
+            } catch (error) {
+                console.error("Error getting opportunity company:", error);
+                throw new Error("Opportunity does not have a company ID");
+            }
+
+            //Creates a project code for the opportunity if it does not exist
+            const compCode = await getOrCreateCompanyCode(company);
+
+            const [projectCode, oppIndex] = await getOrCreateProjectCode(
+                opportunity,
+                compCode,
+                company
+            );
+
+            //Attach the project code to the config object
+            config.compCode = compCode;
+            config.opportunityCounter = oppIndex;
+            config.projectCode = projectCode;
+            config.opportunity = opportunity;
+        }
+
+        //If the stage is Won / Agreed / Completed, then create a ticket in slack
+        if (
+            payload.updated_attributes.stage[1] == "Won" ||
+            payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
+            payload.updated_attributes.stage[1] == "Completed"
+        ) {
+            console.log("Opportunity is Won, creating ticket in Slack");
+            // Get copper users
+            const copperUsers = await getCopperUsers();
+            console.log("Got copper users:", copperUsers);
+
+            // Create a payload for opsRequest
+            const opsRequestPayload = {
+                opportunityObject: config.opportunity,
+                opportunityProjectCodeUpdated: config.projectCode,
+                copperUsers,
+                stageName: payload.updated_attributes.stage[1],
+            };
+
+            // Create OPS request
+            console.log("About to call handleOpsRequestResponse");
+            await handleOpsRequestResponse(opsRequestPayload);
+            console.log("Successfully completed handleOpsRequestResponse");
+        }
 
         return {
-            compCode,
-            opportunityCounter: oppIndex,
-            projectCode,
+            compCode: config.compCode,
+            opportunityCounter: config.opportunityCounter,
+            projectCode: config.projectCode,
         };
     } catch (error) {
         console.error("Error in handleCopperUpdateOpportunityWebhook:", error);

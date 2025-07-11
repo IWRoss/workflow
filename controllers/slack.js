@@ -489,7 +489,7 @@ const handleOpsRequestResponse = async (payload) => {
     }
 
     //Initial top text
-    newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "Proposal Submitted":`;
+    newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "${payload.stageName}":`;
     //Name of the opportunity
     newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
         selectedOpportunity.name;
@@ -514,7 +514,7 @@ const handleOpsRequestResponse = async (payload) => {
         // Send message to users
         const message = await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
-            text: `A proposal was moved to "Proposal Submitted": ${selectedOpportunity.name} `,
+            text: `A proposal was moved to "${payload.stageName}": ${selectedOpportunity.name} `,
 
             ...newOpsRequestMessageTemplate,
         });

@@ -104,6 +104,7 @@ const addTaskToBoard = async (newTask, boardId) => {
         },
         dropdown8: newTask.media,
         details: safeNotes,
+        text_mksnvjqg: newTask.projectCode,
     });
 
     const variables = {
@@ -316,4 +317,5 @@ module.exports = {
     updateAssignedUser,
     assignCompanyCode,
     getMarketingCampaignOptions,
+    addTaskToBoardWithColumns,
 };

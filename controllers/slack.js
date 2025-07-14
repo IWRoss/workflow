@@ -14,6 +14,7 @@ const {
     addTaskToOpsBoard,
     addTaskToMarketingBoard,
     getMarketingCampaignOptions,
+    addTaskToBoardWithColumns,
 } = require("./monday");
 
 const { getOpportunity } = require("./copper");
@@ -26,6 +27,7 @@ const {
 } = require("../helpers/helpers.js");
 
 const templates = require("../templates");
+const { stringify } = require("nodemon/lib/utils/index.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -168,6 +170,8 @@ const putAppIntoMaintenanceMode = async () => {
  * Open Studio Request Form
  */
 const openRequestForm = async (payload, callbackName) => {
+    console.log("Payload inside openRequestForm", payload);
+    console.log("Callback name inside openRequestForm", callbackName);
     // Get templates
     const requestModal = _.cloneDeep(templates.requestModal);
 
@@ -232,6 +236,11 @@ const findField = (fields, field) => {
  * Handle Request Response
  */
 const handleRequestResponse = async (payload, locations) => {
+    console.log(
+        "Payload inside handleRequestResponse",
+        payload.view.blocks[0].element
+    );
+    console.log("Locations inside handleRequestResponse", locations);
     const fields = Object.values(payload.view.state.values);
 
     // Get the user
@@ -240,34 +249,60 @@ const handleRequestResponse = async (payload, locations) => {
     // Get the Monday user
     const mondayUser = await getMondayUserByEmail(user.profile.email);
 
+    // const newTask = {
+    //     user: mondayUser.id ?? "",
+    //     client: findField(fields, "clientSelect").selected_option.value,
+    //     producerDeadline: findField(fields, "producerDeadline").selected_date,
+    //     clientDeadline: findField(fields, "clientDeadline").selected_date,
+    //     media: findField(fields, "mediaSelect")
+    //         .selected_options.map((m) => m.value)
+    //         .join(", "),
+    //     dropboxLink: findField(fields, "dropboxLink").value,
+    //     notes: findField(fields, "notes").value,
+    //     projectCode: findField(fields, "projectCode").value,
+    // };
+
     const newTask = {
-        user: mondayUser.id ?? "",
-        client: findField(fields, "clientSelect").selected_option.value,
-        producerDeadline: findField(fields, "producerDeadline").selected_date,
-        clientDeadline: findField(fields, "clientDeadline").selected_date,
-        media: findField(fields, "mediaSelect")
+        name: `${new Date().toISOString().split("T")[0]} – Request for ${
+            findField(fields, "clientSelect").selected_option.value
+        }`,
+
+        Producer: mondayUser.id ?? "",
+        "Project Code": findField(fields, "projectCode").value,
+        Client: findField(fields, "clientSelect").selected_option.value,
+
+        "Client Deadline": findField(fields, "clientDeadline").selected_date,
+        "Producer Deadline": findField(fields, "producerDeadline")
+            .selected_date,
+
+        Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
-        dropboxLink: findField(fields, "dropboxLink").value,
-        notes: findField(fields, "notes").value,
+        Dropbox: {
+            url: findField(fields, "dropboxLink").value,
+            text: "Link",
+        },
+        Details: findField(fields, "notes").value,
     };
 
     // Add task to boards
     const results = locations.map(async ({ boardId, slackChannel }) => {
-        const result = await addTaskToBoard(newTask, boardId);
+        const result = await addTaskToBoardWithColumns(newTask, boardId);
 
         let newRequestMessageTemplate = _.cloneDeep(
             templates.newRequestMessage
         );
 
         newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
-        newRequestMessageTemplate.blocks[1].fields[0].text += newTask.client;
-        newRequestMessageTemplate.blocks[1].fields[1].text += newTask.media;
+        newRequestMessageTemplate.blocks[1].fields[0].text += newTask.Client;
+        newRequestMessageTemplate.blocks[1].fields[1].text += newTask.Media;
         newRequestMessageTemplate.blocks[2].fields[0].text +=
-            newTask.producerDeadline;
+            newTask["Producer Deadline"];
         newRequestMessageTemplate.blocks[2].fields[1].text +=
-            newTask.clientDeadline;
-        newRequestMessageTemplate.blocks[3].text.text += newTask.notes;
+            newTask["Client Deadline"];
+        newRequestMessageTemplate.blocks[3].fields[0].text += newTask.Details;
+        newRequestMessageTemplate.blocks[3].fields[1].text +=
+            newTask["Project Code"];
         newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
             boardId,
             itemId: result.data.create_item.id,
@@ -454,7 +489,7 @@ const handleOpsRequestResponse = async (payload) => {
     }
 
     //Initial top text
-    newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "Proposal Submitted":`;
+    newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "${payload.stageName}":`;
     //Name of the opportunity
     newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
         selectedOpportunity.name;
@@ -472,26 +507,55 @@ const handleOpsRequestResponse = async (payload) => {
         mondayConsultantUser,
     });
 
-    newOpsRequestMessageTemplate.blocks[2].elements[2].url =
+    newOpsRequestMessageTemplate.blocks[2].elements[1].url =
         process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
-
-    //No action required button
-    newOpsRequestMessageTemplate.blocks[2].elements[1].value =
-        "noActionRequired";
 
     try {
         // Send message to users
         const message = await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
-            text: `A proposal was moved to "Proposal Submitted": ${selectedOpportunity.name} `,
+            text: `A proposal was moved to "${payload.stageName}": ${selectedOpportunity.name} `,
 
             ...newOpsRequestMessageTemplate,
         });
 
+        console.log(
+            "Message sent to Ops Slack channel",
+            message.message.blocks[0]
+        );
+
         await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
             thread_ts: message.ts,
-            text: `<@${consultantSlackUser.id}> please state if there are any actions required for this task.`,
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `*<@${consultantSlackUser.id}>* please state here if there are any actions required for this task.`,
+                    },
+                },
+                {
+                    type: "actions",
+                    elements: [
+                        {
+                            type: "button",
+                            text: {
+                                type: "plain_text",
+                                text: "No Action Required",
+                                emoji: true,
+                            },
+
+                            value: JSON.stringify({
+                                parentMessageTs: message.ts,
+                                parentChannelId: message.channel,
+                            }),
+                            action_id: "noActionRequired",
+                            style: "danger",
+                        },
+                    ],
+                },
+            ],
         });
     } catch (error) {
         console.log(error);
@@ -588,28 +652,82 @@ const handleMarketingRequestResponse = async (payload) => {
 };
 
 //No action required
+/*
+  * This function is called when the "No Action Required" button is clicked
+  1. Parses the payload to get the parent message timestamp and channel ID
+  2. Looks for the parent message in the channel history
+  3. Updates the parent message by removing the actions block and adding a confirmation message
+  4. Updates the current message to remove the "No Action Required" button and add a confirmation message
+ */
 const noActionRequired = async (payload) => {
-    // Find the actions block location
-    const actionsBlockIndex = payload.message.blocks.findIndex(
+    console.log("No action required payload", payload);
+
+    //Parse parent payload
+    const { parentMessageTs, parentChannelId } = JSON.parse(
+        payload.actions[0].value
+    );
+
+    //Look parent history
+    const parentBlock = await slack.conversations.history({
+        channel: parentChannelId,
+        latest: parentMessageTs,
+        limit: 1,
+        inclusive: true,
+    });
+
+    //Get the parent message and its blocks
+    const parentMessage = parentBlock.messages[0];
+    const parentBlocks = [...parentMessage.blocks];
+
+    //Look for all the actions blocks in the parent message
+    //FindIndex returns -1 for no match
+    const actionsBlockIndex = parentBlocks.findIndex(
         (block) => block.type === "actions"
     );
 
-    console.log(
-        "Actions block index",
-        payload.message.blocks[actionsBlockIndex].elements
-    );
+    //Check if a block with type "actions" exists, if yes filter to find the "viewOnCopper" button
+    if (actionsBlockIndex !== -1) {
+        parentBlocks[actionsBlockIndex].elements = parentBlocks[
+            actionsBlockIndex
+        ].elements.filter((element) => element.action_id === "viewOnCopper");
+    }
 
-    // Remove the "No Action Required"
-    payload.message.blocks[actionsBlockIndex].elements.splice(1, 1);
-    // Remove the "Create Task" button
-    payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
-
-    // Add a block showing that no action is required
-    payload.message.blocks.splice(actionsBlockIndex, 0, {
+    // Add the confirmation message block to the parent blocks
+    parentBlocks.push({
         type: "section",
         text: {
             type: "mrkdwn",
             text: `*<@${payload.user.id}>* marked this task as no action required`,
+        },
+    });
+
+    // Update the parent message
+    await slack.chat.update({
+        channel: parentChannelId,
+        ts: parentMessageTs,
+        blocks: parentBlocks,
+    });
+
+    // Now update the threads message
+    // Get the threads message blocks
+    const threadBlocks = [...payload.message.blocks];
+
+    //Find if there is an actions block in the threads message
+    const threadActionsBlockIndex = threadBlocks.findIndex(
+        (block) => block.type === "actions"
+    );
+
+    //If there is an actions block, remove the "No Action Required" button
+    if (threadActionsBlockIndex !== -1) {
+        threadBlocks.splice(threadActionsBlockIndex, 1);
+    }
+
+    // Add a confirmation message block to the thread blocks
+    threadBlocks.push({
+        type: "section",
+        text: {
+            type: "mrkdwn",
+            text: `*<@${payload.user.id}>* confirmed this proposal requires no additional action.`,
         },
     });
 
@@ -618,7 +736,7 @@ const noActionRequired = async (payload) => {
         const message = await slack.chat.update({
             channel: payload.channel.id,
             ts: payload.message.ts,
-            blocks: [...payload.message.blocks],
+            blocks: threadBlocks,
         });
     } catch (error) {
         console.log(error);
@@ -962,4 +1080,5 @@ module.exports = {
     claimTask,
     createTask,
     noActionRequired,
+    handleRequestResponse,
 };

@@ -23,7 +23,7 @@ describe("#handleCopperUpdatesToProposalSubmittedWebHook", function () {
                     "2025-06-23T12:29:11.072Z",
                 ],
                 days_in_stage: [0, 0],
-                stage: ["First Meetings", "Proposal Submitted"],
+                stage: ["First Meetings", "Won"],
             },
             timestamp: "2025-06-23T12:29:11.274Z",
         };

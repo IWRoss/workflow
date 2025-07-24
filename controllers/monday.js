@@ -156,28 +156,54 @@ const addTaskToBoardWithColumns = async (newTask, boardId) => {
         const columnId = columnIds[columnTitles.indexOf(column)];
 
         if (columnId) {
-            columnValues[columnId] = newTask[column];
+            //Get the value for the column
+            let getColumnValue = newTask[column];
+            if (typeof getColumnValue === "string") {
+                getColumnValue = getColumnValue
+                    .replace(/\\/g, "\\\\") // Escape backslashes first
+                    .replace(/"/g, '\\"') // Escape double quotes
+                    .replace(/'/g, "\\'") // Escape single quotes
+                    .replace(/\n/g, "\\n") // Escape newlines
+                    .replace(/\r/g, "\\r") // Escape carriage returns
+                    .replace(/\t/g, "\\t"); // Escape tabs
+            }
+
+            columnValues[columnId] = getColumnValue;
         }
     });
 
-    const column_values = JSON.stringify(columnValues)
-        .replace(/"/g, '\\"')
-        .replace(/\\n/g, "\\\\n");
+    // const column_values = JSON.stringify(columnValues)
+    //     .replace(/"/g, '\\"')
+    //     .replace(/\\n/g, "\\\\n");
+
+    const payload = {
+        boardId: boardId.toString(),
+        itemName: newTask.name,
+        columnValues: JSON.stringify(columnValues),
+    };
 
     console.log(
         "Payload",
         JSON.stringify({
-            boardId,
-            newTask: newTask.name,
-            column_values: column_values,
+            boardId: payload.boardId,
+            itemName: payload.itemName,
+            columnValues: payload.columnValues,
         })
     );
 
-    const result = await monday.api(`mutation {
-    create_item (board_id: ${boardId}, item_name: "${newTask.name}", column_values: "${column_values}") {
-      id
-    }
-  }`);
+    //mutation (declare the variables)
+    //Use the variables in the query
+    //Variables are passed in as an object
+    //Returns the id of the created item
+
+    const result = await monday.api(
+        `mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON!) {
+        create_item (board_id: $boardId, item_name: $itemName, column_values: $columnValues) {
+            id
+        }
+    }`,
+        { variables: payload }
+    );
 
     console.log("Create item request", JSON.stringify(result));
 

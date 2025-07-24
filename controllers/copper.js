@@ -628,10 +628,11 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
         //Any stage past proposal creation, create a project code and company code
         if (
-            payload.updated_attributes.stage[1] == "Won" ||
-            payload.updated_attributes.stage[1] == "Proposal Submitted" ||
-            payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
-            payload.updated_attributes.stage[1] == "Completed"
+            payload.updated_attributes.stage &&
+            (payload.updated_attributes.stage[1] == "Won" ||
+                payload.updated_attributes.stage[1] == "Proposal Submitted" ||
+                payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
+                payload.updated_attributes.stage[1] == "Completed")
         ) {
             const opportunity = await getOpportunity(payload.ids[0]);
             console.log("Opportunity", opportunity);
@@ -668,9 +669,10 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
         //If the stage is Won / Agreed / Completed, then create a ticket in slack
         if (
-            payload.updated_attributes.stage[1] == "Won" ||
-            payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
-            payload.updated_attributes.stage[1] == "Completed"
+            payload.updated_attributes.stage &&
+            (payload.updated_attributes.stage[1] == "Won" ||
+                payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
+                payload.updated_attributes.stage[1] == "Completed")
         ) {
             console.log("Opportunity is Won, creating ticket in Slack");
             // Get copper users

@@ -282,7 +282,11 @@ const handleRequestResponse = async (payload, locations) => {
             url: findField(fields, "dropboxLink").value,
             text: "Link",
         },
-        Details: findField(fields, "notes").value,
+        Details: findField(fields, "notes")
+            .value.replace(/'/g, "'")
+            .replace(/"/g, '"')
+            .replace(/[\u2018\u2019]/g, "'")
+            .replace(/[\u201C\u201D]/g, '"'),
     };
 
     // Add task to boards

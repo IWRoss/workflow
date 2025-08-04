@@ -11,16 +11,20 @@ const newOpsRequestMessage = require("./newOpsRequestMessage");
 const newMarketingRequestMessage = require("./newMarketingRequestMessage");
 const opsRequestModal = require("./opsRequestModal");
 const marketingRequestModal = require("./marketingRequestModal");
+const spendRequestModal = require("./spendRequestModal");
+const newSpendRequestMessage = require("./newSpendRequestMessage");
 
 module.exports = {
-  buildAppHomeScreen,
-  appMaintenance,
-  requestModal,
-  invoiceRequestModal,
-  opsRequestModal,
-  marketingRequestModal,
-  newRequestMessage,
-  newInvoiceRequestMessage,
-  newOpsRequestMessage,
-  newMarketingRequestMessage,
+    buildAppHomeScreen,
+    appMaintenance,
+    requestModal,
+    invoiceRequestModal,
+    opsRequestModal,
+    marketingRequestModal,
+    newRequestMessage,
+    newInvoiceRequestMessage,
+    newOpsRequestMessage,
+    newMarketingRequestMessage,
+    spendRequestModal,
+    newSpendRequestMessage,
 };

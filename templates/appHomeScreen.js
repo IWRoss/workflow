@@ -144,6 +144,31 @@ const blocks = {
                 action_id: "openInvoiceRequestForm",
             },
         },
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Spend Requests",
+                emoji: true,
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "If you need to submit a Spend Request, please submit your ticket using this form.",
+            },
+            accessory: {
+                type: "button",
+                text: {
+                    type: "plain_text",
+                    text: "Create ticket",
+                    emoji: true,
+                },
+                value: "click_me_123",
+                action_id: "openSpendRequestForm",
+            },
+        },
     ],
 };
 

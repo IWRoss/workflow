@@ -28,6 +28,7 @@ const {
 
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
+const clients = require("../data/clients.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -211,6 +212,9 @@ const openCommTechRequestForm = async (payload) =>
 const openMultipleTeamsRequestForm = async (payload) =>
     openRequestForm(payload, "handleMultipleTeamsRequestResponse");
 
+const openSpendRequestForm = async (payload) =>
+    openSpendRequestFormWithTemplate(payload, "handleSpendRequestResponse");
+
 const openInvoiceRequestForm = async (payload) => {
     const invoiceRequestModal = _.cloneDeep(templates.invoiceRequestModal);
 
@@ -230,6 +234,99 @@ const openInvoiceRequestForm = async (payload) => {
  */
 const findField = (fields, field) => {
     return fields.find((f) => f.hasOwnProperty(field))[field];
+};
+
+/**
+ * Handle Spend Request Response (No Monday Board Integration)
+ */
+
+const handleSpendRequest = async (payload, locations) => {
+    console.log(
+        "Payload inside handleRequestResponse",
+        payload.view.blocks[0].element
+    );
+    console.log("Locations inside handleRequestResponse", locations);
+
+    //Get the fields from the payload
+    const fields = Object.values(payload.view.state.values);
+
+    const fieldsPayload = {
+        spendType: findField(fields, "spendRequestTypeSelect").selected_option
+            .value,
+        department: findField(fields, "departmentSelect").selected_option.value,
+        client: findField(fields, "clientSelect").selected_option.value,
+        projectCode: findField(fields, "projectCode").value,
+        notes: findField(fields, "notes").value,
+    };
+
+    //Style the message for slack message
+    let newSpendRequestMessageTemplate = _.cloneDeep(
+        templates.newSpendRequestMessage
+    );
+
+    // Usage in your handleSpendRequest function
+    newSpendRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Spend Request:`;
+
+    // Spend Type and Department (side by side)
+    newSpendRequestMessageTemplate.blocks[1].fields[0].text = `*Spend Type:*\n${fieldsPayload.spendType}`;
+    newSpendRequestMessageTemplate.blocks[1].fields[1].text = `*Department:*\n${fieldsPayload.department}`;
+
+    // Client and Project Code (side by side)
+    newSpendRequestMessageTemplate.blocks[2].fields[0].text = `*Client:*\n${fieldsPayload.client}`;
+    newSpendRequestMessageTemplate.blocks[2].fields[1].text = `*Project Code:*\n${fieldsPayload.projectCode}`;
+
+    // Notes
+    newSpendRequestMessageTemplate.blocks[3].text.text = `*Notes:*\n${fieldsPayload.notes}`;
+
+    // Approve button - store request data for processing
+    newSpendRequestMessageTemplate.blocks[5].elements[0].value = JSON.stringify(
+        {
+            action: "approve",
+            requestId: `spend_${Date.now()}`,
+            userId: payload.user.id,
+            spendType: fieldsPayload.spendType,
+            department: fieldsPayload.department,
+            client: fieldsPayload.client,
+            projectCode: fieldsPayload.projectCode,
+            notes: fieldsPayload.notes,
+            submittedAt: new Date().toISOString(),
+        }
+    );
+
+    // Deny button - store request data for processing
+    newSpendRequestMessageTemplate.blocks[5].elements[1].value = JSON.stringify(
+        {
+            action: "deny",
+            requestId: `spend_${Date.now()}`,
+            userId: payload.user.id,
+            spendType: fieldsPayload.spendType,
+            department: fieldsPayload.department,
+            client: fieldsPayload.client,
+            projectCode: fieldsPayload.projectCode,
+            notes: fieldsPayload.notes,
+            submittedAt: new Date().toISOString(),
+        }
+    );
+
+    //Separate monday board id and slack channel from locations
+    const { boardId, slackChannel } = locations[0];
+
+    //Send a message to slack channel
+    try {
+        // Send message to users
+        const message = await slack.chat.postMessage({
+            channel: slackChannel,
+            ...newSpendRequestMessageTemplate,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+
+    // Return a success message
+    return {
+        status: "success",
+        message: "Spend request submitted successfully.",
+    };
 };
 
 /**
@@ -345,6 +442,14 @@ const handleCommTechRequestResponse = async (payload) =>
         {
             boardId: process.env.COMMTECH_MONDAY_BOARD,
             slackChannel: process.env.COMMTECH_SLACK_CHANNEL,
+        },
+    ]);
+
+const handleSpendRequestResponse = async (payload) =>
+    handleSpendRequest(payload, [
+        {
+            boardId: process.env.SPEND_MONDAY_BOARD,
+            slackChannel: process.env.SPEND_SLACK_CHANNEL,
         },
     ]);
 
@@ -755,6 +860,40 @@ const mapCustomFields = (customFieldsObject) => {
 };
 
 /**
+ * Approve the spend request action
+ */
+
+const approveSpendRequest = async (payload) => {
+    console.log("Payload inside approveSpendRequest", payload);
+
+    //Parse the payload to get the boardId and itemId
+    const { boardId, itemId } = JSON.parse(payload.actions[0].value);
+
+    const user = await getUserById(payload.user.id);
+
+    console.log("User that approved the request", user);
+
+    //Remove the buttons and add a confirmation message
+    //Tagging the user that approved the request
+    // const actionsBlockIndex = payload.message.blocks.findIndex(
+    //     (block) => block.type === "actions"
+    // );
+    // payload.message.blocks[actionsBlockIndex].elements.splice(0, 2);
+    // payload.message.blocks.splice(actionsBlockIndex, 0, {
+    //     type: "section",
+    //     text: {
+    //         type: "mrkdwn",
+    //         text: `*<@${payload.user.id}>* approved this spend request`,
+    //     },
+    // });
+
+    //
+};
+
+//Deny the spend request action
+const denySpendRequest = async (payload) => {};
+
+/**
  * Create a task on Monday for user (DevOps)
  */
 
@@ -1058,18 +1197,40 @@ const openMarketingRequestForm = async (payload) => {
     }
 };
 
+const openSpendRequestFormWithTemplate = async (payload, callbackName) => {
+    console.log("Payload inside openRequestForm", payload);
+    console.log("Callback name inside openRequestForm", callbackName);
+    // Get templates
+    const requestModal = _.cloneDeep(templates.spendRequestModal);
+
+    requestModal.callback_id =
+        callbackName || "handleMultipleTeamsRequestResponse";
+
+    try {
+        // Send leave request form to Slack
+        const result = await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: requestModal,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+};
+
 module.exports = {
     slack,
     getMembers,
     getMemberById,
     openStudioRequestForm,
     openCommTechRequestForm,
+    openSpendRequestForm,
     openOpsRequestForm,
     openMultipleTeamsRequestForm,
     openInvoiceRequestForm,
     openMarketingRequestForm,
     handleStudioRequestResponse,
     handleCommTechRequestResponse,
+    handleSpendRequestResponse,
     handleMultipleTeamsRequestResponse,
     handleInvoiceRequestResponse,
     handleOpsRequestResponse,
@@ -1081,4 +1242,6 @@ module.exports = {
     createTask,
     noActionRequired,
     handleRequestResponse,
+    denySpendRequest,
+    approveSpendRequest,
 };

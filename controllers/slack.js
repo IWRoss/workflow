@@ -595,9 +595,13 @@ const handleMarketingRequestResponse = async (payload) => {
         "Review Date": fieldValues.find((f) =>
             f.hasOwnProperty("reviewDateInput")
         ).reviewDateInput.selected_date,
-        "Go-Live Date": fieldValues.find((f) =>
-            f.hasOwnProperty("goLiveDateInput")
-        ).goLiveDateInput.selected_date,
+        "Start Go-Live Date": fieldValues.find((f) =>
+            f.hasOwnProperty("goStartLiveDateInput")
+        ).goStartLiveDateInput.selected_date,
+        "End Go-Live Date": fieldValues.find((f) =>
+            f.hasOwnProperty("goEndLiveDateInput")
+        ).goEndLiveDateInput.selected_date,
+
         Description: fieldValues.find((f) =>
             f.hasOwnProperty("projectDescriptionInput")
         ).projectDescriptionInput.value,
@@ -606,6 +610,13 @@ const handleMarketingRequestResponse = async (payload) => {
                 .dropboxLinkInput.value + " Link",
         Channel: fieldValues.find((f) => f.hasOwnProperty("channelSelect"))
             .channelSelect.selected_option.value,
+        Timeline: {
+            from: fieldValues.find((f) =>
+                f.hasOwnProperty("goStartLiveDateInput")
+            ).goStartLiveDateInput.selected_date,
+            to: fieldValues.find((f) => f.hasOwnProperty("goEndLiveDateInput"))
+                .goEndLiveDateInput.selected_date,
+        },
     };
 
     // console.log("New task", newTask);
@@ -620,12 +631,14 @@ const handleMarketingRequestResponse = async (payload) => {
     newMarketingRequestMessageTemplate.blocks[1].fields[0].text += newTask.name;
     newMarketingRequestMessageTemplate.blocks[1].fields[1].text +=
         newTask.Channel;
-    newMarketingRequestMessageTemplate.blocks[2].text.text +=
+    newMarketingRequestMessageTemplate.blocks[2].fields[0].text +=
         newTask.Description;
     newMarketingRequestMessageTemplate.blocks[3].fields[0].text +=
         newTask["Review Date"];
+    newMarketingRequestMessageTemplate.blocks[2].fields[1].text +=
+        newTask["Start Go-Live Date"];
     newMarketingRequestMessageTemplate.blocks[3].fields[1].text +=
-        newTask["Go-Live Date"];
+        newTask["End Go-Live Date"];
     newMarketingRequestMessageTemplate.blocks[4].elements[0].value =
         JSON.stringify({
             boardId: process.env.MARKETING_MONDAY_BOARD,

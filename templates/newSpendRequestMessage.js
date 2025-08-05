@@ -61,7 +61,7 @@ module.exports = {
                     type: "button",
                     text: {
                         type: "plain_text",
-                        text: "Deny",
+                        text: "Decline",
                         emoji: true,
                     },
                     value: "",

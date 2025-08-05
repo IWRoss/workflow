@@ -22,6 +22,7 @@ const {
     denySpendRequest,
     noActionRequired,
     getOpportunityOptions,
+    handleDenySpendRequestModal,
 } = require("../../controllers/slack");
 
 /**
@@ -58,6 +59,9 @@ const actions = {
     },
     openMarketingRequestForm: (payload) => {
         openMarketingRequestForm(payload);
+    },
+    handleDenySpendRequestModal: (payload) => {
+        handleDenySpendRequestModal(payload);
     },
     handleCommTechRequestResponse: (payload) => {
         handleCommTechRequestResponse(payload);

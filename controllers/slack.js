@@ -241,10 +241,7 @@ const findField = (fields, field) => {
  */
 
 const handleSpendRequest = async (payload, locations) => {
-    console.log(
-        "Payload inside handleRequestResponse",
-        payload.view.blocks[0].element
-    );
+    console.log("Payload inside handleRequestResponse", payload);
     console.log("Locations inside handleRequestResponse", locations);
 
     //Get the fields from the payload
@@ -278,11 +275,16 @@ const handleSpendRequest = async (payload, locations) => {
     // Notes
     newSpendRequestMessageTemplate.blocks[3].text.text = `*Notes:*\n${fieldsPayload.notes}`;
 
+    console.log("RequestBy", payload.user.name);
+    console.log("requestedBy", payload.user.name);
+
     // Approve button - store request data for processing
     newSpendRequestMessageTemplate.blocks[5].elements[0].value = JSON.stringify(
         {
-            action: "approve",
+            action: "Approved",
             requestId: `spend_${Date.now()}`,
+            requestedBy: payload.user.name,
+
             userId: payload.user.id,
             spendType: fieldsPayload.spendType,
             department: fieldsPayload.department,
@@ -296,8 +298,9 @@ const handleSpendRequest = async (payload, locations) => {
     // Deny button - store request data for processing
     newSpendRequestMessageTemplate.blocks[5].elements[1].value = JSON.stringify(
         {
-            action: "deny",
+            action: "Declined",
             requestId: `spend_${Date.now()}`,
+            requestedBy: payload.user.name,
             userId: payload.user.id,
             spendType: fieldsPayload.spendType,
             department: fieldsPayload.department,
@@ -861,38 +864,219 @@ const mapCustomFields = (customFieldsObject) => {
 
 /**
  * Approve the spend request action
+ * Get the slack user details that approved the request from the payload
+ * Remove the action button blocks by slicing the blocks array between 0 and 4
+ * Add a new section block with the user that approved the request
+ * Update the message with the new blocks
  */
 
 const approveSpendRequest = async (payload) => {
+    const {
+        addApprovedRequestToGoogleSheets,
+    } = require("../helpers/helpers.js");
+
     console.log("Payload inside approveSpendRequest", payload);
 
-    //Parse the payload to get the boardId and itemId
-    const { boardId, itemId } = JSON.parse(payload.actions[0].value);
+    const requestData = JSON.parse(payload.actions[0].value);
+    console.log("Parsed request data:", requestData);
 
     const user = await getUserById(payload.user.id);
 
     console.log("User that approved the request", user);
+    console.log("Blocks before update", payload.message.blocks[5]);
 
-    //Remove the buttons and add a confirmation message
-    //Tagging the user that approved the request
-    // const actionsBlockIndex = payload.message.blocks.findIndex(
-    //     (block) => block.type === "actions"
-    // );
-    // payload.message.blocks[actionsBlockIndex].elements.splice(0, 2);
-    // payload.message.blocks.splice(actionsBlockIndex, 0, {
-    //     type: "section",
-    //     text: {
-    //         type: "mrkdwn",
-    //         text: `*<@${payload.user.id}>* approved this spend request`,
-    //     },
-    // });
+    try {
+        const updatedBlocks = payload.message.blocks.slice(0, 5);
 
-    //
+        updatedBlocks.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `*<@${payload.user.id}>* approved this spend request.`,
+            },
+        });
+
+        // Update the message
+        await slack.chat.update({
+            channel: payload.channel.id,
+            ts: payload.message.ts,
+            blocks: updatedBlocks,
+        });
+
+        //Add the approved spend request to Google Sheets
+        console.log("Adding approved spend request to Google Sheets");
+        const addToGoogleSheets = await addApprovedRequestToGoogleSheets(
+            requestData,
+            user.id,
+            user.profile.real_name
+        );
+
+        if (addToGoogleSheets && addToGoogleSheets.success) {
+            console.log(
+                "Successfully added to Google Sheets:",
+                addToGoogleSheets
+            );
+        } else {
+            console.error("Failed to add to Google Sheets:", addToGoogleSheets);
+        }
+
+        return {
+            status: "success",
+            message: "Spend request approved successfully.",
+        };
+    } catch (error) {
+        console.error("Error updating message:", error);
+    }
 };
 
-//Deny the spend request action
-const denySpendRequest = async (payload) => {};
+/**
+ * Deny the spend request action
+ * Get the slack user details that denied the request from the payload
+ * Remove the action button blocks by slicing the blocks array between 0 and 4
+ * Add a new section block with the user that denied the request
+ * Update the message with the new blocks
+ */
+const denySpendRequest = async (payload) => {
+    console.log("Payload inside denySpendRequest", payload);
 
+    try {
+        const requestData = JSON.parse(payload.actions[0].value);
+        console.log("Request data:", requestData);
+
+        const user = await getUserById(payload.user.id);
+
+        console.log("User that denied the request", user);
+
+        // Create the modal with the request data stored in private_metadata
+        const denyModal = _.cloneDeep(templates.denySpendRequestModal);
+
+        const modalMetadata = {
+            originalRequestData: requestData,
+            channelId: payload.channel.id,
+            messageTs: payload.message.ts,
+            deniedIdBy: user.id,
+            deniedNameBy: user.profile.real_name,
+        };
+
+        denyModal.private_metadata = JSON.stringify(modalMetadata);
+
+        // Show the modal
+        await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: denyModal,
+        });
+
+        console.log("Denial modal opened successfully");
+
+        return {
+            status: "success",
+            message: "Denial modal opened.",
+        };
+    } catch (error) {
+        console.error("Error opening denial modal:", error);
+        return {
+            status: "error",
+            message: "Failed to open denial modal.",
+        };
+    }
+};
+
+const handleDenySpendRequestModal = async (payload) => {
+    const {
+        addApprovedRequestToGoogleSheets,
+    } = require("../helpers/helpers.js");
+    console.log("Processing deny modal submission", payload);
+
+    try {
+        //Get the text field value from the modal submission
+        const stateValues = payload.view.state.values;
+
+        console.log("State values:", stateValues);
+
+        const blockId = Object.keys(stateValues)[0];
+        const denialReason =
+            stateValues[blockId].denialReasonInput.value ||
+            "No reason provided";
+
+        // Get original request data from private_metadata
+        const modalMetadata = JSON.parse(payload.view.private_metadata);
+
+        console.log("Modal metadata:", modalMetadata);
+        const {
+            originalRequestData,
+            channelId,
+            messageTs,
+            deniedIdBy,
+            deniedNameBy,
+        } = modalMetadata;
+
+        console.log("Denial reason:", denialReason);
+        console.log("Denying request for:", originalRequestData);
+
+        // Get the original message to preserve request details
+        const messageHistory = await slack.conversations.history({
+            channel: channelId,
+            latest: messageTs,
+            limit: 1,
+            inclusive: true,
+        });
+
+        const originalBlocks = messageHistory.messages[0].blocks;
+
+        const updatedBlocks = [
+            ...originalBlocks.slice(0, 5),
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: `*@${deniedNameBy}* declined this spend request.\n*Reason:* ${denialReason}`,
+                },
+            },
+        ];
+
+        // Update the message - this removes the approve/deny buttons and adds denial status
+        await slack.chat.update({
+            channel: channelId,
+            ts: messageTs,
+            blocks: updatedBlocks,
+        });
+
+        const payloadWithReason = {
+            ...originalRequestData,
+            denialReason,
+        };
+        console.log("Payload with reason:", payloadWithReason);
+
+        // Add to Google Sheets
+        console.log("Adding declined spend request to Google Sheets");
+        const addToGoogleSheets = await addApprovedRequestToGoogleSheets(
+            payloadWithReason,
+            deniedIdBy,
+            deniedNameBy
+        );
+
+        if (addToGoogleSheets && addToGoogleSheets.success) {
+            console.log(
+                "Successfully added to Google Sheets:",
+                addToGoogleSheets
+            );
+        } else {
+            console.error("Failed to add to Google Sheets:", addToGoogleSheets);
+        }
+
+        return {
+            status: "success",
+            message: "Spend request was declined.",
+        };
+    } catch (error) {
+        console.error("Error processing denial:", error);
+        return {
+            status: "error",
+            message: "Failed to process denial.",
+            error: error.message,
+        };
+    }
+};
 /**
  * Create a task on Monday for user (DevOps)
  */
@@ -1244,4 +1428,6 @@ module.exports = {
     handleRequestResponse,
     denySpendRequest,
     approveSpendRequest,
+    handleSpendRequest,
+    handleDenySpendRequestModal,
 };

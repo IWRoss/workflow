@@ -721,7 +721,7 @@ const handleMarketingRequestResponse = async (payload) => {
                 .dropboxLinkInput.value + " Link",
         Channel: fieldValues.find((f) => f.hasOwnProperty("channelSelect"))
             .channelSelect.selected_option.value,
-        Timeline: {
+        "Go-Live Date": {
             from: fieldValues.find((f) =>
                 f.hasOwnProperty("goStartLiveDateInput")
             ).goStartLiveDateInput.selected_date,

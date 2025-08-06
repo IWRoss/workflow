@@ -61,7 +61,7 @@ const initialiseGoogleSheets = () => {
 };
 
 //Add approved requests to google sheets
-const addApprovedRequestToGoogleSheets = async (
+const addSpendRequestToGoogleSheets = async (
     requestData,
     approvedByID,
     approvedByName
@@ -82,7 +82,7 @@ const addApprovedRequestToGoogleSheets = async (
         requestData.notes,
         approvedByID,
         approvedByName,
-        requestData.denialReason || "",
+        requestData.textfieldValue || "",
         new Date().toISOString().split("T")[0], // YYYY-MM-DD format
     ];
 
@@ -113,5 +113,5 @@ module.exports = {
     camelCaseToCapitalCase,
     isBetaUser,
     initialiseGoogleSheets,
-    addApprovedRequestToGoogleSheets,
+    addSpendRequestToGoogleSheets,
 };

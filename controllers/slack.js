@@ -244,7 +244,7 @@ const handleSpendRequest = async (payload, locations) => {
     console.log("Payload inside handleRequestResponse", payload);
     console.log("Locations inside handleRequestResponse", locations);
 
-    //Get the fields from the payload
+    //Get the fields from the slack payload and its values
     const fields = Object.values(payload.view.state.values);
 
     const fieldsPayload = {
@@ -256,12 +256,12 @@ const handleSpendRequest = async (payload, locations) => {
         notes: findField(fields, "notes").value,
     };
 
-    //Style the message for slack message
+    //Custom message template to display on slack
     let newSpendRequestMessageTemplate = _.cloneDeep(
         templates.newSpendRequestMessage
     );
 
-    // Usage in your handleSpendRequest function
+    //Display the user who submitted the request
     newSpendRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Spend Request:`;
 
     // Spend Type and Department (side by side)
@@ -278,13 +278,16 @@ const handleSpendRequest = async (payload, locations) => {
     console.log("RequestBy", payload.user.name);
     console.log("requestedBy", payload.user.name);
 
-    // Approve button - store request data for processing
+    //Get user slack details
+    const user = await getMemberById(payload.user.id);
+    console.log("User", user);
+
+    // Approve button
     newSpendRequestMessageTemplate.blocks[5].elements[0].value = JSON.stringify(
         {
             action: "Approved",
             requestId: `spend_${Date.now()}`,
-            requestedBy: payload.user.name,
-
+            requestedBy: user.real_name,
             userId: payload.user.id,
             spendType: fieldsPayload.spendType,
             department: fieldsPayload.department,
@@ -295,12 +298,12 @@ const handleSpendRequest = async (payload, locations) => {
         }
     );
 
-    // Deny button - store request data for processing
+    // Decline button
     newSpendRequestMessageTemplate.blocks[5].elements[1].value = JSON.stringify(
         {
             action: "Declined",
             requestId: `spend_${Date.now()}`,
-            requestedBy: payload.user.name,
+            requestedBy: user.real_name,
             userId: payload.user.id,
             spendType: fieldsPayload.spendType,
             department: fieldsPayload.department,
@@ -451,7 +454,7 @@ const handleCommTechRequestResponse = async (payload) =>
 const handleSpendRequestResponse = async (payload) =>
     handleSpendRequest(payload, [
         {
-            boardId: process.env.SPEND_MONDAY_BOARD,
+            boardId: process.env.SPEND_MONDAY_BOARD, //This is undefined as there is no need for Monday board integration
             slackChannel: process.env.SPEND_SLACK_CHANNEL,
         },
     ]);
@@ -863,28 +866,26 @@ const mapCustomFields = (customFieldsObject) => {
 };
 
 /**
- * Approve the spend request action
- * Get the slack user details that approved the request from the payload
- * Remove the action button blocks by slicing the blocks array between 0 and 4
- * Add a new section block with the user that approved the request
- * Update the message with the new blocks
+ * Function to approve the spend request action
  */
 
 const approveSpendRequest = async (payload) => {
-    const {
-        addApprovedRequestToGoogleSheets,
-    } = require("../helpers/helpers.js");
+    const { addSpendRequestToGoogleSheets } = require("../helpers/helpers.js");
 
     console.log("Payload inside approveSpendRequest", payload);
 
-    const requestData = JSON.parse(payload.actions[0].value);
-    console.log("Parsed request data:", requestData);
+    //Parse the request data from the payload
+    const parseButtonData = JSON.parse(payload.actions[0].value);
+    console.log("Parsed request data:", parseButtonData);
 
+    //Get the slack details of the user that approved the request
     const user = await getUserById(payload.user.id);
 
     console.log("User that approved the request", user);
     console.log("Blocks before update", payload.message.blocks[5]);
 
+    //Remove the action buttons from the blocks array
+    //Add a new section block with the user that approved the request
     try {
         const updatedBlocks = payload.message.blocks.slice(0, 5);
 
@@ -892,32 +893,37 @@ const approveSpendRequest = async (payload) => {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: `*<@${payload.user.id}>* approved this spend request.`,
+                text: `*<@${user.id}>* approved this spend request.`,
             },
-        });
-
-        // Update the message
-        await slack.chat.update({
-            channel: payload.channel.id,
-            ts: payload.message.ts,
-            blocks: updatedBlocks,
         });
 
         //Add the approved spend request to Google Sheets
         console.log("Adding approved spend request to Google Sheets");
-        const addToGoogleSheets = await addApprovedRequestToGoogleSheets(
-            requestData,
+        const addToGoogleSheets = await addSpendRequestToGoogleSheets(
+            parseButtonData,
             user.id,
             user.profile.real_name
         );
 
+        //If the request was successfully added to Google Sheets, update the message
         if (addToGoogleSheets && addToGoogleSheets.success) {
             console.log(
                 "Successfully added to Google Sheets:",
                 addToGoogleSheets
             );
+
+            // Update the message
+            await slack.chat.update({
+                channel: payload.channel.id,
+                ts: payload.message.ts,
+                blocks: updatedBlocks,
+            });
         } else {
             console.error("Failed to add to Google Sheets:", addToGoogleSheets);
+            return {
+                status: "error",
+                message: "Failed to add approved request to Google Sheets.",
+            };
         }
 
         return {
@@ -930,35 +936,35 @@ const approveSpendRequest = async (payload) => {
 };
 
 /**
- * Deny the spend request action
- * Get the slack user details that denied the request from the payload
- * Remove the action button blocks by slicing the blocks array between 0 and 4
- * Add a new section block with the user that denied the request
- * Update the message with the new blocks
+ * Function to decline the spend request action
  */
 const denySpendRequest = async (payload) => {
     console.log("Payload inside denySpendRequest", payload);
 
     try {
-        const requestData = JSON.parse(payload.actions[0].value);
-        console.log("Request data:", requestData);
+        // Parse the request data from the payload
+        const parseButtonData = JSON.parse(payload.actions[0].value);
+        console.log("Request data:", parseButtonData);
 
+        //Get the slack details of the user that declined the request
         const user = await getUserById(payload.user.id);
 
         console.log("User that denied the request", user);
 
-        // Create the modal with the request data stored in private_metadata
+        //Get a modal template to justify the decline
         const denyModal = _.cloneDeep(templates.denySpendRequestModal);
 
-        const modalMetadata = {
-            originalRequestData: requestData,
+        //Send the original payload to the modal
+        const modalPayload = {
+            originalRequestData: parseButtonData,
             channelId: payload.channel.id,
             messageTs: payload.message.ts,
             deniedIdBy: user.id,
             deniedNameBy: user.profile.real_name,
         };
 
-        denyModal.private_metadata = JSON.stringify(modalMetadata);
+        //Set the metadata for the modal
+        denyModal.private_metadata = JSON.stringify(modalPayload);
 
         // Show the modal
         await slack.views.open({
@@ -981,10 +987,10 @@ const denySpendRequest = async (payload) => {
     }
 };
 
+//Function to handle when the user clicks decline for spend request and opens a modal
 const handleDenySpendRequestModal = async (payload) => {
-    const {
-        addApprovedRequestToGoogleSheets,
-    } = require("../helpers/helpers.js");
+    const { addSpendRequestToGoogleSheets } = require("../helpers/helpers.js");
+
     console.log("Processing deny modal submission", payload);
 
     try {
@@ -993,15 +999,16 @@ const handleDenySpendRequestModal = async (payload) => {
 
         console.log("State values:", stateValues);
 
+        //Get the block id that has the text field and get its value
         const blockId = Object.keys(stateValues)[0];
-        const denialReason =
-            stateValues[blockId].denialReasonInput.value ||
-            "No reason provided";
+        const textfieldValue = stateValues[blockId].denialReasonInput.value;
 
-        // Get original request data from private_metadata
+        // Get original request data from private_metadata by parsing
         const modalMetadata = JSON.parse(payload.view.private_metadata);
 
         console.log("Modal metadata:", modalMetadata);
+
+        //Break down the metadata
         const {
             originalRequestData,
             channelId,
@@ -1010,7 +1017,7 @@ const handleDenySpendRequestModal = async (payload) => {
             deniedNameBy,
         } = modalMetadata;
 
-        console.log("Denial reason:", denialReason);
+        console.log("Denial reason:", textfieldValue);
         console.log("Denying request for:", originalRequestData);
 
         // Get the original message to preserve request details
@@ -1021,35 +1028,39 @@ const handleDenySpendRequestModal = async (payload) => {
             inclusive: true,
         });
 
+        //Retrive the orignal block from the message history
         const originalBlocks = messageHistory.messages[0].blocks;
 
+        //Remove the action buttons from the original blocks
+        //Add a new section block with the user that declined the request
         const updatedBlocks = [
             ...originalBlocks.slice(0, 5),
             {
                 type: "section",
                 text: {
                     type: "mrkdwn",
-                    text: `*@${deniedNameBy}* declined this spend request.\n*Reason:* ${denialReason}`,
+                    text: `*<@${deniedIdBy}>* declined this spend request.\n*Reason:* ${textfieldValue}`,
                 },
             },
         ];
 
-        // Update the message - this removes the approve/deny buttons and adds denial status
+        // Update the original message - this removes the approve/deny buttons and adds decline buttons
         await slack.chat.update({
             channel: channelId,
             ts: messageTs,
             blocks: updatedBlocks,
         });
 
+        //Add the textField from the modal to the original payload
         const payloadWithReason = {
             ...originalRequestData,
-            denialReason,
+            textfieldValue,
         };
         console.log("Payload with reason:", payloadWithReason);
 
         // Add to Google Sheets
         console.log("Adding declined spend request to Google Sheets");
-        const addToGoogleSheets = await addApprovedRequestToGoogleSheets(
+        const addToGoogleSheets = await addSpendRequestToGoogleSheets(
             payloadWithReason,
             deniedIdBy,
             deniedNameBy
@@ -1062,6 +1073,10 @@ const handleDenySpendRequestModal = async (payload) => {
             );
         } else {
             console.error("Failed to add to Google Sheets:", addToGoogleSheets);
+            return {
+                status: "error",
+                message: "Failed to add declined request to Google Sheets.",
+            };
         }
 
         return {
@@ -1381,17 +1396,19 @@ const openMarketingRequestForm = async (payload) => {
     }
 };
 
+//Function to open the spend request form with a custom template
 const openSpendRequestFormWithTemplate = async (payload, callbackName) => {
     console.log("Payload inside openRequestForm", payload);
     console.log("Callback name inside openRequestForm", callbackName);
-    // Get templates
+
+    // Get the modal template
     const requestModal = _.cloneDeep(templates.spendRequestModal);
 
     requestModal.callback_id =
         callbackName || "handleMultipleTeamsRequestResponse";
 
     try {
-        // Send leave request form to Slack
+        // Send spend request form to Slack
         const result = await slack.views.open({
             trigger_id: payload.trigger_id,
             view: requestModal,

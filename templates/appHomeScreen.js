@@ -156,7 +156,7 @@ const blocks = {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: "If you need to submit a Spend Request, please submit your ticket using this form.",
+                text: "If you need to submit a spend request, please submit your ticket using this form.",
             },
             accessory: {
                 type: "button",

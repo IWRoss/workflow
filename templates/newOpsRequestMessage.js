@@ -9,18 +9,11 @@ module.exports = {
         },
         {
             type: "section",
-            fields: [
-                {
-                    type: "mrkdwn",
-                    text: "*Opportunity*\n",
-                },
-                {
-                    type: "mrkdwn",
-                    text: "*Project Code*\n",
-                },
-            ],
+            text: {
+                type: "mrkdwn",
+                text: "",
+            },
         },
-
         {
             type: "actions",
             elements: [
@@ -28,25 +21,17 @@ module.exports = {
                     type: "button",
                     text: {
                         type: "plain_text",
-                        text: "Create Monday Task",
+                        text: "✓ Mark cost sheets as uploaded",
                         emoji: true,
                     },
                     value: "",
-                    action_id: "createTask",
+                    action_id: "markAsDone",
                     style: "primary",
                 },
-
-                {
-                    type: "button",
-                    text: {
-                        type: "plain_text",
-                        text: "View on Copper",
-                        emoji: true,
-                    },
-                    url: "",
-                    action_id: "viewOnCopper",
-                },
             ],
+        },
+        {
+            type: "divider",
         },
     ],
 };

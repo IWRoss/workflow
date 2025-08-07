@@ -17,7 +17,7 @@ const {
     handleOpsRequestResponse,
     handleMarketingRequestResponse,
     claimTask,
-    createTask,
+    markAsDone,
     approveSpendRequest,
     denySpendRequest,
     noActionRequired,
@@ -90,8 +90,8 @@ const actions = {
     getOpportunityOptions: async (payload) => {
         return await getOpportunityOptions(payload);
     },
-    createTask: (payload) => {
-        createTask(payload);
+    markAsDone: (payload) => {
+        markAsDone(payload);
     },
     noActionRequired: (payload) => {
         noActionRequired(payload);

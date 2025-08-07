@@ -548,23 +548,10 @@ const handleOpsRequestResponse = async (payload) => {
     const selectedOpportunity = payload.opportunityObject;
     console.log("Selected opportunity", selectedOpportunity);
 
-    //3. Map the custom fields
-    const customFields = mapCustomFields(selectedOpportunity.custom_fields);
-    console.log("Custom fields", customFields);
-
-    //4. Find copper user that moved the opportunity to the "Proposal Submitted" stage
+    //3. Find copper user that moved the opportunity to the "Proposal Submitted" stage
     const copperUser = payload.copperUsers.filter(
         (user) => user.id === selectedOpportunity.assignee_id
     );
-
-    console.log("Selected copper user", copperUser);
-
-    //5. Get the Consultant Monday user by email
-    const mondayConsultantUser = await getMondayUserByEmail(
-        copperUser[0].email
-    );
-
-    console.log("Consultant Monday user", mondayConsultantUser);
 
     //6. Find the consultants slack user
     const consultantSlackUser = slackMembers.find(
@@ -573,59 +560,28 @@ const handleOpsRequestResponse = async (payload) => {
 
     console.log("Consultant Slack user", consultantSlackUser);
 
-    //7. Create a new Ops Request message template
+    console.log("Selected copper user", copperUser);
+
+    //4. Create a new Ops Request message template
     const newOpsRequestMessageTemplate = _.cloneDeep(
         templates.newOpsRequestMessage
     );
 
-    //8. Check if there are any null fields in the selectedOpportunity object
-    const nullFields = Object.keys(customFields).filter(
-        (key) =>
-            customFields[key] === null ||
-            customFields[key] === undefined ||
-            customFields[key] === ""
-    );
-
-    // If there are, add a warning block with the null fields
-    if (nullFields.length > 0) {
-        const warningMessage = `*Missing Fields:*\n - ${nullFields
-            .map((el) => camelCaseToCapitalCase(el))
-            .join("\n - ")}`;
-
-        //Add a text block to the message
-        newOpsRequestMessageTemplate.blocks[1].fields.push({
-            type: "mrkdwn",
-            text: warningMessage,
-        });
-    }
-
     //Initial top text
-    newOpsRequestMessageTemplate.blocks[0].text.text = `*@${consultantSlackUser.name}*'s proposal was moved to "${payload.stageName}":`;
-    //Name of the opportunity
-    newOpsRequestMessageTemplate.blocks[1].fields[0].text +=
-        selectedOpportunity.name;
-    //Project code
-    newOpsRequestMessageTemplate.blocks[1].fields[1].text +=
-        customFields.projectCode ||
-        payload.opportunityProjectCodeUpdated ||
-        "No ID";
+    newOpsRequestMessageTemplate.blocks[0].text.text = `:tada: @${consultantSlackUser.name} has moved *${selectedOpportunity.name}* to *${payload.stageName}*:tada:`;
+    newOpsRequestMessageTemplate.blocks[1].text.text = `Please upload a complete cost sheet PDF to the opportunity and confirm via the button below. `;
 
     //Create a monday task button
     newOpsRequestMessageTemplate.blocks[2].elements[0].value = JSON.stringify({
         consultantSlackUser,
         oppId: selectedOpportunity.id,
-        opportunityProjectCodeUpdated: payload.opportunityProjectCodeUpdated,
-        mondayConsultantUser,
     });
-
-    newOpsRequestMessageTemplate.blocks[2].elements[1].url =
-        process.env.COPPER_OPPORTUNITY_URL + selectedOpportunity.id;
 
     try {
         // Send message to users
         const message = await slack.chat.postMessage({
             channel: process.env.OPS_SLACK_CHANNEL,
-            text: `A proposal was moved to "${payload.stageName}": ${selectedOpportunity.name} `,
+            text: `:tada: @${consultantSlackUser.name} has moved *${selectedOpportunity.name}* to *${payload.stageName}* :tada:`,
 
             ...newOpsRequestMessageTemplate,
         });
@@ -634,40 +590,6 @@ const handleOpsRequestResponse = async (payload) => {
             "Message sent to Ops Slack channel",
             message.message.blocks[0]
         );
-
-        await slack.chat.postMessage({
-            channel: process.env.OPS_SLACK_CHANNEL,
-            thread_ts: message.ts,
-            blocks: [
-                {
-                    type: "section",
-                    text: {
-                        type: "mrkdwn",
-                        text: `*<@${consultantSlackUser.id}>* please state here if there are any actions required for this task.`,
-                    },
-                },
-                {
-                    type: "actions",
-                    elements: [
-                        {
-                            type: "button",
-                            text: {
-                                type: "plain_text",
-                                text: "No Action Required",
-                                emoji: true,
-                            },
-
-                            value: JSON.stringify({
-                                parentMessageTs: message.ts,
-                                parentChannelId: message.channel,
-                            }),
-                            action_id: "noActionRequired",
-                            style: "danger",
-                        },
-                    ],
-                },
-            ],
-        });
     } catch (error) {
         console.log(error);
     }
@@ -1109,88 +1031,28 @@ const handleDenySpendRequestModal = async (payload) => {
  * Create a task on Monday for user (DevOps)
  */
 
-const createTask = async (payload) => {
-    console.log("Going through createTask", payload);
+const markAsDone = async (payload) => {
+    console.log("Going through markAsDone", payload);
 
     //1. Parse the payload actions
     const parsedPayload = JSON.parse(payload.actions[0].value);
     console.log("Parsed payload", parsedPayload);
 
-    //2. Get slack user that claimed
-    const slackCreateTaskUser = await getUserById(payload.user.id);
-
-    //3. Get the Monday user which the task is assigned to
-    const mondayAssignedUser = await getMondayUserByEmail(
-        slackCreateTaskUser.profile.email
-    );
-
-    //4. Get Opportunity object from copper
-    const selectedOpportunity = await getOpportunity(parsedPayload.oppId);
-    console.log("Opportunity object", selectedOpportunity);
-
-    //5. Map the custom fields from the opportunity object
-    const customFields = mapCustomFields(selectedOpportunity.custom_fields);
-    console.log("Custom fields object", customFields);
-
-    //9. Create a new task object for Monday.com
-    const newTask = {
-        name: selectedOpportunity.name,
-        Consultant: parsedPayload.mondayConsultantUser.id,
-        "Project Code":
-            customFields.projectCode ||
-            parsedPayload.opportunityProjectCodeUpdated ||
-            "No ID",
-        "Likely Invoice Date": new Date(
-            parseInt(customFields.likelyInvoiceDate) * 1000
-        )
-            .toISOString()
-            .split("T")[0],
-        "Submitted Date": new Date(parseInt(customFields.submittedOn) * 1000)
-            .toISOString()
-            .split("T")[0],
-        "Consulting Fees": parseInt(customFields.consultingFees),
-        "Studio Fees": parseInt(customFields.studioFees),
-        "Project Fees": parseInt(customFields.projectFees),
-        "Invoicing Email": `${customFields.invoicingEmail} Link`,
-        "Invoice Detail": customFields.invoiceDetail,
-        "Total Days": customFields.totalDays,
-    };
-
-    //10. Create a new task on Monday.com
-    const addTaskRequest = await addTaskToOpsBoard(newTask);
-
-    //11. Update the assigned user on the task
-    await updateAssignedUser(
-        mondayAssignedUser.id,
-        addTaskRequest.data.create_item.id,
-        process.env.OPS_MONDAY_BOARD
-    );
-
-    //12. Find the actions block location
+    //3. Find the actions block location
     const actionsBlockIndex = payload.message.blocks.findIndex(
         (block) => block.type === "actions"
     );
 
-    //13. Remove the claim button and no action required button
-    payload.message.blocks[actionsBlockIndex].elements.splice(0, 1);
-    payload.message.blocks[actionsBlockIndex].elements.splice(1, 1);
+    //4. Remove the Mark as Done button from the actions block
+    payload.message.blocks.splice(actionsBlockIndex, 1);
 
-    //14. Add a button block to view on Monday.com after the task is created
-    payload.message.blocks[actionsBlockIndex].elements.push({
-        type: "button",
-        text: {
-            type: "plain_text",
-            text: "📋 View on Monday",
-        },
-        url: `https://iwcrew.monday.com/boards/${process.env.MARKETING_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`,
-        action_id: "view_monday",
-    });
+    //5. Add a button block to view on Monday.com after the task is created
 
     payload.message.blocks.splice(actionsBlockIndex, 0, {
         type: "section",
         text: {
             type: "mrkdwn",
-            text: `*<@${payload.user.id}>* created a task on Monday`,
+            text: `*<@${payload.user.id}>* has uploaded the cost sheet to the opportunity.`,
         },
     });
 
@@ -1453,7 +1315,7 @@ module.exports = {
     addWorkflowInterfaceToSlackByUser,
     putAppIntoMaintenanceMode,
     claimTask,
-    createTask,
+    markAsDone,
     noActionRequired,
     handleRequestResponse,
     denySpendRequest,

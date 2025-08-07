@@ -11,10 +11,10 @@ describe("#handleCopperUpdatesToProposalSubmittedWebHook", function () {
         // Increase timeout to 10 seconds
         this.timeout(10000);
         payload = {
-            subscription_id: 460389,
+            subscription_id: 35087745,
             event: "update",
             type: "opportunity",
-            ids: [34678548],
+            ids: [35087745],
             updated_attributes: {
                 stage_id: [351547, 351548],
                 win_probability: [10, 50],

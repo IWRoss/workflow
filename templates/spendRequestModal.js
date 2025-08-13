@@ -160,5 +160,71 @@ module.exports = {
                 emoji: true,
             },
         },
+
+        {
+            type: "divider",
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "*Fill only if relevant*",
+            },
+        },
+        {
+            type: "divider",
+        },
+
+        {
+            type: "input",
+            element: {
+                type: "plain_text_input",
+                initial_value: "0",
+                action_id: "number_of_attendees",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Input the number of attendees",
+                },
+            },
+            label: {
+                type: "plain_text",
+                text: "Number of Attendees",
+                emoji: true,
+            },
+        },
+        {
+            type: "input",
+            element: {
+                type: "plain_text_input",
+                initial_value: "0",
+                action_id: "number_of_clients",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Input the number of clients",
+                },
+            },
+            label: {
+                type: "plain_text",
+                text: "Number of Clients",
+                emoji: true,
+            },
+        },
+        {
+            type: "input",
+            element: {
+                type: "plain_text_input",
+                initial_value: "0",
+                action_id: "number_of_internal_staff",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Input the number of internal staff",
+                },
+            },
+            label: {
+                type: "plain_text",
+                text: "Number of Internal Staff",
+                emoji: true,
+            },
+        },
     ],
 };

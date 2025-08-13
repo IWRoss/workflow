@@ -43,7 +43,11 @@ const webdevOptions = {
 
 //Spend Request Options
 const spendRequestType = {
-    Spend: ["Overhead", "Not chargeable to the client"],
+    Spend: [
+        "Overhead",
+        "Client and Job related expenses not rechargeable",
+        "Client Sales Meeting",
+    ],
 };
 
 //Spend Request Department Options

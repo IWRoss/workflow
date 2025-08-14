@@ -84,6 +84,9 @@ const addSpendRequestToGoogleSheets = async (
         approvedByName,
         requestData.textfieldValue || "",
         new Date().toISOString().split("T")[0], // YYYY-MM-DD format
+        requestData.numberOfAttendees || "",
+        requestData.numberOfClients || "",
+        requestData.numberOfInternalStaff || "",
     ];
 
     try {

@@ -168,7 +168,7 @@ module.exports = {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: "*Fill only if relevant*",
+                text: "*Fill in for client entertainment or sales meeting*",
             },
         },
         {

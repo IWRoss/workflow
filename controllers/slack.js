@@ -254,6 +254,10 @@ const handleSpendRequest = async (payload, locations) => {
         client: findField(fields, "clientSelect").selected_option.value,
         projectCode: findField(fields, "projectCode").value,
         notes: findField(fields, "notes").value,
+        numberOfAttendees: findField(fields, "number_of_attendees").value,
+        numberOfClients: findField(fields, "number_of_clients").value,
+        numberOfInternalStaff: findField(fields, "number_of_internal_staff")
+            .value,
     };
 
     //Custom message template to display on slack
@@ -275,6 +279,52 @@ const handleSpendRequest = async (payload, locations) => {
     // Notes
     newSpendRequestMessageTemplate.blocks[3].text.text = `*Notes:*\n${fieldsPayload.notes}`;
 
+    console.log("numberOfAttendees", fieldsPayload.numberOfAttendees);
+    console.log("numberOfClients", fieldsPayload.numberOfClients);
+    console.log("numberOfInternalStaff", fieldsPayload.numberOfInternalStaff);
+
+    //Object for additional blocks
+    const additionalBlocks = [];
+
+    if (
+        fieldsPayload.numberOfAttendees !== "0" &&
+        fieldsPayload.numberOfAttendees !== 0
+    ) {
+        additionalBlocks.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `*Number of Attendees:*\n${fieldsPayload.numberOfAttendees}`,
+            },
+        });
+    }
+
+    if (
+        fieldsPayload.numberOfClients !== "0" &&
+        fieldsPayload.numberOfClients !== 0
+    ) {
+        additionalBlocks.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `*Number of Clients:*\n${fieldsPayload.numberOfClients}`,
+            },
+        });
+    }
+
+    if (
+        fieldsPayload.numberOfInternalStaff !== "0" &&
+        fieldsPayload.numberOfInternalStaff !== 0
+    ) {
+        additionalBlocks.push({
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: `*Number of Internal Staff:*\n${fieldsPayload.numberOfInternalStaff}`,
+            },
+        });
+    }
+
     console.log("RequestBy", payload.user.name);
     console.log("requestedBy", payload.user.name);
 
@@ -295,6 +345,9 @@ const handleSpendRequest = async (payload, locations) => {
             projectCode: fieldsPayload.projectCode,
             notes: fieldsPayload.notes,
             submittedAt: new Date().toISOString(),
+            numberOfAttendees: fieldsPayload.numberOfAttendees,
+            numberOfClients: fieldsPayload.numberOfClients,
+            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
         }
     );
 
@@ -311,8 +364,29 @@ const handleSpendRequest = async (payload, locations) => {
             projectCode: fieldsPayload.projectCode,
             notes: fieldsPayload.notes,
             submittedAt: new Date().toISOString(),
+            numberOfAttendees: fieldsPayload.numberOfAttendees,
+            numberOfClients: fieldsPayload.numberOfClients,
+            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
         }
     );
+
+    if (additionalBlocks.length > 0) {
+        console.log("Adding additional blocks");
+
+        const combinedBlock = {
+            type: "section",
+            fields: [],
+        };
+
+        additionalBlocks.forEach((block) => {
+            combinedBlock.fields.push({
+                type: "mrkdwn",
+                text: block.text.text,
+            });
+        });
+
+        newSpendRequestMessageTemplate.blocks.splice(4, 0, combinedBlock);
+    }
 
     //Separate monday board id and slack channel from locations
     const { boardId, slackChannel } = locations[0];

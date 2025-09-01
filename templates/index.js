@@ -14,6 +14,7 @@ const marketingRequestModal = require("./marketingRequestModal");
 const spendRequestModal = require("./spendRequestModal");
 const newSpendRequestMessage = require("./newSpendRequestMessage");
 const denySpendRequestModal = require("./denySpendRequestModal");
+const approveSpendRequestModal = require("./approveSpendRequestModal");
 
 module.exports = {
     buildAppHomeScreen,
@@ -29,4 +30,5 @@ module.exports = {
     spendRequestModal,
     newSpendRequestMessage,
     denySpendRequestModal,
+    approveSpendRequestModal,
 };

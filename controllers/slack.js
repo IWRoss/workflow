@@ -957,68 +957,170 @@ const mapCustomFields = (customFieldsObject) => {
  */
 
 const approveSpendRequest = async (payload) => {
-    const { addSpendRequestToGoogleSheets } = require("../helpers/helpers.js");
-
     console.log("Payload inside approveSpendRequest", payload);
 
-    //Parse the request data from the payload
-    const parseButtonData = JSON.parse(payload.actions[0].value);
-    console.log("Parsed request data:", parseButtonData);
-
-    //Get the slack details of the user that approved the request
-    const user = await getUserById(payload.user.id);
-
-    console.log("User that approved the request", user);
-    console.log("Blocks before update", payload.message.blocks[5]);
-
-    //Remove the action buttons from the blocks array
-    //Add a new section block with the user that approved the request
     try {
-        const updatedBlocks = payload.message.blocks.slice(0, 5);
+        //Parse the request data from the payload
+        const parseButtonData = JSON.parse(payload.actions[0].value);
+        console.log("Parsed request data:", parseButtonData);
 
-        updatedBlocks.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: `*<@${user.id}>* approved this spend request.`,
-            },
+        //Get the slack details of the user that approved the request
+        const user = await getUserById(payload.user.id);
+
+        //Check if the user id who approved the request is in the list of approvers
+        const isApprover = process.env.SPEND_REQUEST_APPROVERS.split(
+            ","
+        ).includes(user.id);
+        if (!isApprover) {
+            console.log("User is not an approver");
+            return {
+                status: "error",
+                message: "User is not authorized to approve this request.",
+            };
+        }
+
+        console.log("User that approved the request", user);
+        console.log("Blocks before update", payload.message.blocks[5]);
+
+        //Get a modal template to justify the decline
+        const approveModal = _.cloneDeep(templates.approveSpendRequestModal);
+
+        //Send the original payload to the modal
+        const modalPayload = {
+            originalRequestData: parseButtonData,
+            channelId: payload.channel.id,
+            messageTs: payload.message.ts,
+            acceptedIdBy: user.id,
+            acceptedNameBy: user.profile.real_name,
+        };
+
+        //Set the metadata for the modal
+        approveModal.private_metadata = JSON.stringify(modalPayload);
+
+        // Show the modal
+        await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: approveModal,
         });
 
-        //Add the approved spend request to Google Sheets
-        console.log("Adding approved spend request to Google Sheets");
+        console.log("Approval modal opened successfully");
+
+        return {
+            status: "success",
+            message: "Approval modal opened.",
+        };
+    } catch (error) {
+        console.error("Error opening approval modal:", error);
+        return {
+            status: "error",
+            message: "Failed to open approval modal.",
+        };
+    }
+};
+
+//Function to handle when the user clicks accept for spend request and opens a modal
+const handleAcceptSpendRequestModal = async (payload) => {
+    const { addSpendRequestToGoogleSheets } = require("../helpers/helpers.js");
+
+    console.log("Processing accept modal submission", payload);
+
+    try {
+        //Get the text field value from the modal submission
+        const stateValues = payload.view.state.values;
+
+        console.log("State values:", stateValues);
+
+        //Get the block id that has the text field and get its value
+        const blockId = Object.keys(stateValues)[0];
+        const textfieldValue = stateValues[blockId].acceptanceReasonInput.value;
+
+        // Get original request data from private_metadata by parsing
+        const modalMetadata = JSON.parse(payload.view.private_metadata);
+
+        console.log("Modal metadata:", modalMetadata);
+
+        //Break down the metadata
+        const {
+            originalRequestData,
+            channelId,
+            messageTs,
+            acceptedIdBy,
+            acceptedNameBy,
+        } = modalMetadata;
+
+        console.log("Accept reason:", textfieldValue);
+        console.log("Accepting request for:", originalRequestData);
+
+        // Get the original message to preserve request details
+        const messageHistory = await slack.conversations.history({
+            channel: channelId,
+            latest: messageTs,
+            limit: 1,
+            inclusive: true,
+        });
+
+        //Retrive the orignal block from the message history
+        const originalBlocks = messageHistory.messages[0].blocks;
+
+        //Remove the action buttons from the original blocks
+        //Add a new section block with the user that declined the request
+        const updatedBlocks = [
+            ...originalBlocks.slice(0, 5),
+            {
+                type: "section",
+                text: {
+                    type: "mrkdwn",
+                    text: `*<@${acceptedIdBy}>* Accepted this spend request.\n*Reason:* ${textfieldValue}`,
+                },
+            },
+        ];
+
+        // Update the original message - this removes the approve/deny buttons and adds decline buttons
+        await slack.chat.update({
+            channel: channelId,
+            ts: messageTs,
+            blocks: updatedBlocks,
+        });
+
+        //Add the textField from the modal to the original payload
+        const payloadWithReason = {
+            ...originalRequestData,
+            textfieldValue,
+        };
+        console.log("Payload with reason:", payloadWithReason);
+
+        // Add to Google Sheets
+        console.log("Adding accepted spend request to Google Sheets");
         const addToGoogleSheets = await addSpendRequestToGoogleSheets(
-            parseButtonData,
-            user.id,
-            user.profile.real_name
+            payloadWithReason,
+            acceptedIdBy,
+            acceptedNameBy
         );
 
-        //If the request was successfully added to Google Sheets, update the message
         if (addToGoogleSheets && addToGoogleSheets.success) {
             console.log(
                 "Successfully added to Google Sheets:",
                 addToGoogleSheets
             );
-
-            // Update the message
-            await slack.chat.update({
-                channel: payload.channel.id,
-                ts: payload.message.ts,
-                blocks: updatedBlocks,
-            });
         } else {
             console.error("Failed to add to Google Sheets:", addToGoogleSheets);
             return {
                 status: "error",
-                message: "Failed to add approved request to Google Sheets.",
+                message: "Failed to add declined request to Google Sheets.",
             };
         }
 
         return {
             status: "success",
-            message: "Spend request approved successfully.",
+            message: "Spend request was declined.",
         };
     } catch (error) {
-        console.error("Error updating message:", error);
+        console.error("Error processing denial:", error);
+        return {
+            status: "error",
+            message: "Failed to process denial.",
+            error: error.message,
+        };
     }
 };
 
@@ -1037,6 +1139,18 @@ const denySpendRequest = async (payload) => {
         const user = await getUserById(payload.user.id);
 
         console.log("User that denied the request", user);
+
+        //Check if the user id who approved the request is in the list of approvers
+        const isApprover = process.env.SPEND_REQUEST_APPROVERS.split(
+            ","
+        ).includes(user.id);
+        if (!isApprover) {
+            console.log("User is not an approver");
+            return {
+                status: "error",
+                message: "User is not authorized to approve this request.",
+            };
+        }
 
         //Get a modal template to justify the decline
         const denyModal = _.cloneDeep(templates.denySpendRequestModal);
@@ -1534,4 +1648,5 @@ module.exports = {
     approveSpendRequest,
     handleSpendRequest,
     handleDenySpendRequestModal,
+    handleAcceptSpendRequestModal,
 };

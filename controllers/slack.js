@@ -29,6 +29,7 @@ const {
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
 const clients = require("../data/clients.js");
+const { generateTitleFromRequest } = require("./openai.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -439,10 +440,13 @@ const handleRequestResponse = async (payload, locations) => {
     //     projectCode: findField(fields, "projectCode").value,
     // };
 
+    const projectTitle = await generateTitleFromRequest(
+        findField(fields, "clientSelect").selected_option.value,
+        findField(fields, "notes").value
+    );
+
     const newTask = {
-        name: `${new Date().toISOString().split("T")[0]} – Request for ${
-            findField(fields, "clientSelect").selected_option.value
-        }`,
+        name: projectTitle,
 
         Producer: mondayUser.id ?? "",
         "Project Code": findField(fields, "projectCode").value,

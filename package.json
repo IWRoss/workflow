@@ -25,7 +25,8 @@
     "monday-sdk-js": "^0.1.4",
     "morgan": "~1.9.1",
     "node-cron": "^3.0.2",
-    "nodemon": "^2.0.2"
+    "nodemon": "^2.0.2",
+    "openai": "^5.19.1"
   },
   "devDependencies": {
     "mocha": "^11.1.0"

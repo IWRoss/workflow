@@ -1,0 +1,37 @@
+const OpenAI = require("openai");
+
+//Create a connection to OpenAI
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
+
+const generateTitleFromRequest = async (client, description) => {
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                {
+                    role: "system",
+                    content:
+                        "You are a helpful assistant that generates concise and relevant titles for project descriptions.",
+                },
+                {
+                    role: "user",
+                    content: `Generate a concise (8 words or less) and relevant title for the following project description, emphasising the deliverable:\n\n${description}\n\nPlease feature the client: ${client}\n\nTitle:`,
+                },
+            ],
+            max_tokens: 20,
+            temperature: 0.7,
+        });
+
+        const title = response.choices[0].message.content.trim();
+        return title;
+    } catch (error) {
+        console.error("Error generating title:", error);
+        throw error;
+    }
+};
+
+module.exports = {
+    generateTitleFromRequest,
+};

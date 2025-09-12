@@ -474,7 +474,7 @@ const handleRequestResponse = async (payload, locations) => {
             templates.newRequestMessage
         );
 
-        newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
+        newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request: ${projectTitle}`;
         newRequestMessageTemplate.blocks[1].fields[0].text += newTask.Client;
         newRequestMessageTemplate.blocks[1].fields[1].text += newTask.Media;
         newRequestMessageTemplate.blocks[2].fields[0].text +=

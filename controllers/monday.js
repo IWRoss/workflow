@@ -232,6 +232,10 @@ const addTaskToMarketingBoard = async (newTask) => {
     );
 };
 
+const addProjectToProjectBoard = async (newTask) => {
+    return addTaskToBoardWithColumns(newTask, process.env.PROJECT_MONDAY_BOARD);
+};
+
 /**
  * Update assigned user on task
  */
@@ -339,6 +343,7 @@ module.exports = {
     addTaskToBoard,
     addTaskToOpsBoard,
     addTaskToMarketingBoard,
+    addProjectToProjectBoard,
     getMondayUserByEmail,
     updateAssignedUser,
     assignCompanyCode,

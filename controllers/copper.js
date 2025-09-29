@@ -657,6 +657,8 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
             payload.updated_attributes.status[1] === "Won",
         // Action function to perform when the filter passes
         async (opportunity, payload) => {
+            const { addProjectToProjectBoard } = require("./monday");
+
             try {
                 console.log("Opportunity passed filter, performing action");
 
@@ -692,10 +694,17 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 
                 // We then want to create a ticket in Monday.com
                 // For now, let's console log the details
-                console.log(
-                    "Creating ticket in Monday.com with details:",
-                    config
-                );
+                // console.log(
+                //     "Creating ticket in Monday.com with details:",
+                //     config
+                // );
+
+                return await addProjectToProjectBoard({
+                    name: `${config.projectCode} - ${config.opportunity.name}`,
+                    "Project Code": config.projectCode,
+                    "Project Owner": null,
+                    Client: company.name,
+                });
             } catch (error) {
                 console.error("Error creating project:", error);
             }

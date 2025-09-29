@@ -28,6 +28,12 @@ const generateTitleFromRequest = async (client, description) => {
         });
 
         const title = response.choices[0].message.content.trim();
+
+        // Remove speech marks if they are present
+        if (title.startsWith('"') && title.endsWith('"')) {
+            return title.slice(1, -1);
+        }
+
         return title;
     } catch (error) {
         console.error("Error generating title:", error);

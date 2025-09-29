@@ -5,6 +5,8 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+const { promptFormattedGlossary } = require("../data/glossary");
+
 const generateTitleFromRequest = async (client, description) => {
     try {
         const response = await openai.chat.completions.create({
@@ -13,7 +15,8 @@ const generateTitleFromRequest = async (client, description) => {
                 {
                     role: "system",
                     content:
-                        "You are a helpful assistant that generates concise and relevant titles for project descriptions.",
+                        "You are a helpful assistant that generates concise and relevant titles for project descriptions for a company called Cegos. Use the following business-specific vocabulary:\n\n" +
+                        promptFormattedGlossary,
                 },
                 {
                     role: "user",

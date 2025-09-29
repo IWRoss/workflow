@@ -12,17 +12,27 @@ const descriptions = [
     {
         client: "Cegos",
         description:
-            "Lovely design team! content in progress but flagging early here. We are running a live scoping day next thursday, and will need: - Some ppt decks - mostly existing Cegos templates, some tweaking and polishing - Posters; 1 or 2 A1 posters, to be printed by Wednesday for use in person. Simple scoping templates, but want them to be lovely! If someone can take this on then will brief on Monday. Thankyouplease!",
+            "hey guys! please can you upload this case study onto the website - thank you!",
     },
     {
-        client: "Made In Add",
+        client: "Cegos",
         description:
-            "Hey Studio, Would love to hold time for a 15-20 slide workshop deck for Made In Add. I'll have it ready by EOP Wednesday - Would like to share it with the client on Monday 15th EOP. Can give a proper briefing f2f or virtully.",
+            "heya guys, \nThe brunch speakeasy copy is ready, could you please upload it to the website on the Oct speakeasy page.\nThanks so much!!",
     },
     {
-        client: "Brunch",
+        client: "Red Bull",
         description:
-            "heya guys, The brunch speakeasy copy is ready, could you please upload it to the website on the Oct speakeasy page. Thanks so much!!",
+            "Dear wonderful & amazing dev team!!\n\nThis is the dev request for the Red Bull web browser app that we discussed on Tuesday August 26th. We are SO excited to work with you on this project! I will use this document as a main repository for the development request. Please reach out with any questions!!\n\nThe workshop will run on Wednesday, September 24th, and we would like to be able to test the app on the ground, in Portland OR on Monday, September 22nd to make sure we can address any problems. \n\nPlease see below for all notes. I will be adding in the challenges and will keep you updated as I go.\n\nTHANK YOU for taking this on with such gusto and excitement!!",
+    },
+    {
+        client: "M&S",
+        description:
+            "Hi both, please would either of you be able to hold a little bit of time to make some tweaks to the M&S Core Skills Dashboard?\n\nUpdates:\nPlease could we pull the data from the final question on the Typeform onto the dashboard: What other topics would you like to see?\n\nWould we also be able to add back in the workshops I deleted? (Sorry about this one)\n\nEvolving Through Change Workshop\nDriving Impactful Change Workshop\nCrafting Clear Goals Workshop\nPrioritising for Productivity Workshop\nInfluencing Stakeholders with Stories Workshop\nPreparing for Feedback Conversations Workshop\nBecoming Commercially Clever Workshop\n\n(I've not specified if their are immersive or knowledge boost because, if we run them, they will likely all follow the same 90 min format now)\n\nTHANK YOU!",
+    },
+    {
+        title: "Cegos",
+        description:
+            "Hi Ross and Anite,\n\nStudio is working on creating content for a portfolio page on the website, using the same template as the case studies page. Would you be able to hold time on week c 25th August create x1 landing page and x3 pages for 3 projects (I'll send over the content when it's ready!). This request is to get the groundworks laid for this project (the end goal is to have x6 projects on the page by end of September) - it would be great to speak more about the details in person.\n\nThank you so much <3",
     },
 ];
 

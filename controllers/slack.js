@@ -216,6 +216,20 @@ const openMultipleTeamsRequestForm = async (payload) =>
 const openSpendRequestForm = async (payload) =>
     openSpendRequestFormWithTemplate(payload, "handleSpendRequestResponse");
 
+const openCustomerComplaintForm = async (payload) =>
+    openFormWithCustomTemplate(
+        payload,
+        "handleCustomerComplaintResponse",
+        templates.customerComplaintModal
+    );
+
+const openOpportunityToImproveForm = async (payload) =>
+    openFormWithCustomTemplate(
+        payload,
+        "handleOpportunityToImproveResponse",
+        templates.opportunityToImproveModal
+    );
+
 const openInvoiceRequestForm = async (payload) => {
     const invoiceRequestModal = _.cloneDeep(templates.invoiceRequestModal);
 
@@ -235,6 +249,91 @@ const openInvoiceRequestForm = async (payload) => {
  */
 const findField = (fields, field) => {
     return fields.find((f) => f.hasOwnProperty(field))[field];
+};
+
+/**
+ * Handle Customer Complaint Response (No Monday Board Integration)
+ */
+
+const handleCustomerComplaint = async (payload, locations) => {
+    console.log("handleCustomerComplaint");
+    console.log("Payload inside handleCustomerComplaint", payload);
+    console.log("Locations inside handleCustomerComplaint", locations);
+
+    //Get the fields from the slack payload and its values
+    const fields = Object.values(payload.view.state.values);
+
+    const fieldsPayload = {
+        ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
+        ISOCustomerComplaintText: findField(fields, "complaintText").value,
+        ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
+            .selected_option.value,
+    };
+    console.log("fieldsPayload", fieldsPayload);
+
+    // Return a success message
+    return {
+        status: "success",
+        message: "Customer Request submitted successfully.",
+    };
+};
+
+/**
+ * Handle Opportunity to Improve Response (No Monday Board Integration)
+ */
+
+const handleOpportunityToImprove = async (payload, locations) => {
+    console.log("handleOpportunityToImprove");
+    console.log("Payload inside handleOpportunityToImprove", payload);
+    console.log("Locations inside handleOpportunityToImprove", locations);
+
+    //Get the fields from the slack payload and its values
+    const fields = Object.values(payload.view.state.values);
+
+    const fieldsPayload = {
+        ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
+        ISOCustomerComplaintText: findField(fields, "complaintText").value,
+        ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
+            .selected_option.value,
+        ISOCustomerComplaintRaisedDate: new Date(),
+    };
+    console.log("fieldsPayload", fieldsPayload);
+
+    //Custom message template to display on slack
+    let newCustomerComplaintMessageTemplate = _.cloneDeep(
+        templates.newCustomerComplaintMessage
+    );
+
+    // Populate the template
+    newCustomerComplaintMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Customer Complaint:`;
+
+    // Area and Priority (side by side)
+    newCustomerComplaintMessageTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;
+    newCustomerComplaintMessageTemplate.blocks[1].fields[1].text = `*Priority:*\n${fieldsPayload.ISOCustomerComplaintPriority}`;
+
+    // Complaint Details
+    newCustomerComplaintMessageTemplate.blocks[2].text.text = `*Complaint Details:*\n${fieldsPayload.ISOCustomerComplaintText}`;
+
+    // Raised Date
+    newCustomerComplaintMessageTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
+        fieldsPayload.ISOCustomerComplaintRaisedDate
+    ).toLocaleString()}`;
+
+    const { slackChannel } = locations[0];
+    try {
+        const message = await slack.chat.postMessage({
+            channel: slackChannel,
+            ...newCustomerComplaintMessageTemplate,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+
+    // Return a success message
+    return {
+        status: "success",
+        message: "Opportunity to Improve submitted successfully.",
+    };
 };
 
 /**
@@ -532,8 +631,18 @@ const handleCommTechRequestResponse = async (payload) =>
 const handleSpendRequestResponse = async (payload) =>
     handleSpendRequest(payload, [
         {
-            boardId: process.env.SPEND_MONDAY_BOARD, //This is undefined as there is no need for Monday board integration
+            boardId: process.env.SPEND_MONDAY_BOARD,
             slackChannel: process.env.SPEND_SLACK_CHANNEL,
+        },
+    ]);
+
+const handleCustomerComplaintResponse = async (payload) =>
+    handleCustomerComplaint(payload, [{}]);
+
+const handleOpportunityToImproveResponse = async (payload) =>
+    handleOpportunityToImprove(payload, [
+        {
+            slackChannel: process.env.CUSTOMER_COMPLAINT_SLACK_CHANNEL,
         },
     ]);
 
@@ -1603,11 +1712,34 @@ const openMarketingRequestForm = async (payload) => {
 
 //Function to open the spend request form with a custom template
 const openSpendRequestFormWithTemplate = async (payload, callbackName) => {
-    console.log("Payload inside openRequestForm", payload);
-    console.log("Callback name inside openRequestForm", callbackName);
+    console.log("Payload inside ", payload);
+    console.log("Callback name inside ", callbackName);
 
     // Get the modal template
     const requestModal = _.cloneDeep(templates.spendRequestModal);
+
+    requestModal.callback_id =
+        callbackName || "handleMultipleTeamsRequestResponse";
+
+    try {
+        // Send spend request form to Slack
+        const result = await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: requestModal,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+//Function to open form with custom template
+const openFormWithCustomTemplate = async (payload, callbackName, template) => {
+    // console.log("Payload inside openFormWithCustomTemplate", payload);
+    // console.log("Callback name inside openFormWithCustomTemplate", callbackName);
+    // console.log("template:", template)
+
+    // Get the modal template
+    const requestModal = _.cloneDeep(template);
 
     requestModal.callback_id =
         callbackName || "handleMultipleTeamsRequestResponse";
@@ -1630,6 +1762,8 @@ module.exports = {
     openStudioRequestForm,
     openCommTechRequestForm,
     openSpendRequestForm,
+    openCustomerComplaintForm,
+    openOpportunityToImproveForm,
     openOpsRequestForm,
     openMultipleTeamsRequestForm,
     openInvoiceRequestForm,
@@ -1637,6 +1771,8 @@ module.exports = {
     handleStudioRequestResponse,
     handleCommTechRequestResponse,
     handleSpendRequestResponse,
+    handleCustomerComplaintResponse,
+    handleOpportunityToImproveResponse,
     handleMultipleTeamsRequestResponse,
     handleInvoiceRequestResponse,
     handleOpsRequestResponse,
@@ -1651,6 +1787,8 @@ module.exports = {
     denySpendRequest,
     approveSpendRequest,
     handleSpendRequest,
+    handleCustomerComplaint,
+    handleOpportunityToImprove,
     handleDenySpendRequestModal,
     handleAcceptSpendRequestModal,
 };

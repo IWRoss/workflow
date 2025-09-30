@@ -168,6 +168,54 @@ const blocks = {
                 value: "click_me_123",
                 action_id: "openSpendRequestForm",
             },
+        },{
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Non Conformance, Customer Complaint",
+                emoji: true,
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "If you need to enter a customer complaint, please submit using this form. All submissions are anonymous.",
+            },
+            accessory: {
+                type: "button",
+                text: {
+                    type: "plain_text",
+                    text: "Create ticket",
+                    emoji: true,
+                },
+                value: "click_me_123",
+                action_id: "openCustomerComplaintForm",
+            },
+        },{
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Opportunity to improve",
+                emoji: true,
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "If you need to enter an oppotunity to improve, please submit using this form. ",
+            },
+            accessory: {
+                type: "button",
+                text: {
+                    type: "plain_text",
+                    text: "Create ticket",
+                    emoji: true,
+                },
+                value: "click_me_123",
+                action_id: "openOpportunityToImproveForm",
+            },
         },
     ],
 };

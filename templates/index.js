@@ -15,6 +15,11 @@ const spendRequestModal = require("./spendRequestModal");
 const newSpendRequestMessage = require("./newSpendRequestMessage");
 const denySpendRequestModal = require("./denySpendRequestModal");
 const approveSpendRequestModal = require("./approveSpendRequestModal");
+const customerComplaintModal = require("./customerComplaintModal");
+const opportunityToImproveModal = require("./opportunityToImproveModal");
+const newCustomerComplaintMessage = require("./newCustomerComplaintMessage");
+const newOpportunityToImproveMessage = require("./newOpportunityToImprove");
+
 
 module.exports = {
     buildAppHomeScreen,
@@ -31,4 +36,8 @@ module.exports = {
     newSpendRequestMessage,
     denySpendRequestModal,
     approveSpendRequestModal,
+    customerComplaintModal,
+    opportunityToImproveModal,
+    newCustomerComplaintMessage,
+    newOpportunityToImproveMessage,
 };

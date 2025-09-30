@@ -464,6 +464,8 @@ const setupCopperWebhook = async () => {
 
     console.log("Subscribed to Copper webhook", response.id);
 
+    await getCopperUsers();
+
     return response;
 };
 
@@ -702,7 +704,9 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
                 return await addProjectToProjectBoard({
                     name: `${config.projectCode} - ${config.opportunity.name}`,
                     "Project Code": config.projectCode,
-                    "Project Owner": null,
+                    "Project Owner": await getCopperUserById(
+                        config.opportunity.assignee_id
+                    ),
                     Client: company.name,
                 });
             } catch (error) {
@@ -807,13 +811,30 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
 //     }
 // };
 
-//Get a list of all the copper users
+// Get a list of all the copper users
 const getCopperUsers = async () => {
-    const response = await axios.get(`${process.env.COPPER_API_URL}/users`, {
+    const copperUsers = getCache("copperUsers");
+
+    if (copperUsers) {
+        return copperUsers;
+    }
+
+    const response = await axios.get(`${process.env.COPPER_API_URL}users/`, {
         headers: copperHeaders,
+        page_number: 1,
+        page_size: 100,
     });
 
+    setCache("copperUsers", response.data, 1000 * 60 * 60 * 24); // Cache for 24 hours
+
     return response.data;
+};
+
+// Get Copper User
+const getCopperUserById = async (userId) => {
+    const copperUsers = await getCopperUsers();
+
+    return copperUsers.find((user) => user.id === userId);
 };
 
 module.exports = {
@@ -832,4 +853,5 @@ module.exports = {
     assignCompanyCode,
     getCopperUsers,
     getOpportunity,
+    getCopperUserById,
 };

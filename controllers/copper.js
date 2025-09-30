@@ -701,12 +701,14 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
                 //     config
                 // );
 
+                const opportunityOwner = await getCopperUserById(
+                    config.opportunity.assignee_id
+                );
+
                 return await addProjectToProjectBoard({
                     name: `${config.projectCode} - ${config.opportunity.name}`,
                     "Project Code": config.projectCode,
-                    "Project Owner": await getCopperUserById(
-                        config.opportunity.assignee_id
-                    ),
+                    "Project Owner": opportunityOwner.email,
                     Client: company.name,
                 });
             } catch (error) {

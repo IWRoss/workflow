@@ -6,7 +6,7 @@ beforeEach(() => {
 // describe("#handleCopperUpdatesToProposalSubmittedWebHook", function () {
 //     it("should create a ticket on slack when staged moved to submitted", async function () {
 //         const {
-//             handleCopperUpdateOpportunityWebhook,
+//             addOpportunityToProjectBoardOnWebhook,
 //         } = require("../controllers/copper");
 //         // Increase timeout to 10 seconds
 //         this.timeout(10000);
@@ -28,7 +28,7 @@ beforeEach(() => {
 //             timestamp: "2025-06-23T12:29:11.274Z",
 //         };
 //         try {
-//             const result = await handleCopperUpdateOpportunityWebhook(payload);
+//             const result = await addOpportunityToProjectBoardOnWebhook(payload);
 //             console.dir(result, { depth: null });
 //         } catch (error) {
 //             console.error("Error getting valid contact types:", error);

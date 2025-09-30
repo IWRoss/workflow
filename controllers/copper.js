@@ -105,7 +105,13 @@ const getOpportunity = async (opportunityId) => {
         }
     );
 
-    return response.data;
+    if (!response.data) {
+        throw new Error("Opportunity not found");
+    }
+
+    const formattedOpportunity = formatOpportunity(response.data);
+
+    return formattedOpportunity;
 };
 
 const getOpportunityByProjectCode = async (projectCode) => {
@@ -124,7 +130,7 @@ const getOpportunityByProjectCode = async (projectCode) => {
     return response.data;
 };
 
-const getOpportunities = async () => {
+const getOpportunities = async (filter = () => true) => {
     // Get the first day of the current year as an epoch timestamp
     // const firstDayOfYearTimestamp =
     //   new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
@@ -173,26 +179,9 @@ const getOpportunities = async () => {
         page++;
     }
 
-    const formattedOpportunities = allOpportunities.map((opportunity) => {
-        const customFields = opportunity.custom_fields.reduce((acc, field) => {
-            if (opportunityCustomFieldMap[field.custom_field_definition_id]) {
-                acc[
-                    opportunityCustomFieldMap[field.custom_field_definition_id]
-                ] = field.value;
-            }
-            return acc;
-        }, {});
-
-        return {
-            id: opportunity.id,
-            name: opportunity.name,
-            stageId: opportunity.pipeline_stage_id,
-            stageName: validPipelineStages.find(
-                (stage) => stage.id === opportunity.pipeline_stage_id
-            ).name,
-            ...customFields,
-        };
-    });
+    const formattedOpportunities = allOpportunities.map((opportunity) =>
+        formatOpportunity(opportunity)
+    );
 
     setCache(
         "copperOpportunities",
@@ -200,7 +189,37 @@ const getOpportunities = async () => {
         1000 * 60 * 3 // Cache for 3 minutes
     );
 
-    return formattedOpportunities;
+    // Filter the opportunities based on the provided filter function
+    const filteredOpportunities = formattedOpportunities.filter(filter);
+
+    return filteredOpportunities;
+};
+
+const getWonOpportunities = async () => {
+    return await getOpportunities(
+        (opp) => opp.status === "Won" && opp.stageName !== "Completed"
+    );
+};
+
+const formatOpportunity = (opportunity) => {
+    const customFields = opportunity.custom_fields.reduce((acc, field) => {
+        if (opportunityCustomFieldMap[field.custom_field_definition_id]) {
+            acc[opportunityCustomFieldMap[field.custom_field_definition_id]] =
+                field.value;
+        }
+        return acc;
+    }, {});
+
+    return {
+        id: opportunity.id,
+        name: opportunity.name,
+        status: opportunity.status,
+        stageId: opportunity.pipeline_stage_id,
+        stageName: opportunity.stageName,
+        companyId: opportunity.company_id,
+        ownerId: opportunity.assignee_id,
+        ...customFields,
+    };
 };
 
 /**
@@ -474,17 +493,11 @@ const getOrCreateProjectCode = async (opp, compCode, company) => {
     //1. Check if the opportunity has a project code
     console.log("Checking if opportunity has a project code");
 
-    const projectCode = opp.custom_fields.find(
-        (field) =>
-            field.custom_field_definition_id ==
-            selectCustomFieldIDByName("projectCode")
-    )?.value;
-
     //2. If it has a project code, return it
-    if (projectCode) {
-        console.log("Project code already exists:", projectCode);
+    if (opp.projectCode) {
+        console.log("Project code already exists:", opp.projectCode);
 
-        return [projectCode, null];
+        return [opp.projectCode, null];
     }
 
     //3. If it does not have a project code, create one
@@ -502,12 +515,16 @@ const getOrCreateProjectCode = async (opp, compCode, company) => {
 
 //Check if the opportunity has a company code, if not, create one
 const getOrCreateCompanyCode = async (comp) => {
+    console.dir(comp, { depth: null });
+
     // Get the company code from the company custom fields
     const companyCode = comp.custom_fields.find(
         (field) =>
             field.custom_field_definition_id ==
             selectCustomFieldIDByName("companyCode", companyCustomFieldMap)
     )?.value;
+
+    console.dir(companyCode, { depth: null });
 
     // If the company code exists, return it
     if (companyCode) {
@@ -575,7 +592,7 @@ const updateOpportunityCounter = async (opp, comp) => {
     try {
         const updateCompanyOpportunityCountResponse =
             await updateCompanyOpportunityCount(
-                opp.company_id,
+                opp.companyId,
                 opportunityIndex
             );
 
@@ -632,6 +649,7 @@ const handleCopperOpportunityWebhook = async (
 
         // Get the opportunity details
         const opportunity = await getOpportunity(payload.ids[0]);
+
         console.log("Opportunity details:", opportunity);
 
         // Apply the filter function
@@ -650,7 +668,7 @@ const handleCopperOpportunityWebhook = async (
     }
 };
 
-const handleCopperUpdateOpportunityWebhook = async (payload) => {
+const addOpportunityToProjectBoardOnWebhook = async (payload) => {
     return handleCopperOpportunityWebhook(
         payload,
         // Filter function to only process certain stage changes
@@ -659,159 +677,59 @@ const handleCopperUpdateOpportunityWebhook = async (payload) => {
             payload.updated_attributes.status[1] === "Won",
         // Action function to perform when the filter passes
         async (opportunity, payload) => {
-            const { addProjectToProjectBoard } = require("./monday");
-
-            try {
-                console.log("Opportunity passed filter, performing action");
-
-                //Object to store details
-                const config = {
-                    compCode: null,
-                    opportunityCounter: null,
-                    projectCode: null,
-                    opportunity: null,
-                };
-
-                // Create a project code and company code
-                if (opportunity.company_id === null) {
-                    throw new Error("Opportunity does not have a company ID");
-                }
-
-                const company = await getCompany(opportunity.company_id);
-                console.log("Got opportunity company:", company);
-
-                //Creates a project code for the opportunity if it does not exist
-                const compCode = await getOrCreateCompanyCode(company);
-                const [projectCode, oppIndex] = await getOrCreateProjectCode(
-                    opportunity,
-                    compCode,
-                    company
-                );
-
-                //Attach the project code to the config object
-                config.compCode = compCode;
-                config.opportunityCounter = oppIndex;
-                config.projectCode = projectCode;
-                config.opportunity = opportunity;
-
-                // We then want to create a ticket in Monday.com
-                // For now, let's console log the details
-                // console.log(
-                //     "Creating ticket in Monday.com with details:",
-                //     config
-                // );
-
-                const opportunityOwner = await getCopperUserById(
-                    config.opportunity.assignee_id
-                );
-
-                return await addProjectToProjectBoard({
-                    name: `${config.projectCode} - ${config.opportunity.name}`,
-                    "Project Code": config.projectCode,
-                    "Project Owner": opportunityOwner.email,
-                    Client: company.name,
-                });
-            } catch (error) {
-                console.error("Error creating project:", error);
-            }
+            return await addOpportunityToProjectBoard(opportunity);
         }
     );
 };
 
-// /**
-//  * Handle subscription to Copper update opportunity events
-//  */
-// const handleCopperUpdateOpportunityWebhook = async (payload) => {
-//     try {
-//         const { handleOpsRequestResponse } = require("./slack");
+const addOpportunityToProjectBoard = async (opportunity) => {
+    const { addProjectToProjectBoard } = require("./monday");
 
-//         console.log("Payload before checking stage:", payload);
+    try {
+        console.log("Adding opportunity to project board:", opportunity);
 
-//         //Object to store details
-//         const config = {
-//             compCode: null,
-//             opportunityCounter: null,
-//             projectCode: null,
-//             opportunity: null,
-//         };
+        if (opportunity.companyId === null) {
+            throw new Error("Opportunity does not have a company ID");
+        }
 
-//         //Any stage past proposal creation, create a project code and company code
-//         if (
-//             payload.updated_attributes.stage &&
-//             (payload.updated_attributes.stage[1] == "Won" ||
-//                 payload.updated_attributes.stage[1] == "Proposal Submitted" ||
-//                 payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
-//                 payload.updated_attributes.stage[1] == "Completed")
-//         ) {
-//             const opportunity = await getOpportunity(payload.ids[0]);
-//             console.log("Opportunity", opportunity);
+        const company = await getCompany(opportunity.companyId);
+        console.log("Got opportunity company:", company);
 
-//             /**
-//              * If opportunity has a company ID, check if it has a project code
-//              */
+        //Creates a project code for the opportunity if it does not exist
+        const compCode = await getOrCreateCompanyCode(company);
+        const [projectCode, oppIndex] = await getOrCreateProjectCode(
+            opportunity,
+            compCode,
+            company
+        );
 
-//             //Catch if the opportunity does not have a company ID
-//             let company;
+        const opportunityOwner = await getCopperUserById(opportunity.ownerId);
 
-//             try {
-//                 company = await getCompany(opportunity.company_id);
-//             } catch (error) {
-//                 console.error("Error getting opportunity company:", error);
-//                 throw new Error("Opportunity does not have a company ID");
-//             }
+        return await addProjectToProjectBoard({
+            name: `${projectCode} - ${opportunity.name}`,
+            "Project Code": projectCode,
+            "Project Owner": opportunityOwner.email,
+            Client: company.name,
+        });
+    } catch (error) {
+        console.error("Error adding opportunity to project board:", error);
+    }
+};
 
-//             //Creates a project code for the opportunity if it does not exist
-//             const compCode = await getOrCreateCompanyCode(company);
+const addWonOpportunitiesToProjectBoard = async () => {
+    const wonOpportunities = await getWonOpportunities();
 
-//             const [projectCode, oppIndex] = await getOrCreateProjectCode(
-//                 opportunity,
-//                 compCode,
-//                 company
-//             );
-
-//             //Attach the project code to the config object
-//             config.compCode = compCode;
-//             config.opportunityCounter = oppIndex;
-//             config.projectCode = projectCode;
-//             config.opportunity = opportunity;
-//         }
-
-//         //If the stage is Won / Agreed / Completed, then create a ticket in slack
-//         if (
-//             payload.updated_attributes.stage &&
-//             (payload.updated_attributes.stage[1] == "Won" ||
-//                 payload.updated_attributes.stage[1] == "Agreed (Backlog)" ||
-//                 payload.updated_attributes.stage[1] == "Completed")
-//         ) {
-//             console.log("Opportunity is Won, creating ticket in Slack");
-//             // Get copper users
-//             const copperUsers = await getCopperUsers();
-//             console.log("Got copper users:", copperUsers);
-
-//             // Create a payload for opsRequest
-//             const opsRequestPayload = {
-//                 opportunityObject: config.opportunity,
-//                 opportunityProjectCodeUpdated: config.projectCode,
-//                 copperUsers,
-//                 stageName: payload.updated_attributes.stage[1],
-//             };
-
-//             // Create OPS request
-//             console.log("About to call handleOpsRequestResponse");
-//             await handleOpsRequestResponse(opsRequestPayload);
-//             console.log("Successfully completed handleOpsRequestResponse");
-//         }
-
-//         return {
-//             compCode: config.compCode,
-//             opportunityCounter: config.opportunityCounter,
-//             projectCode: config.projectCode,
-//         };
-//     } catch (error) {
-//         console.error("Error in handleCopperUpdateOpportunityWebhook:", error);
-//         throw error;
-//     }
-// };
+    for (const opportunity of wonOpportunities) {
+        try {
+            await addOpportunityToProjectBoard(opportunity);
+        } catch (error) {
+            console.error(
+                "Error adding won opportunity to project board:",
+                error
+            );
+        }
+    }
+};
 
 // Get a list of all the copper users
 const getCopperUsers = async () => {
@@ -844,13 +762,16 @@ module.exports = {
     getValidPipelineStageIDs,
     getValidContactTypes,
     getOpportunities,
+    getWonOpportunities,
     getCompanies,
     getCustomFieldDefinitions,
     subscribeToCopperWebhook,
     unsubscribeFromCopperWebhook,
     listAllCopperWebhooks,
     setupCopperWebhook,
-    handleCopperUpdateOpportunityWebhook,
+    addOpportunityToProjectBoardOnWebhook,
+    addOpportunityToProjectBoard,
+    addWonOpportunitiesToProjectBoard,
     createCompanyCode,
     assignCompanyCode,
     getCopperUsers,

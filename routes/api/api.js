@@ -173,7 +173,7 @@ router.post("/slack/command", async (req, res) => {
 });
 
 const {
-    handleCopperUpdateOpportunityWebhook,
+    addOpportunityToProjectBoardOnWebhook,
 } = require("../../controllers/copper");
 
 const copperActions = {
@@ -181,7 +181,7 @@ const copperActions = {
         update: async (payload) => {
             console.dir(payload, { depth: null });
 
-            await handleCopperUpdateOpportunityWebhook(payload);
+            await addOpportunityToProjectBoardOnWebhook(payload);
         },
     },
 };

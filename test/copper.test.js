@@ -240,3 +240,90 @@ describe("#getCopperUserById", function () {
         }
     });
 });
+
+describe("#getWonOpportunities", function () {
+    it("should get won opportunities", async function () {
+        const { getWonOpportunities } = require("../controllers/copper");
+
+        // Increase timeout to 10 seconds
+        this.timeout(10000);
+
+        try {
+            const result = await getWonOpportunities();
+
+            console.log(
+                result.map((opp) => ({ id: opp.id, stage: opp.stageName }))
+            );
+
+            // console.dir(
+            //     result.find((opp) => opp.id === 35400989),
+            //     { depth: null }
+            // );
+
+            assert(result);
+        } catch (error) {
+            console.error("Error getting won opportunities:", error);
+        }
+    });
+});
+
+describe("#addOpportunityToProjectBoard", function () {
+    it("should add an opportunity to the project board", async function () {
+        const {
+            getWonOpportunities,
+            addOpportunityToProjectBoard,
+        } = require("../controllers/copper");
+
+        // Increase timeout to 10 seconds
+        this.timeout(10000);
+
+        try {
+            const opportunities = await getWonOpportunities();
+
+            console.log(
+                opportunities.map((opp) => ({
+                    id: opp.id,
+                    stage: opp.stageName,
+                    name: opp.name,
+                }))
+            );
+
+            // Select opp.id === 35400989
+            const opportunity = opportunities.find(
+                (opp) => opp.id === 35400989
+            );
+
+            const result = await addOpportunityToProjectBoard(opportunity);
+
+            console.dir(result, { depth: null });
+
+            assert(result);
+        } catch (error) {
+            console.error("Error adding opportunity to project board:", error);
+        }
+    });
+});
+
+describe("#addWonOpportunitiesToProjectBoard", function () {
+    it("should add won opportunities to the project board", async function () {
+        const {
+            addWonOpportunitiesToProjectBoard,
+        } = require("../controllers/copper");
+
+        // Increase timeout to 20 seconds
+        this.timeout(0);
+
+        try {
+            const result = await addWonOpportunitiesToProjectBoard();
+
+            console.dir(result, { depth: null });
+
+            return assert(result);
+        } catch (error) {
+            console.error(
+                "Error adding won opportunities to project board:",
+                error
+            );
+        }
+    });
+});

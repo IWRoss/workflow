@@ -196,7 +196,7 @@ const blocks = {
             type: "header",
             text: {
                 type: "plain_text",
-                text: "Opportunity to improve",
+                text: "Opportunity to Improve",
                 emoji: true,
             },
         },
@@ -204,7 +204,7 @@ const blocks = {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: "If you need to enter an oppotunity to improve, please submit using this form. ",
+                text: "If you need to enter an opportunity to improve, please submit using this form. ",
             },
             accessory: {
                 type: "button",

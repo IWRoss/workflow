@@ -256,6 +256,8 @@ const findField = (fields, field) => {
  */
 
 const handleCustomerComplaint = async (payload, locations) => {
+        const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+
     console.log("handleCustomerComplaint");
     console.log("Payload inside handleCustomerComplaint", payload);
     console.log("Locations inside handleCustomerComplaint", locations);
@@ -268,13 +270,46 @@ const handleCustomerComplaint = async (payload, locations) => {
         ISOCustomerComplaintText: findField(fields, "complaintText").value,
         ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
             .selected_option.value,
+            ISOCustomerComplaintRaisedDate: new Date(),
     };
     console.log("fieldsPayload", fieldsPayload);
+
+
+    // Add to Google Sheets
+    console.log("Adding accepted spend request to Google Sheets");
+    //Prepare the rows
+    const rowData = [
+        "Open",
+        fieldsPayload.ISOAreaSelected,
+        fieldsPayload.ISOCustomerComplaintPriority,
+        fieldsPayload.ISOCustomerComplaintText,
+        new Date(fieldsPayload.ISOCustomerComplaintRaisedDate)
+            .toISOString()
+            .split("T")[0],
+    ];
+
+
+    try {
+        const addToGoogleSheets = await addRowToGoogleSheets(rowData, {
+            spreadsheetId:
+                process.env.GOOGLE_SHEETS_SPREADSHEET_ID_CUSTOMER_COMPLAINTS,
+            range: "Sheet1!A:H",
+        });
+
+        if (addToGoogleSheets.success) {
+            console.log(
+                "Customer complaint added to Google Sheets successfully"
+            );
+            console.log("Updated range:", addToGoogleSheets.updatedRange);
+        }
+    } catch (error) {
+        console.log(error);
+    }
 
     // Return a success message
     return {
         status: "success",
-        message: "Customer Request submitted successfully.",
+        message: "Customer Complaint submitted successfully.",
     };
 };
 
@@ -283,6 +318,8 @@ const handleCustomerComplaint = async (payload, locations) => {
  */
 
 const handleOpportunityToImprove = async (payload, locations) => {
+    const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+
     console.log("handleOpportunityToImprove");
     console.log("Payload inside handleOpportunityToImprove", payload);
     console.log("Locations inside handleOpportunityToImprove", locations);
@@ -292,38 +329,71 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     const fieldsPayload = {
         ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
-        ISOCustomerComplaintText: findField(fields, "complaintText").value,
-        ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
+        ISOOpportunityToImproveText: findField(fields, "opportunityToImproveText").value,
+        ISOOpportunityToImprovePriority: findField(fields, "prioritySelect")
             .selected_option.value,
-        ISOCustomerComplaintRaisedDate: new Date(),
+        ISOOpportunityToImproveRaisedDate: new Date(),
     };
     console.log("fieldsPayload", fieldsPayload);
 
     //Custom message template to display on slack
-    let newCustomerComplaintMessageTemplate = _.cloneDeep(
-        templates.newCustomerComplaintMessage
+    let newOpportunityToImproveTemplate = _.cloneDeep(
+        templates.newOpportunityToImproveMessage
     );
 
     // Populate the template
-    newCustomerComplaintMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Customer Complaint:`;
+    newOpportunityToImproveTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Customer Complaint:`;
 
     // Area and Priority (side by side)
-    newCustomerComplaintMessageTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;
-    newCustomerComplaintMessageTemplate.blocks[1].fields[1].text = `*Priority:*\n${fieldsPayload.ISOCustomerComplaintPriority}`;
+    newOpportunityToImproveTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;
+    newOpportunityToImproveTemplate.blocks[1].fields[1].text = `*Priority:*\n${fieldsPayload.ISOOpportunityToImprovePriority}`;
 
     // Complaint Details
-    newCustomerComplaintMessageTemplate.blocks[2].text.text = `*Complaint Details:*\n${fieldsPayload.ISOCustomerComplaintText}`;
+    newOpportunityToImproveTemplate.blocks[2].text.text = `*Opportunity To Improve Details:*\n${fieldsPayload.ISOOpportunityToImproveText}`;
 
     // Raised Date
-    newCustomerComplaintMessageTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
-        fieldsPayload.ISOCustomerComplaintRaisedDate
+    newOpportunityToImproveTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
+        fieldsPayload.ISOOpportunityToImproveRaisedDate
     ).toLocaleString()}`;
 
     const { slackChannel } = locations[0];
+
+    // Add to Google Sheets
+    console.log("Adding accepted spend request to Google Sheets");
+    //Prepare the rows
+    const rowData = [
+        "Open",
+        payload.user.id,
+        payload.user.name,
+        fieldsPayload.ISOAreaSelected,
+        fieldsPayload.ISOOpportunityToImprovePriority,
+        fieldsPayload.ISOOpportunityToImproveText,
+        new Date(fieldsPayload.ISOOpportunityToImproveRaisedDate)
+            .toISOString()
+            .split("T")[0],
+    ];
+
+    try {
+        const addToGoogleSheets = await addRowToGoogleSheets(rowData, {
+            spreadsheetId:
+                process.env.GOOGLE_SHEETS_SPREADSHEET_ID_OPPORTUNITY_TO_IMPROVE,
+            range: "Sheet1!A:H",
+        });
+
+        if (addToGoogleSheets.success) {
+            console.log(
+                "Opportunity To Improve added to Google Sheets successfully"
+            );
+            console.log("Updated range:", addToGoogleSheets.updatedRange);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
     try {
         const message = await slack.chat.postMessage({
             channel: slackChannel,
-            ...newCustomerComplaintMessageTemplate,
+            ...newOpportunityToImproveTemplate,
         });
     } catch (error) {
         console.log(error);

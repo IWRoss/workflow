@@ -24,7 +24,7 @@ module.exports = {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: "*Complaint Details:*\n",
+                text: "*Opportunity to Improve details:*\n",
             },
         },
         {

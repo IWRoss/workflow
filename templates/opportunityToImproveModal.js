@@ -46,16 +46,16 @@ module.exports = {
             element: {
                 type: "plain_text_input",
                 multiline: true,
-                action_id: "complaintText",
+                action_id: "opportunityToImproveText",
                 max_length: 2000,
                 placeholder: {
                     type: "plain_text",
-                    text: "Please describe the complaint",
+                    text: "Please describe the opportunity to improve",
                 },
             },
             label: {
                 type: "plain_text",
-                text: "Complaint Details",
+                text: "Opportunity To Improve Details",
                 emoji: true,
             },
         },

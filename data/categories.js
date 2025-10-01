@@ -87,6 +87,29 @@ const createSlackOptionGroup = (options) => {
     }, []);
 };
 
+
+//ISO category Options
+
+const ISOCategoryOptions ={
+    Category: [
+        "Webdev",
+        "Studio",
+        "Marketing",
+        "Ops",
+        "Multiple Teams",
+        "No Department",
+    ],
+}
+
+const ISOPriorityOptions ={
+    Priority: [
+        "Low",
+        "Normal",
+        "High",
+    ],
+}
+
+
 module.exports = {
     // handleStudioRequestResponse: [
     //   "Amend",
@@ -121,4 +144,7 @@ module.exports = {
     handleCommTechRequestResponse: createSlackOptionGroup(webdevOptions),
     spendRequestType: createSlackOptionGroup(spendRequestType),
     spendRequestDepartment: createSlackOptionGroup(spendRequestDepartment),
+    ISOAreas: createSlackOptionGroup(ISOCategoryOptions),
+    ISOPriority: createSlackOptionGroup(ISOPriorityOptions),
+
 };

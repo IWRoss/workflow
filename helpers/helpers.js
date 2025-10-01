@@ -1,3 +1,5 @@
+const { options } = require("nodemon/lib/config");
+
 /**
  * Axios
  */
@@ -60,16 +62,46 @@ const initialiseGoogleSheets = () => {
     return google.sheets({ version: "v4", auth });
 };
 
+const addRowToGoogleSheets = async (rowData, options = {}) => {
+    const {
+        spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+        range = "Sheet1!A:Z",
+        valueInputOption = "RAW",
+    } = options;
+
+    const sheets = initialiseGoogleSheets();
+
+    try {
+        const response = await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range,
+            valueInputOption,
+            requestBody: {
+                values: [rowData],
+            },
+        });
+
+        console.log("Data added to Google Sheets:", response.data);
+        return {
+            success: true,
+            updatedRange: response.data.updates.updatedRange,
+            updatedRows: response.data.updates.updatedRows,
+        };
+    } catch (error) {
+        console.error("Error adding row to Google Sheets:", error);
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
+};
+
 //Add approved requests to google sheets
 const addSpendRequestToGoogleSheets = async (
     requestData,
     approvedByID,
     approvedByName
 ) => {
-    const sheets = initialiseGoogleSheets();
-    const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-
-    // Prepare the row data
     const rowData = [
         requestData.action,
         requestData.requestId,
@@ -83,31 +115,15 @@ const addSpendRequestToGoogleSheets = async (
         approvedByID,
         approvedByName,
         requestData.textfieldValue || "",
-        new Date().toISOString().split("T")[0], // YYYY-MM-DD format
+        new Date().toISOString().split("T")[0],  
         requestData.numberOfAttendees || "",
         requestData.numberOfClients || "",
         requestData.numberOfInternalStaff || "",
     ];
 
-    try {
-        // Append the row to the Google Sheet
-        const response = await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: "Sheet1!A:I",
-            valueInputOption: "RAW",
-            requestBody: {
-                values: [rowData],
-            },
-        });
-        console.log("Data added to Google Sheets:", response.data);
-        return {
-            success: true,
-            updatedRange: response.data.updates.updatedRange,
-            updatedRows: response.data.updates.updatedRows,
-        };
-    } catch (error) {
-        console.error("Error adding approved request to Google Sheets:", error);
-    }
+    return await addRowToGoogleSheets(rowData, {
+        range: "Sheet1!A:P", 
+    });
 };
 
 module.exports = {
@@ -117,4 +133,6 @@ module.exports = {
     isBetaUser,
     initialiseGoogleSheets,
     addSpendRequestToGoogleSheets,
+    addRowToGoogleSheets
+    
 };

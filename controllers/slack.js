@@ -216,6 +216,20 @@ const openMultipleTeamsRequestForm = async (payload) =>
 const openSpendRequestForm = async (payload) =>
     openSpendRequestFormWithTemplate(payload, "handleSpendRequestResponse");
 
+const openCustomerComplaintForm = async (payload) =>
+    openFormWithCustomTemplate(
+        payload,
+        "handleCustomerComplaintResponse",
+        templates.customerComplaintModal
+    );
+
+const openOpportunityToImproveForm = async (payload) =>
+    openFormWithCustomTemplate(
+        payload,
+        "handleOpportunityToImproveResponse",
+        templates.opportunityToImproveModal
+    );
+
 const openInvoiceRequestForm = async (payload) => {
     const invoiceRequestModal = _.cloneDeep(templates.invoiceRequestModal);
 
@@ -235,6 +249,161 @@ const openInvoiceRequestForm = async (payload) => {
  */
 const findField = (fields, field) => {
     return fields.find((f) => f.hasOwnProperty(field))[field];
+};
+
+/**
+ * Handle Customer Complaint Response (No Monday Board Integration)
+ */
+
+const handleCustomerComplaint = async (payload, locations) => {
+        const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+
+    console.log("handleCustomerComplaint");
+    console.log("Payload inside handleCustomerComplaint", payload);
+    console.log("Locations inside handleCustomerComplaint", locations);
+
+    //Get the fields from the slack payload and its values
+    const fields = Object.values(payload.view.state.values);
+
+    const fieldsPayload = {
+        ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
+        ISOCustomerComplaintText: findField(fields, "complaintText").value,
+        ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
+            .selected_option.value,
+            ISOCustomerComplaintRaisedDate: new Date(),
+    };
+    console.log("fieldsPayload", fieldsPayload);
+
+
+    // Add to Google Sheets
+    console.log("Adding accepted spend request to Google Sheets");
+    //Prepare the rows
+    const rowData = [
+        "Open",
+        fieldsPayload.ISOAreaSelected,
+        fieldsPayload.ISOCustomerComplaintPriority,
+        fieldsPayload.ISOCustomerComplaintText,
+        new Date(fieldsPayload.ISOCustomerComplaintRaisedDate)
+            .toISOString()
+            .split("T")[0],
+    ];
+
+
+    try {
+        const addToGoogleSheets = await addRowToGoogleSheets(rowData, {
+            spreadsheetId:
+                process.env.GOOGLE_SHEETS_SPREADSHEET_ID_CUSTOMER_COMPLAINTS,
+            range: "Sheet1!A:H",
+        });
+
+        if (addToGoogleSheets.success) {
+            console.log(
+                "Customer complaint added to Google Sheets successfully"
+            );
+            console.log("Updated range:", addToGoogleSheets.updatedRange);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+    // Return a success message
+    return {
+        status: "success",
+        message: "Customer Complaint submitted successfully.",
+    };
+};
+
+/**
+ * Handle Opportunity to Improve Response (No Monday Board Integration)
+ */
+
+const handleOpportunityToImprove = async (payload, locations) => {
+    const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+
+    console.log("handleOpportunityToImprove");
+    console.log("Payload inside handleOpportunityToImprove", payload);
+    console.log("Locations inside handleOpportunityToImprove", locations);
+
+    //Get the fields from the slack payload and its values
+    const fields = Object.values(payload.view.state.values);
+
+    const fieldsPayload = {
+        ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
+        ISOOpportunityToImproveText: findField(fields, "opportunityToImproveText").value,
+        ISOOpportunityToImprovePriority: findField(fields, "prioritySelect")
+            .selected_option.value,
+        ISOOpportunityToImproveRaisedDate: new Date(),
+    };
+    console.log("fieldsPayload", fieldsPayload);
+
+    //Custom message template to display on slack
+    let newOpportunityToImproveTemplate = _.cloneDeep(
+        templates.newOpportunityToImproveMessage
+    );
+
+    // Populate the template
+    newOpportunityToImproveTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Customer Complaint:`;
+
+    // Area and Priority (side by side)
+    newOpportunityToImproveTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;
+    newOpportunityToImproveTemplate.blocks[1].fields[1].text = `*Priority:*\n${fieldsPayload.ISOOpportunityToImprovePriority}`;
+
+    // Complaint Details
+    newOpportunityToImproveTemplate.blocks[2].text.text = `*Opportunity To Improve Details:*\n${fieldsPayload.ISOOpportunityToImproveText}`;
+
+    // Raised Date
+    newOpportunityToImproveTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
+        fieldsPayload.ISOOpportunityToImproveRaisedDate
+    ).toLocaleString()}`;
+
+    const { slackChannel } = locations[0];
+
+    // Add to Google Sheets
+    console.log("Adding accepted spend request to Google Sheets");
+    //Prepare the rows
+    const rowData = [
+        "Open",
+        payload.user.id,
+        payload.user.name,
+        fieldsPayload.ISOAreaSelected,
+        fieldsPayload.ISOOpportunityToImprovePriority,
+        fieldsPayload.ISOOpportunityToImproveText,
+        new Date(fieldsPayload.ISOOpportunityToImproveRaisedDate)
+            .toISOString()
+            .split("T")[0],
+    ];
+
+    try {
+        const addToGoogleSheets = await addRowToGoogleSheets(rowData, {
+            spreadsheetId:
+                process.env.GOOGLE_SHEETS_SPREADSHEET_ID_OPPORTUNITY_TO_IMPROVE,
+            range: "Sheet1!A:H",
+        });
+
+        if (addToGoogleSheets.success) {
+            console.log(
+                "Opportunity To Improve added to Google Sheets successfully"
+            );
+            console.log("Updated range:", addToGoogleSheets.updatedRange);
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+    try {
+        const message = await slack.chat.postMessage({
+            channel: slackChannel,
+            ...newOpportunityToImproveTemplate,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+
+    // Return a success message
+    return {
+        status: "success",
+        message: "Opportunity to Improve submitted successfully.",
+    };
 };
 
 /**
@@ -532,8 +701,18 @@ const handleCommTechRequestResponse = async (payload) =>
 const handleSpendRequestResponse = async (payload) =>
     handleSpendRequest(payload, [
         {
-            boardId: process.env.SPEND_MONDAY_BOARD, //This is undefined as there is no need for Monday board integration
+            boardId: process.env.SPEND_MONDAY_BOARD,
             slackChannel: process.env.SPEND_SLACK_CHANNEL,
+        },
+    ]);
+
+const handleCustomerComplaintResponse = async (payload) =>
+    handleCustomerComplaint(payload, [{}]);
+
+const handleOpportunityToImproveResponse = async (payload) =>
+    handleOpportunityToImprove(payload, [
+        {
+            slackChannel: process.env.CUSTOMER_COMPLAINT_SLACK_CHANNEL,
         },
     ]);
 
@@ -1603,11 +1782,34 @@ const openMarketingRequestForm = async (payload) => {
 
 //Function to open the spend request form with a custom template
 const openSpendRequestFormWithTemplate = async (payload, callbackName) => {
-    console.log("Payload inside openRequestForm", payload);
-    console.log("Callback name inside openRequestForm", callbackName);
+    console.log("Payload inside ", payload);
+    console.log("Callback name inside ", callbackName);
 
     // Get the modal template
     const requestModal = _.cloneDeep(templates.spendRequestModal);
+
+    requestModal.callback_id =
+        callbackName || "handleMultipleTeamsRequestResponse";
+
+    try {
+        // Send spend request form to Slack
+        const result = await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: requestModal,
+        });
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+//Function to open form with custom template
+const openFormWithCustomTemplate = async (payload, callbackName, template) => {
+    // console.log("Payload inside openFormWithCustomTemplate", payload);
+    // console.log("Callback name inside openFormWithCustomTemplate", callbackName);
+    // console.log("template:", template)
+
+    // Get the modal template
+    const requestModal = _.cloneDeep(template);
 
     requestModal.callback_id =
         callbackName || "handleMultipleTeamsRequestResponse";
@@ -1630,6 +1832,8 @@ module.exports = {
     openStudioRequestForm,
     openCommTechRequestForm,
     openSpendRequestForm,
+    openCustomerComplaintForm,
+    openOpportunityToImproveForm,
     openOpsRequestForm,
     openMultipleTeamsRequestForm,
     openInvoiceRequestForm,
@@ -1637,6 +1841,8 @@ module.exports = {
     handleStudioRequestResponse,
     handleCommTechRequestResponse,
     handleSpendRequestResponse,
+    handleCustomerComplaintResponse,
+    handleOpportunityToImproveResponse,
     handleMultipleTeamsRequestResponse,
     handleInvoiceRequestResponse,
     handleOpsRequestResponse,
@@ -1651,6 +1857,8 @@ module.exports = {
     denySpendRequest,
     approveSpendRequest,
     handleSpendRequest,
+    handleCustomerComplaint,
+    handleOpportunityToImprove,
     handleDenySpendRequestModal,
     handleAcceptSpendRequestModal,
 };

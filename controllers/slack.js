@@ -256,7 +256,7 @@ const findField = (fields, field) => {
  */
 
 const handleCustomerComplaint = async (payload, locations) => {
-        const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+    const { addRowToGoogleSheets } = require("../helpers/helpers.js");
 
     console.log("handleCustomerComplaint");
     console.log("Payload inside handleCustomerComplaint", payload);
@@ -270,10 +270,9 @@ const handleCustomerComplaint = async (payload, locations) => {
         ISOCustomerComplaintText: findField(fields, "complaintText").value,
         ISOCustomerComplaintPriority: findField(fields, "prioritySelect")
             .selected_option.value,
-            ISOCustomerComplaintRaisedDate: new Date(),
+        ISOCustomerComplaintRaisedDate: new Date(),
     };
     console.log("fieldsPayload", fieldsPayload);
-
 
     // Add to Google Sheets
     console.log("Adding accepted spend request to Google Sheets");
@@ -287,7 +286,6 @@ const handleCustomerComplaint = async (payload, locations) => {
             .toISOString()
             .split("T")[0],
     ];
-
 
     try {
         const addToGoogleSheets = await addRowToGoogleSheets(rowData, {
@@ -329,7 +327,10 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     const fieldsPayload = {
         ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
-        ISOOpportunityToImproveText: findField(fields, "opportunityToImproveText").value,
+        ISOOpportunityToImproveText: findField(
+            fields,
+            "opportunityToImproveText"
+        ).value,
         ISOOpportunityToImprovePriority: findField(fields, "prioritySelect")
             .selected_option.value,
         ISOOpportunityToImproveRaisedDate: new Date(),
@@ -655,6 +656,8 @@ const handleRequestResponse = async (payload, locations) => {
             newTask["Project Code"];
         newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
             boardId,
+            taskTitle: projectTitle,
+
             itemId: result.data.create_item.id,
         });
         newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
@@ -1584,6 +1587,8 @@ const claimTask = async (payload) => {
     // Get the user
     const user = await getUserById(payload.user.id);
 
+    console.log("Claim Task payload", payload);
+
     // Get the Monday user
     const mondayUser = await getMondayUserByEmail(user.profile.email);
 
@@ -1595,7 +1600,7 @@ const claimTask = async (payload) => {
     const taskAddress =
         payload.message.blocks[actionsBlockIndex].elements[1].url;
 
-    const { boardId, itemId } = JSON.parse(payload.actions[0].value);
+    const { boardId, itemId ,taskTitle} = JSON.parse(payload.actions[0].value);
 
     // Update the task
     await updateAssignedUser(mondayUser.id, itemId, boardId);
@@ -1622,7 +1627,7 @@ const claimTask = async (payload) => {
 
     slack.chat.postMessage({
         channel: posterID,
-        text: `*<@${claimer}>* claimed your <${taskAddress}|task>.`,
+        text: `*<@${claimer}>* claimed your <${taskAddress}| ${taskTitle} task>.`,
         unfurl_links: false,
     });
 

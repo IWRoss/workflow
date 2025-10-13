@@ -343,7 +343,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
     );
 
     // Populate the template
-    newOpportunityToImproveTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Opportunity To Improve Details:`;
+    newOpportunityToImproveTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Opportunity To Improve:`;
 
     // Area and Priority (side by side)
     newOpportunityToImproveTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;

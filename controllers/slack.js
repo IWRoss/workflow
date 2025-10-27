@@ -562,6 +562,8 @@ const handleSpendRequest = async (payload, locations) => {
     //Separate monday board id and slack channel from locations
     const { boardId, slackChannel } = locations[0];
 
+    
+
     //Send a message to slack channel
     try {
         // Send message to users
@@ -1261,6 +1263,16 @@ const handleAcceptSpendRequestModal = async (payload) => {
             },
         ];
 
+
+
+        //Send notification to the requester that their spend request was approved
+        await slack.chat.postMessage({
+            channel: originalRequestData.userId,
+            text: `:tada: Your spend request for *${originalRequestData.spendType}* has been *approved* by *<@${acceptedIdBy}>*.`,
+        });
+
+
+
         // Update the original message - this removes the approve/deny buttons and adds decline buttons
         await slack.chat.update({
             channel: channelId,
@@ -1360,6 +1372,8 @@ const denySpendRequest = async (payload) => {
         });
 
         console.log("Denial modal opened successfully");
+
+
 
         return {
             status: "success",
@@ -1465,6 +1479,12 @@ const handleDenySpendRequestModal = async (payload) => {
                 message: "Failed to add declined request to Google Sheets.",
             };
         }
+
+        //Send notification to the requester that their spend request was denied
+        await slack.chat.postMessage({
+            channel: originalRequestData.userId,
+            text: `Your spend request for *${originalRequestData.spendType}* has been *denied* by *<@${deniedIdBy}>*.`,
+        });
 
         return {
             status: "success",

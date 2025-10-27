@@ -9,7 +9,7 @@ module.exports = {
     callback_id: "",
     title: {
         type: "plain_text",
-        text: "Submit Complaint",
+        text: "Submit NC",
         emoji: true,
     },
     submit: {
@@ -50,12 +50,12 @@ module.exports = {
                 max_length: 2000,
                 placeholder: {
                     type: "plain_text",
-                    text: "Please describe the complaint",
+                    text: "Please provide more details about the non-conformance...",
                 },
             },
             label: {
                 type: "plain_text",
-                text: "Complaint Details",
+                text: "Non-Conformance Details",
                 emoji: true,
             },
         },

@@ -276,8 +276,13 @@ const handleCustomerComplaint = async (payload, locations) => {
 
     // Add to Google Sheets
     console.log("Adding accepted spend request to Google Sheets");
+
+    //4 Digit unique ID
+    const id = Math.floor(1000 + Math.random() * 9000);
+
     //Prepare the rows
     const rowData = [
+        id,
         "Open",
         fieldsPayload.ISOAreaSelected,
         fieldsPayload.ISOCustomerComplaintPriority,
@@ -359,10 +364,14 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     const { slackChannel } = locations[0];
 
+     //4 Digit unique ID
+    const id = Math.floor(1000 + Math.random() * 9000);
+
     // Add to Google Sheets
     console.log("Adding accepted spend request to Google Sheets");
     //Prepare the rows
     const rowData = [
+        id,
         "Open",
         payload.user.id,
         payload.user.name,

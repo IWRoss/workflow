@@ -357,14 +357,18 @@ const handleOpportunityToImprove = async (payload, locations) => {
     // Complaint Details
     newOpportunityToImproveTemplate.blocks[2].text.text = `*Opportunity To Improve Details:*\n${fieldsPayload.ISOOpportunityToImproveText}`;
 
-    // Raised Date
+    // Raised Date - Format 00/MM/YYYY
     newOpportunityToImproveTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
         fieldsPayload.ISOOpportunityToImproveRaisedDate
-    ).toLocaleString()}`;
+    ).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    })}`;
 
     const { slackChannel } = locations[0];
 
-     //4 Digit unique ID
+    //4 Digit unique ID
     const id = Math.floor(1000 + Math.random() * 9000);
 
     // Add to Google Sheets
@@ -570,8 +574,6 @@ const handleSpendRequest = async (payload, locations) => {
 
     //Separate monday board id and slack channel from locations
     const { boardId, slackChannel } = locations[0];
-
-    
 
     //Send a message to slack channel
     try {
@@ -1272,15 +1274,11 @@ const handleAcceptSpendRequestModal = async (payload) => {
             },
         ];
 
-
-
         //Send notification to the requester that their spend request was approved
         await slack.chat.postMessage({
             channel: originalRequestData.userId,
             text: `:tada: Your spend request for *${originalRequestData.spendType}* has been *approved* by *<@${acceptedIdBy}>*.`,
         });
-
-
 
         // Update the original message - this removes the approve/deny buttons and adds decline buttons
         await slack.chat.update({
@@ -1381,8 +1379,6 @@ const denySpendRequest = async (payload) => {
         });
 
         console.log("Denial modal opened successfully");
-
-
 
         return {
             status: "success",
@@ -1629,7 +1625,7 @@ const claimTask = async (payload) => {
     const taskAddress =
         payload.message.blocks[actionsBlockIndex].elements[1].url;
 
-    const { boardId, itemId ,taskTitle} = JSON.parse(payload.actions[0].value);
+    const { boardId, itemId, taskTitle } = JSON.parse(payload.actions[0].value);
 
     // Update the task
     await updateAssignedUser(mondayUser.id, itemId, boardId);

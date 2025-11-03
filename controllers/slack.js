@@ -1922,11 +1922,11 @@ const logPasswordRequest = async (userId, appName, success) => {
     const emoji = success ? "🔐" : "⚠️";
 
     const logMessage =
-        `${emoji} **Password Request Log**\n` +
-        `**User:** <@${userId}>\n` +
-        `**Application:** \`${appName}\`\n` +
-        `**Status:** ${status}\n` +
-        `**Time:** ${timestamp}`;
+        `${emoji} *Password Request Log*\n` +
+        `*User:* <@${userId}>\n` +
+        `*Application:* \`${appName}\`\n` +
+        `*Status:* ${status}\n` +
+        `*Time:* ${timestamp}`;
 
     try {
         await slack.chat.postMessage({
@@ -1977,22 +1977,11 @@ const handlePasswordCommand = async (payload) => {
             credentials.username &&
             credentials.password
         ) {
-            message = `🔐 Credentials for *${appKey}*:\n\n👤 **Username:** \`${credentials.username}\`\n🔑 **Password:** \`${credentials.password}\``;
+            message = `🔐 Credentials for *${appKey}*:\n\n👤 *Username:* \`${credentials.username}\`\n🔑 *Password:* \`${credentials.password}\``;
 
             // Add URL if available
             if (credentials.url) {
-                message += `\n🔗 **URL:** ${credentials.url}`;
-            }
-
-            // Add alternative commands if available
-            if (
-                credentials.commands &&
-                Array.isArray(credentials.commands) &&
-                credentials.commands.length > 0
-            ) {
-                message += `\n\n💡 **Alternative commands:** ${credentials.commands
-                    .map((cmd) => `\`${cmd}\``)
-                    .join(", ")}`;
+                message += `\n🔗 *URL:* ${credentials.url}`;
             }
 
             message += `\n\n_This message is only visible to you and will disappear when you refresh._`;

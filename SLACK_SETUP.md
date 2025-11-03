@@ -1,22 +1,29 @@
 # Slack App Configuration for Password Manager
 
-To enable the `/password` slash command in your Slack workspace, you need to configure it in your Slack app settings.
+To enable the `/password` and `/passwords` slash commands in your Slack workspace, you need to configure them in your Slack app settings.
 
-## Step 1: Create/Configure Slash Command
+## Step 1: Create/Configure Slash Commands
 
 1. Go to [Slack API](https://api.slack.com/apps)
 2. Select your existing Workflow app (or create a new one)
 3. Navigate to "Slash Commands" in the left sidebar
-4. Click "Create New Command"
+4. Click "Create New Command" for each command
 
-## Step 2: Configure the Command
+## Step 2: Configure the Commands
 
-Fill in the following details:
+### First Command - Individual Password Lookup
 
 -   **Command**: `/password`
 -   **Request URL**: `https://your-domain.com/slack/command`
 -   **Short Description**: `Get application passwords`
 -   **Usage Hint**: `[application-name]`
+
+### Second Command - List All Applications
+
+-   **Command**: `/passwords`
+-   **Request URL**: `https://your-domain.com/slack/command`
+-   **Short Description**: `List all available applications`
+-   **Usage Hint**: `(no parameters needed)`
 
 ## Step 3: Configure Permissions
 
@@ -39,12 +46,13 @@ SLACK_TOKEN=xoxb-your-bot-token
 
 ## Testing
 
-Once configured, you can test the command in any Slack channel:
+Once configured, you can test both commands in any Slack channel:
 
 ```
-/password wifi
-/password admin
-/password
+/password wifi     # Get specific password
+/password admin    # Get another password
+/passwords         # List all available applications
+/password          # Also lists applications (legacy)
 ```
 
 ## Security Considerations

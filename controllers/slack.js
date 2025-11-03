@@ -1897,6 +1897,38 @@ const handlePasswordCommand = async (payload) => {
     }
 };
 
+/**
+ * Handle passwords list command
+ * Shows all available applications without revealing actual passwords
+ */
+const handlePasswordsListCommand = async (payload) => {
+    const passwords = require("../data/passwords");
+
+    // Get all application names
+    const applicationNames = Object.keys(passwords);
+
+    if (applicationNames.length === 0) {
+        await slack.chat.postEphemeral({
+            channel: payload.channel_id,
+            user: payload.user_id,
+            text: `📋 No applications configured in the password manager.`,
+        });
+        return;
+    }
+
+    // Format the list nicely
+    const formattedList = applicationNames
+        .sort() // Sort alphabetically for better UX
+        .map((app) => `• ${app}`)
+        .join("\n");
+
+    await slack.chat.postEphemeral({
+        channel: payload.channel_id,
+        user: payload.user_id,
+        text: `📋 *Available Applications:*\n\n${formattedList}\n\n💡 Use \`/password <application-name>\` to get a specific password.\n\n_This message is only visible to you._`,
+    });
+};
+
 module.exports = {
     slack,
     getMembers,
@@ -1934,4 +1966,5 @@ module.exports = {
     handleDenySpendRequestModal,
     handleAcceptSpendRequestModal,
     handlePasswordCommand,
+    handlePasswordsListCommand,
 };

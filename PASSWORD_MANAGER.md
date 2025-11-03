@@ -4,31 +4,33 @@ A simple password manager feature for the Workflow application that responds to 
 
 ## Features
 
--   Responds to `/password` slash commands in Slack
+-   Responds to `/password` and `/passwords` slash commands in Slack
 -   Displays passwords as ephemeral messages (only visible to the requesting user)
 -   Lists available applications when no specific app is requested
 -   Provides helpful error messages for invalid applications
+-   Shows formatted list of all available applications with `/passwords` command
 
 ## Usage
 
-### Basic Usage
+### Get a Specific Password
 
 ```
 /password <application-name>
 ```
 
+### List All Available Applications
+
+```
+/passwords
+```
+
 ### Examples
 
 ```
-/password wifi
-/password admin
-/password database
-```
-
-### List Available Applications
-
-```
-/password
+/password wifi          # Gets the wifi password
+/password admin         # Gets the admin password
+/passwords             # Shows all available applications
+/password              # Also shows available applications (legacy)
 ```
 
 ## How It Works

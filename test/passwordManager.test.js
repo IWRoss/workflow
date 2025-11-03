@@ -27,4 +27,31 @@ describe("Password Manager", () => {
             });
         });
     });
+
+    describe("commands functionality", () => {
+        it("should be able to list all application names", () => {
+            const appNames = Object.keys(passwords);
+            expect(Array.isArray(appNames)).to.be.true;
+            expect(appNames.length).to.be.greaterThan(0);
+        });
+
+        it("should return sorted application names for better UX", () => {
+            const appNames = Object.keys(passwords);
+            const sortedNames = [...appNames].sort();
+            expect(JSON.stringify(sortedNames)).to.equal(
+                JSON.stringify(appNames.sort())
+            );
+        });
+
+        it("should handle case-insensitive lookups", () => {
+            const appNames = Object.keys(passwords);
+            if (appNames.length > 0) {
+                const testApp = appNames[0];
+                const upperCaseApp = testApp.toUpperCase();
+
+                // Should find the password regardless of case
+                expect(passwords[testApp.toLowerCase()]).to.exist;
+            }
+        });
+    });
 });

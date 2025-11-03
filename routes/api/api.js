@@ -29,6 +29,7 @@ const {
     openCustomerComplaintForm,
     openOpportunityToImproveForm,
     handlePasswordCommand,
+    handlePasswordsListCommand,
 } = require("../../controllers/slack");
 
 /**
@@ -120,6 +121,9 @@ const actions = {
     },
     password: (payload) => {
         handlePasswordCommand(payload);
+    },
+    passwords: (payload) => {
+        handlePasswordsListCommand(payload);
     },
 };
 

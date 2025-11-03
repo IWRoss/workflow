@@ -8,19 +8,27 @@ const openai = new OpenAI({
 const { promptFormattedGlossary } = require("../data/glossary");
 
 const generateTitleFromRequest = async (client, description) => {
+    let systemPrompt = `You are a helpful assistant that generates concise and relevant titles for project descriptions for a company called Cegos. Use British English spelling and terminology throughout. Use the following business-specific vocabulary:\n\n${promptFormattedGlossary}`;
+
+    let userPrompt = `Generate a concise (8 words or less) and relevant title for the following project description, in sentence-case, emphasising the deliverable, and the verb corresponding to the action (e.g. "Add options to M&S Typeform"):\n\n${description}`;
+
+    if (client && !client.toLowerCase().includes("cegos")) {
+        userPrompt += `\n\nPlease feature the client: ${client}`;
+    }
+
+    userPrompt += `\n\nTitle:`;
+
     try {
         const response = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content:
-                        "You are a helpful assistant that generates concise and relevant titles for project descriptions for a company called Cegos. Use the following business-specific vocabulary:\n\n" +
-                        promptFormattedGlossary,
+                    content: systemPrompt,
                 },
                 {
                     role: "user",
-                    content: `Generate a concise (8 words or less) and relevant title for the following project description, emphasising the deliverable, and the verb corresponding to the action (e.g. "Add options to M&S Typeform"):\n\n${description}\n\nPlease feature the client (unless it's Cegos): ${client}\n\nTitle:`,
+                    content: userPrompt,
                 },
             ],
             max_tokens: 20,

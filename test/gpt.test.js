@@ -12,22 +12,22 @@ const descriptions = [
     {
         client: "Cegos",
         description:
-            "hey guys! please can you upload this case study onto the website - thank you!",
+            "Hi team! This is the request to build in some categorisation for Events Hub as discussed, so we can separate out magazines, whitepapers, brochures, or other events into different sections. Ideally I'd love to be able to compare or at least summarise sign-ups from different 'formats' more easily! Thank youuu",
     },
     {
         client: "Cegos",
         description:
-            "heya guys, \nThe brunch speakeasy copy is ready, could you please upload it to the website on the Oct speakeasy page.\nThanks so much!!",
+            "Was trying to book half days holiday using whosware but cannot do it. thanks",
     },
     {
-        client: "Red Bull",
+        client: "Cegos",
         description:
-            "Dear wonderful & amazing dev team!!\n\nThis is the dev request for the Red Bull web browser app that we discussed on Tuesday August 26th. We are SO excited to work with you on this project! I will use this document as a main repository for the development request. Please reach out with any questions!!\n\nThe workshop will run on Wednesday, September 24th, and we would like to be able to test the app on the ground, in Portland OR on Monday, September 22nd to make sure we can address any problems. \n\nPlease see below for all notes. I will be adding in the challenges and will keep you updated as I go.\n\nTHANK YOU for taking this on with such gusto and excitement!!",
+            "Hey Ross — this is the request for a prioritised list of all webpages for us to start working on SEO improvements! How you prioritise is up to you (also fine if you just start with the top 10 for this week).",
     },
     {
-        client: "M&S",
+        client: "Cegos",
         description:
-            "Hi both, please would either of you be able to hold a little bit of time to make some tweaks to the M&S Core Skills Dashboard?\n\nUpdates:\nPlease could we pull the data from the final question on the Typeform onto the dashboard: What other topics would you like to see?\n\nWould we also be able to add back in the workshops I deleted? (Sorry about this one)\n\nEvolving Through Change Workshop\nDriving Impactful Change Workshop\nCrafting Clear Goals Workshop\nPrioritising for Productivity Workshop\nInfluencing Stakeholders with Stories Workshop\nPreparing for Feedback Conversations Workshop\nBecoming Commercially Clever Workshop\n\n(I've not specified if their are immersive or knowledge boost because, if we run them, they will likely all follow the same 90 min format now)\n\nTHANK YOU!",
+            "Have guys, Current we do client evaluations manually via Polleverywhere then into PPT. I would like to automate this process and provide an evals service to all Cegos UK. Currently I only produce reports for Cegos OG. For further details and to see what the process is right now, please contact me. Thank you :-)",
     },
     {
         title: "Cegos",

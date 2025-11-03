@@ -1,5 +1,3 @@
-const { reportErrorToSlack } = require("../controllers/slack");
-
 /**
  * Axios
  */
@@ -88,7 +86,6 @@ const addRowToGoogleSheets = async (rowData, options = {}) => {
             updatedRows: response.data.updates.updatedRows,
         };
     } catch (error) {
-        await reportErrorToSlack(error, "addRowToGoogleSheets");
         console.error("Error adding row to Google Sheets:", error);
         return {
             success: false,

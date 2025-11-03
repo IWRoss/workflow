@@ -10,9 +10,9 @@ const server = require("http").createServer(app);
 
 // Parse requests of content-type - application/json
 const rawBodyBuffer = (req, res, buf, encoding) => {
-  if (buf && buf.length) {
-    req.rawBody = buf.toString(encoding || "utf8");
-  }
+    if (buf && buf.length) {
+        req.rawBody = buf.toString(encoding || "utf8");
+    }
 };
 
 app.use(bodyParser.urlencoded({ verify: rawBodyBuffer, extended: true }));
@@ -24,13 +24,17 @@ const apiRoutes = require("./routes/api/api");
 // Use routes
 app.post("*", apiRoutes);
 app.get("*", (req, res) => {
-  // Return something if it's live
-  res.send("Hello world");
+    res.status(200).json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        service: "workflow",
+    });
 });
 
 // Start the server
 server.listen(PORT, function () {
-  console.log("listening on port 4000");
+    console.log("listening on port 4000");
 });
 
 /**

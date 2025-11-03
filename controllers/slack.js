@@ -1856,11 +1856,95 @@ const openFormWithCustomTemplate = async (payload, callbackName, template) => {
 };
 
 /**
+ * Find application by name or alternative command
+ * @param {string} searchTerm - The search term (app name or command alias)
+ * @param {object} passwords - The passwords object
+ * @returns {object|null} - {appKey, credentials} or null if not found
+ */
+const findApplicationByCommand = (searchTerm, passwords) => {
+    const lowerSearchTerm = searchTerm.toLowerCase().trim();
+
+    // First, try direct match by app name
+    if (passwords[lowerSearchTerm]) {
+        return {
+            appKey: lowerSearchTerm,
+            credentials: passwords[lowerSearchTerm],
+        };
+    }
+
+    // Then, search through alternative commands
+    for (const [appKey, credentials] of Object.entries(passwords)) {
+        if (
+            typeof credentials === "object" &&
+            credentials.commands &&
+            Array.isArray(credentials.commands)
+        ) {
+            // Check if the search term matches any of the alternative commands
+            const matchingCommand = credentials.commands.find(
+                (cmd) => cmd.toLowerCase() === lowerSearchTerm
+            );
+            if (matchingCommand) {
+                return { appKey, credentials };
+            }
+        }
+    }
+
+    return null;
+};
+
+/**
+ * Log password request to passwords channel
+ * @param {string} userId - The Slack user ID who made the request
+ * @param {string} appName - The application name that was requested
+ * @param {boolean} success - Whether the request was successful
+ */
+const logPasswordRequest = async (userId, appName, success) => {
+    const passwordsChannel = process.env.PASSWORDS_CHANNEL;
+
+    if (!passwordsChannel) {
+        console.log(
+            "PASSWORDS_CHANNEL not configured, skipping password request logging"
+        );
+        return;
+    }
+
+    const timestamp = new Date().toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+
+    const status = success ? "✅ SUCCESS" : "❌ FAILED";
+    const emoji = success ? "🔐" : "⚠️";
+
+    const logMessage =
+        `${emoji} **Password Request Log**\n` +
+        `**User:** <@${userId}>\n` +
+        `**Application:** \`${appName}\`\n` +
+        `**Status:** ${status}\n` +
+        `**Time:** ${timestamp}`;
+
+    try {
+        await slack.chat.postMessage({
+            channel: passwordsChannel,
+            text: logMessage,
+        });
+    } catch (error) {
+        console.error("Failed to log password request:", error);
+    }
+};
+
+/**
  * Handle password slash command
  * Responds with a temporary password for the requested application
  */
 const handlePasswordCommand = async (payload) => {
-    const passwords = require("../data/passwords");
+    const { loadPasswords } = require("../helpers/passwordLoader");
+    const passwords = loadPasswords();
 
     // Extract the application name from the command text
     const appName = payload.text ? payload.text.trim().toLowerCase() : "";
@@ -1874,26 +1958,94 @@ const handlePasswordCommand = async (payload) => {
             user: payload.user_id,
             text: `Please specify an application name. Available applications: ${availableApps}\n\nUsage: \`/password <application-name>\``,
         });
+
+        // Log password request with no app name
+        await logPasswordRequest(payload.user_id, "(no app specified)", false);
         return;
     }
 
-    // Check if the application exists in our password database
-    if (passwords[appName]) {
-        // Send the password as an ephemeral message (only visible to the user)
+    // Find the application by name or alternative command
+    const foundApp = findApplicationByCommand(appName, passwords);
+
+    if (foundApp) {
+        const { appKey, credentials } = foundApp;
+
+        // Handle both new format (object with username/password) and legacy format (string)
+        let message;
+        if (
+            typeof credentials === "object" &&
+            credentials.username &&
+            credentials.password
+        ) {
+            message = `🔐 Credentials for *${appKey}*:\n\n👤 **Username:** \`${credentials.username}\`\n🔑 **Password:** \`${credentials.password}\``;
+
+            // Add URL if available
+            if (credentials.url) {
+                message += `\n🔗 **URL:** ${credentials.url}`;
+            }
+
+            // Add alternative commands if available
+            if (
+                credentials.commands &&
+                Array.isArray(credentials.commands) &&
+                credentials.commands.length > 0
+            ) {
+                message += `\n\n💡 **Alternative commands:** ${credentials.commands
+                    .map((cmd) => `\`${cmd}\``)
+                    .join(", ")}`;
+            }
+
+            message += `\n\n_This message is only visible to you and will disappear when you refresh._`;
+        } else {
+            // Legacy format - just a password string
+            message = `🔐 Password for *${appKey}*: \`${credentials}\`\n\n_This message is only visible to you and will disappear when you refresh._`;
+        }
+
+        // Send the credentials as an ephemeral message (only visible to the user)
         await slack.chat.postEphemeral({
             channel: payload.channel_id,
             user: payload.user_id,
-            text: `🔐 Password for *${appName}*: \`${passwords[appName]}\`\n\n_This message is only visible to you and will disappear when you refresh._`,
+            text: message,
         });
+
+        // Log successful password request
+        await logPasswordRequest(payload.user_id, appKey, true);
     } else {
-        // Application not found
-        const availableApps = Object.keys(passwords).join(", ");
+        // Application not found - show available apps and alternative commands
+        const availableApps = Object.keys(passwords);
+        const allCommands = [];
+
+        // Collect all possible commands (app names + alternative commands)
+        availableApps.forEach((appKey) => {
+            allCommands.push(appKey);
+            const credentials = passwords[appKey];
+            if (
+                typeof credentials === "object" &&
+                credentials.commands &&
+                Array.isArray(credentials.commands)
+            ) {
+                allCommands.push(...credentials.commands);
+            }
+        });
+
+        const uniqueCommands = [...new Set(allCommands)].sort();
+        const commandList = uniqueCommands.slice(0, 20).join(", "); // Limit to first 20 to avoid message being too long
+        const remainingCount = uniqueCommands.length - 20;
+
+        let errorMessage = `❌ Application or command "${appName}" not found.\n\n📋 Available commands: ${commandList}`;
+
+        if (remainingCount > 0) {
+            errorMessage += `\n\n... and ${remainingCount} more. Use \`/passwords\` to see all applications.`;
+        }
 
         await slack.chat.postEphemeral({
             channel: payload.channel_id,
             user: payload.user_id,
-            text: `❌ Application "${appName}" not found.\n\nAvailable applications: ${availableApps}`,
+            text: errorMessage,
         });
+
+        // Log failed password request
+        await logPasswordRequest(payload.user_id, appName, false);
     }
 };
 
@@ -1901,8 +2053,13 @@ const handlePasswordCommand = async (payload) => {
  * Handle passwords list command
  * Shows all available applications without revealing actual passwords
  */
+/**
+ * Handle passwords list command
+ * Shows all available applications without revealing actual passwords
+ */
 const handlePasswordsListCommand = async (payload) => {
-    const passwords = require("../data/passwords");
+    const { loadPasswords } = require("../helpers/passwordLoader");
+    const passwords = loadPasswords();
 
     // Get all application names
     const applicationNames = Object.keys(passwords);
@@ -1913,13 +2070,37 @@ const handlePasswordsListCommand = async (payload) => {
             user: payload.user_id,
             text: `📋 No applications configured in the password manager.`,
         });
+
+        // Log passwords list request (empty)
+        await logPasswordRequest(
+            payload.user_id,
+            "passwords list (empty)",
+            true
+        );
         return;
     }
 
-    // Format the list nicely
+    // Format the list nicely with alternative commands
     const formattedList = applicationNames
         .sort() // Sort alphabetically for better UX
-        .map((app) => `• ${app}`)
+        .map((app) => {
+            const credentials = passwords[app];
+            let line = `• ${app}`;
+
+            // Add alternative commands if available
+            if (
+                typeof credentials === "object" &&
+                credentials.commands &&
+                Array.isArray(credentials.commands)
+            ) {
+                const altCommands = credentials.commands
+                    .map((cmd) => `\`${cmd}\``)
+                    .join(", ");
+                line += ` (also: ${altCommands})`;
+            }
+
+            return line;
+        })
         .join("\n");
 
     await slack.chat.postEphemeral({
@@ -1927,6 +2108,9 @@ const handlePasswordsListCommand = async (payload) => {
         user: payload.user_id,
         text: `📋 *Available Applications:*\n\n${formattedList}\n\n💡 Use \`/password <application-name>\` to get a specific password.\n\n_This message is only visible to you._`,
     });
+
+    // Log passwords list request
+    await logPasswordRequest(payload.user_id, "passwords list", true);
 };
 
 module.exports = {

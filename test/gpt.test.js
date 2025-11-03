@@ -38,7 +38,7 @@ const descriptions = [
 
 describe("#generateTitleFromRequest", function () {
     it("should generate a title from descriptions", async function () {
-        this.timeout(10000);
+        this.timeout(20000);
 
         for (const { client, description } of descriptions) {
             try {

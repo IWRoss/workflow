@@ -20,7 +20,7 @@ const generateTitleFromRequest = async (client, description) => {
                 },
                 {
                     role: "user",
-                    content: `Generate a concise (8 words or less) and relevant title for the following project description, emphasising the deliverable, and the verb corresponding to the action (e.g. "Add options to M&S Typeform"):\n\n${description}\n\nPlease feature the client: ${client}\n\nTitle:`,
+                    content: `Generate a concise (8 words or less) and relevant title for the following project description, emphasising the deliverable, and the verb corresponding to the action (e.g. "Add options to M&S Typeform"):\n\n${description}\n\nPlease feature the client (unless it's Cegos): ${client}\n\nTitle:`,
                 },
             ],
             max_tokens: 20,

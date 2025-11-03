@@ -1855,6 +1855,48 @@ const openFormWithCustomTemplate = async (payload, callbackName, template) => {
     }
 };
 
+/**
+ * Handle password slash command
+ * Responds with a temporary password for the requested application
+ */
+const handlePasswordCommand = async (payload) => {
+    const passwords = require("../data/passwords");
+
+    // Extract the application name from the command text
+    const appName = payload.text ? payload.text.trim().toLowerCase() : "";
+
+    if (!appName) {
+        // If no application specified, show available applications
+        const availableApps = Object.keys(passwords).join(", ");
+
+        await slack.chat.postEphemeral({
+            channel: payload.channel_id,
+            user: payload.user_id,
+            text: `Please specify an application name. Available applications: ${availableApps}\n\nUsage: \`/password <application-name>\``,
+        });
+        return;
+    }
+
+    // Check if the application exists in our password database
+    if (passwords[appName]) {
+        // Send the password as an ephemeral message (only visible to the user)
+        await slack.chat.postEphemeral({
+            channel: payload.channel_id,
+            user: payload.user_id,
+            text: `🔐 Password for *${appName}*: \`${passwords[appName]}\`\n\n_This message is only visible to you and will disappear when you refresh._`,
+        });
+    } else {
+        // Application not found
+        const availableApps = Object.keys(passwords).join(", ");
+
+        await slack.chat.postEphemeral({
+            channel: payload.channel_id,
+            user: payload.user_id,
+            text: `❌ Application "${appName}" not found.\n\nAvailable applications: ${availableApps}`,
+        });
+    }
+};
+
 module.exports = {
     slack,
     getMembers,
@@ -1891,4 +1933,5 @@ module.exports = {
     handleOpportunityToImprove,
     handleDenySpendRequestModal,
     handleAcceptSpendRequestModal,
+    handlePasswordCommand,
 };

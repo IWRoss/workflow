@@ -28,6 +28,7 @@ const {
     handleAcceptSpendRequestModal,
     openCustomerComplaintForm,
     openOpportunityToImproveForm,
+    handlePasswordCommand,
 } = require("../../controllers/slack");
 
 /**
@@ -44,10 +45,10 @@ const actions = {
     openSpendRequestForm: (payload) => {
         openSpendRequestForm(payload);
     },
-    openCustomerComplaintForm: (payload) =>{
+    openCustomerComplaintForm: (payload) => {
         openCustomerComplaintForm(payload);
     },
-    openOpportunityToImproveForm: (payload) =>{
+    openOpportunityToImproveForm: (payload) => {
         openOpportunityToImproveForm(payload);
     },
     approveSpendRequest: (payload) => {
@@ -82,14 +83,14 @@ const actions = {
     },
     handleSpendRequestResponse: (payload) => {
         handleSpendRequestResponse(payload);
-    },handleCustomerComplaintResponse: (payload) => {
+    },
+    handleCustomerComplaintResponse: (payload) => {
         handleCustomerComplaintResponse(payload);
     },
     handleOpportunityToImproveResponse: (payload) => {
         handleOpportunityToImproveResponse(payload);
     },
 
-    
     handleStudioRequestResponse: (payload) => {
         handleStudioRequestResponse(payload);
     },
@@ -116,6 +117,9 @@ const actions = {
     },
     noActionRequired: (payload) => {
         noActionRequired(payload);
+    },
+    password: (payload) => {
+        handlePasswordCommand(payload);
     },
 };
 

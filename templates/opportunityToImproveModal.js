@@ -37,7 +37,7 @@ module.exports = {
             },
             label: {
                 type: "plain_text",
-                text: "Area",
+                text: "Department",
                 emoji: true,
             },
         },

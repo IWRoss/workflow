@@ -59,6 +59,7 @@ const spendRequestDepartment = {
         "Ops",
         "Multiple Teams",
         "No Department",
+        "Consultant / Sales",
     ],
 };
 
@@ -98,6 +99,7 @@ const ISOCategoryOptions ={
         "Ops",
         "Multiple Teams",
         "No Department",
+        "Consultant / Sales",
     ],
 }
 

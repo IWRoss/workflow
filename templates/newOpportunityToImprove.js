@@ -12,7 +12,7 @@ module.exports = {
             fields: [
                 {
                     type: "mrkdwn",
-                    text: "*Area:*\n",
+                    text: "*Department:*\n",
                 },
                 {
                     type: "mrkdwn",

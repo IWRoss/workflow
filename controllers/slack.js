@@ -255,8 +255,20 @@ const findField = (fields, field) => {
  * Handle Customer Complaint Response (No Monday Board Integration)
  */
 
+const generateNextId = (existingIds) => {
+    const numericIds = existingIds
+        .map((id) => parseInt(id, 10))
+        .filter((n) => !isNaN(n));
+
+    const maxId = Math.max(...numericIds, 0); // start from 1
+    return maxId + 1;
+};
+
 const handleCustomerComplaint = async (payload, locations) => {
-    const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+    const {
+        addRowToGoogleSheets,
+        getColumnValues,
+    } = require("../helpers/helpers.js");
 
     console.log("handleCustomerComplaint");
     console.log("Payload inside handleCustomerComplaint", payload);
@@ -277,12 +289,23 @@ const handleCustomerComplaint = async (payload, locations) => {
     // Add to Google Sheets
     console.log("Adding accepted spend request to Google Sheets");
 
-    //4 Digit unique ID
-    const id = Math.floor(1000 + Math.random() * 9000);
+    // Get existing IDs from Google Sheets (column A)
+    const rawExistingIds = await getColumnValues({
+        spreadsheetId:
+            process.env.GOOGLE_SHEETS_SPREADSHEET_ID_CUSTOMER_COMPLAINTS,
+        range: "Sheet1!A:A",
+    });
+
+    //Remove any non-numeric values from the existing IDs
+    const existingIdsFlat = rawExistingIds.filter((v) => /^\d+$/.test(v));
+
+
+    // Compute the next sequential ID
+    const nextId = generateNextId(existingIdsFlat);
 
     //Prepare the rows
     const rowData = [
-        id,
+        String(nextId),
         "Open",
         fieldsPayload.ISOAreaSelected,
         fieldsPayload.ISOCustomerComplaintPriority,
@@ -321,7 +344,10 @@ const handleCustomerComplaint = async (payload, locations) => {
  */
 
 const handleOpportunityToImprove = async (payload, locations) => {
-    const { addRowToGoogleSheets } = require("../helpers/helpers.js");
+    const {
+        addRowToGoogleSheets,
+        getColumnValues,
+    } = require("../helpers/helpers.js");
 
     console.log("handleOpportunityToImprove");
     console.log("Payload inside handleOpportunityToImprove", payload);
@@ -350,8 +376,8 @@ const handleOpportunityToImprove = async (payload, locations) => {
     // Populate the template
     newOpportunityToImproveTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Opportunity To Improve:`;
 
-    // Area and Priority (side by side)
-    newOpportunityToImproveTemplate.blocks[1].fields[0].text = `*Area:*\n${fieldsPayload.ISOAreaSelected}`;
+    // Department and Priority (side by side)
+    newOpportunityToImproveTemplate.blocks[1].fields[0].text = `*Department:*\n${fieldsPayload.ISOAreaSelected}`;
     newOpportunityToImproveTemplate.blocks[1].fields[1].text = `*Priority:*\n${fieldsPayload.ISOOpportunityToImprovePriority}`;
 
     // Complaint Details
@@ -368,8 +394,17 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     const { slackChannel } = locations[0];
 
-    //4 Digit unique ID
-    const id = Math.floor(1000 + Math.random() * 9000);
+    const existingIds = await getColumnValues({
+        spreadsheetId:
+            process.env.GOOGLE_SHEETS_SPREADSHEET_ID_OPPORTUNITY_TO_IMPROVE,
+        range: "Sheet1!A:A",
+    });
+
+    // Remove any non-numeric values from the existing IDs
+    const existingIdsFlat = existingIds.filter((v) => /^\d+$/.test(v));
+
+    // Compute the next sequential ID
+    const id = generateNextId(existingIdsFlat);
 
     // Add to Google Sheets
     console.log("Adding accepted spend request to Google Sheets");

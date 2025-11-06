@@ -126,6 +126,28 @@ const addSpendRequestToGoogleSheets = async (
     });
 };
 
+const getColumnValues = async (options = {}) => {
+    const {
+        spreadsheetId ,
+        range,
+    } = options;
+
+    const sheets = initialiseGoogleSheets();
+
+    try {
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range,
+        });
+
+        const rows = response.data.values || [];
+        return rows.flat();
+    } catch (error) {
+        console.error("Error retrieving column values from Google Sheets:", error);
+        return [];
+    }
+};
+
 module.exports = {
     isValidHttpUrl,
     clearRequireCache,
@@ -133,6 +155,7 @@ module.exports = {
     isBetaUser,
     initialiseGoogleSheets,
     addSpendRequestToGoogleSheets,
-    addRowToGoogleSheets
+    addRowToGoogleSheets,
+    getColumnValues,
     
 };

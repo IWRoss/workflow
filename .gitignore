@@ -64,3 +64,5 @@ temp/
 *.zip
 *.7z
 *.rar
+
+data/passwords.js

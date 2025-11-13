@@ -200,6 +200,7 @@ const openRequestForm = async (payload, callbackName) => {
             view: requestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openRequestForm");
         console.log(error);
     }
 };
@@ -240,6 +241,8 @@ const openInvoiceRequestForm = async (payload) => {
             view: invoiceRequestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openInvoiceRequestForm");
+
         console.log(error);
     }
 };
@@ -329,6 +332,7 @@ const handleCustomerComplaint = async (payload, locations) => {
             console.log("Updated range:", addToGoogleSheets.updatedRange);
         }
     } catch (error) {
+        await reportErrorToSlack(error, "handleCustomerComplaint");
         console.log(error);
     }
 
@@ -436,6 +440,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
             console.log("Updated range:", addToGoogleSheets.updatedRange);
         }
     } catch (error) {
+        await reportErrorToSlack(error, "handleOpportunityToImprove");
         console.log(error);
     }
 
@@ -445,6 +450,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
             ...newOpportunityToImproveTemplate,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "handleOpportunityToImprove");
         console.log(error);
     }
 
@@ -618,6 +624,7 @@ const handleSpendRequest = async (payload, locations) => {
             ...newSpendRequestMessageTemplate,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "handleSpendRequest");
         console.log(error);
     }
 
@@ -724,6 +731,11 @@ const handleRequestResponse = async (payload, locations) => {
                 ...newRequestMessageTemplate,
             });
         } catch (error) {
+            await reportErrorToSlack(
+                error,
+                "Add Task to Board - handleRequestResponse"
+            );
+
             console.log(error);
         }
 
@@ -840,6 +852,7 @@ const handleInvoiceRequestResponse = async (payload) => {
             ...newInvoiceRequestMessageTemplate,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "handleInvoiceRequestResponse");
         console.log(error);
     }
 };
@@ -977,6 +990,7 @@ const handleOpsRequestResponse = async (payload) => {
             ],
         });
     } catch (error) {
+        await reportErrorToSlack(error, "handleOpsRequestResponse");
         console.log(error);
     }
 };
@@ -1079,6 +1093,7 @@ const handleMarketingRequestResponse = async (payload) => {
             ...newMarketingRequestMessageTemplate,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "handleMarketingRequestResponse");
         console.log(error);
     }
 };
@@ -1171,6 +1186,7 @@ const noActionRequired = async (payload) => {
             blocks: threadBlocks,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "noActionRequired");
         console.log(error);
     }
 };
@@ -1244,6 +1260,8 @@ const approveSpendRequest = async (payload) => {
             message: "Approval modal opened.",
         };
     } catch (error) {
+        await reportErrorToSlack(error, "approveSpendRequest");
+
         console.error("Error opening approval modal:", error);
         return {
             status: "error",
@@ -1355,6 +1373,7 @@ const handleAcceptSpendRequestModal = async (payload) => {
             message: "Spend request was declined.",
         };
     } catch (error) {
+        await reportErrorToSlack(error, "handleAcceptSpendRequestModal");
         console.error("Error processing denial:", error);
         return {
             status: "error",
@@ -1420,6 +1439,7 @@ const denySpendRequest = async (payload) => {
             message: "Denial modal opened.",
         };
     } catch (error) {
+        await reportErrorToSlack(error, "denySpendRequest");
         console.error("Error opening denial modal:", error);
         return {
             status: "error",
@@ -1531,6 +1551,7 @@ const handleDenySpendRequestModal = async (payload) => {
             message: "Spend request was declined.",
         };
     } catch (error) {
+        await reportErrorToSlack(error, "handleDenySpendRequestModal");
         console.error("Error processing denial:", error);
         return {
             status: "error",
@@ -1636,6 +1657,8 @@ const createTask = async (payload) => {
             blocks: [...payload.message.blocks],
         });
     } catch (error) {
+        await reportErrorToSlack(error, "createTask");
+
         console.log(error);
     }
 };
@@ -1699,6 +1722,7 @@ const claimTask = async (payload) => {
             blocks: [...payload.message.blocks],
         });
     } catch (error) {
+        await reportErrorToSlack(error, "claimTask");
         console.log(error);
     }
 };
@@ -1807,6 +1831,7 @@ const openOpsRequestForm = async (payload) => {
             view: opsRequestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openOpsRequestForm");
         console.dir(error, { depth: null });
     }
 };
@@ -1841,6 +1866,7 @@ const openMarketingRequestForm = async (payload) => {
             view: marketingRequestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openMarketingRequestForm");
         console.dir(error, { depth: null });
     }
 };
@@ -1863,6 +1889,7 @@ const openSpendRequestFormWithTemplate = async (payload, callbackName) => {
             view: requestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openSpendRequestFormWithTemplate");
         console.log(error);
     }
 };
@@ -1886,6 +1913,7 @@ const openFormWithCustomTemplate = async (payload, callbackName, template) => {
             view: requestModal,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "openFormWithCustomTemplate");
         console.log(error);
     }
 };
@@ -1969,6 +1997,7 @@ const logPasswordRequest = async (userId, appName, success) => {
             text: logMessage,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "logPasswordRequest");
         console.error("Failed to log password request:", error);
     }
 };
@@ -2137,6 +2166,43 @@ const handlePasswordsListCommand = async (payload) => {
     await logPasswordRequest(payload.user_id, "passwords list", true);
 };
 
+const reportErrorToSlack = async (error, context) => {
+    const errorChannel = process.env.ERROR_REPORTING_CHANNEL;
+
+    if (!errorChannel) {
+        console.log(
+            "ERROR_REPORTING_CHANNEL not configured, skipping error reporting"
+        );
+        return;
+    }
+
+    const timestamp = new Date().toLocaleString("en-GB", {
+        timeZone: "Europe/London",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+    });
+
+    const logMessage =
+        `❗ *Error Report*\n` +
+        `*Context:* ${context}\n` +
+        `*Error Message:* ${error.message}\n` +
+        `*Stack Trace:* \`\`\`${error.stack}\`\`\`\n` +
+        `*Time:* ${timestamp}`;
+
+    try {
+        await slack.chat.postMessage({
+            channel: errorChannel,
+            text: logMessage,
+        });
+    } catch (err) {
+        console.error("Failed to report error to Slack:", err);
+    }
+};
+
 module.exports = {
     slack,
     getMembers,
@@ -2175,4 +2241,5 @@ module.exports = {
     handleAcceptSpendRequestModal,
     handlePasswordCommand,
     handlePasswordsListCommand,
+    reportErrorToSlack,
 };

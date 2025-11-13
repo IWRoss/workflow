@@ -1,4 +1,4 @@
-const { options } = require("nodemon/lib/config");
+const { reportErrorToSlack } = require("../controllers/slack");
 
 /**
  * Axios
@@ -88,6 +88,7 @@ const addRowToGoogleSheets = async (rowData, options = {}) => {
             updatedRows: response.data.updates.updatedRows,
         };
     } catch (error) {
+        await reportErrorToSlack(error, "addRowToGoogleSheets");
         console.error("Error adding row to Google Sheets:", error);
         return {
             success: false,
@@ -115,22 +116,19 @@ const addSpendRequestToGoogleSheets = async (
         approvedByID,
         approvedByName,
         requestData.textfieldValue || "",
-        new Date().toISOString().split("T")[0],  
+        new Date().toISOString().split("T")[0],
         requestData.numberOfAttendees || "",
         requestData.numberOfClients || "",
         requestData.numberOfInternalStaff || "",
     ];
 
     return await addRowToGoogleSheets(rowData, {
-        range: "Sheet1!A:P", 
+        range: "Sheet1!A:P",
     });
 };
 
 const getColumnValues = async (options = {}) => {
-    const {
-        spreadsheetId ,
-        range,
-    } = options;
+    const { spreadsheetId, range } = options;
 
     const sheets = initialiseGoogleSheets();
 
@@ -143,7 +141,10 @@ const getColumnValues = async (options = {}) => {
         const rows = response.data.values || [];
         return rows.flat();
     } catch (error) {
-        console.error("Error retrieving column values from Google Sheets:", error);
+        console.error(
+            "Error retrieving column values from Google Sheets:",
+            error
+        );
         return [];
     }
 };
@@ -157,5 +158,4 @@ module.exports = {
     addSpendRequestToGoogleSheets,
     addRowToGoogleSheets,
     getColumnValues,
-    
 };

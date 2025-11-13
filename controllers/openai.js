@@ -1,3 +1,5 @@
+const { reportErrorToSlack } = require("./slack");
+
 const OpenAI = require("openai");
 
 //Create a connection to OpenAI
@@ -44,6 +46,7 @@ const generateTitleFromRequest = async (client, description) => {
 
         return title;
     } catch (error) {
+        await reportErrorToSlack(error, "generateTitleFromRequest");
         console.error("Error generating title:", error);
         throw error;
     }

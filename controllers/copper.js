@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { setCache, getCache } = require("./cache");
+const { reportErrorToSlack } = require("./slack");
 
 const copperHeaders = {
     "X-PW-AccessToken": process.env.COPPER_API_KEY,
@@ -548,6 +549,7 @@ const getOrCreateCompanyCode = async (comp) => {
         console.log("New company code created:", newCompanyCode);
         return newCompanyCode;
     } catch (error) {
+        await reportErrorToSlack(error, "getOrCreateCompanyCode");
         console.error("Error creating company code:", error);
         return null;
     }
@@ -603,6 +605,7 @@ const updateOpportunityCounter = async (opp, comp) => {
 
         return opportunityIndex;
     } catch (error) {
+        await reportErrorToSlack(error, "updateOpportunityCounter");
         console.error("Error updating company opportunity count:", error);
     }
 };
@@ -624,6 +627,7 @@ const createProjectCodeForOpportunity = async (compCode, oppIndex, opp) => {
 
         return newProjectCode;
     } catch (error) {
+        await reportErrorToSlack(error, "createProjectCodeForOpportunity");
         console.error("Error updating opportunity project code:", error);
     }
 };
@@ -663,6 +667,7 @@ const handleCopperOpportunityWebhook = async (
 
         return { success: true };
     } catch (error) {
+        await reportErrorToSlack(error, "handleCopperOpportunityWebhook");
         console.error("Error in handleCopperOpportunityWebhook:", error);
         throw error;
     }
@@ -712,6 +717,7 @@ const addOpportunityToProjectBoard = async (opportunity) => {
             Client: company.name,
         });
     } catch (error) {
+        await reportErrorToSlack(error, "addOpportunityToProjectBoard");
         console.error("Error adding opportunity to project board:", error);
     }
 };
@@ -723,6 +729,11 @@ const addWonOpportunitiesToProjectBoard = async () => {
         try {
             await addOpportunityToProjectBoard(opportunity);
         } catch (error) {
+            await reportErrorToSlack(
+                error,
+                "addWonOpportunitiesToProjectBoard"
+            );
+
             console.error(
                 "Error adding won opportunity to project board:",
                 error

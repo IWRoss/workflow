@@ -327,3 +327,32 @@ describe("#addWonOpportunitiesToProjectBoard", function () {
         }
     });
 });
+
+describe("#addOpportunityToProjectBoardById", function () {
+    it("should add a test opportunity to the project board", async function () {
+        const {
+            addOpportunityToProjectBoard,
+            getOpportunity,
+        } = require("../controllers/copper");
+
+        // Increase timeout to 10 seconds
+        this.timeout(10000);
+
+        const testOpportunityId = 36373179; // Replace with a valid opportunity ID for testing
+
+        const opportunity = await getOpportunity(testOpportunityId);
+
+        try {
+            const result = await addOpportunityToProjectBoard(opportunity);
+
+            console.dir(result, { depth: null });
+
+            assert(result);
+        } catch (error) {
+            console.error(
+                "Error adding test opportunity to project board:",
+                error
+            );
+        }
+    });
+});

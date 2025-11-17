@@ -218,6 +218,8 @@ const formatOpportunity = (opportunity) => {
         stageName: opportunity.stageName,
         companyId: opportunity.company_id,
         ownerId: opportunity.assignee_id,
+        value: opportunity.monetary_value,
+        currency: opportunity.monetary_unit,
         ...customFields,
     };
 };
@@ -710,6 +712,12 @@ const addOpportunityToProjectBoard = async (opportunity) => {
             "Project Code": projectCode,
             "Project Owner": opportunityOwner.email,
             Client: company.name,
+            Total: opportunity.value || 0,
+            Currency: opportunity.currency || "GBP",
+            "Consulting Fee": opportunity.consultingFees || 0,
+            "Studio Fee": opportunity.studioFees || 0,
+            "Project Fee": opportunity.projectFees || 0,
+            "Billed Hours": opportunity.totalDays * 8 || 0,
         });
     } catch (error) {
         console.error("Error adding opportunity to project board:", error);

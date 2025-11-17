@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
+const path = require("path");
 
 const PORT = process.env.PORT || 4000;
 
@@ -18,18 +19,31 @@ const rawBodyBuffer = (req, res, buf, encoding) => {
 app.use(bodyParser.urlencoded({ verify: rawBodyBuffer, extended: true }));
 app.use(bodyParser.json({ verify: rawBodyBuffer }));
 
+// Serve static files from React build in production
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "client/build")));
+}
+
 // Import routes
 const apiRoutes = require("./routes/api/api");
 
 // Use routes
 app.post("*", apiRoutes);
+
+// Handle React routing - catch all GET requests
 app.get("*", (req, res) => {
-    res.status(200).json({
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        service: "workflow",
-    });
+    if (process.env.NODE_ENV === "production") {
+        // Serve React app in production
+        res.sendFile(path.join(__dirname, "client/build", "index.html"));
+    } else {
+        // Development API response
+        res.status(200).json({
+            status: "ok",
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            service: "workflow",
+        });
+    }
 });
 
 // Start the server

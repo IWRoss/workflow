@@ -146,6 +146,35 @@ const getColumnValues = async (options = {}) => {
     }
 };
 
+const createCompanyCode = async (companyName) => {
+    let companyCode = false;
+
+    // First check if company name is a three letter initialism
+    if (companyName.length === 3 && companyName.match(/^[A-Z]{3}$/)) {
+        companyCode = companyName;
+    }
+
+    // Then check if company name has multiple words and can be converted to a three letter initialism
+    if (!companyCode && companyName.split(" ").length > 2) {
+        const words = companyName.split(" ");
+        companyCode = words
+            .map((word) => word[0].toUpperCase())
+            .join("")
+            .substr(0, 3);
+    }
+
+    // If not, then take the first three letters of the company name
+    if (!companyCode) {
+        companyCode = companyName
+            .split(" ")
+            .join("")
+            .substr(0, 3)
+            .toUpperCase();
+    }
+
+    return companyCode;
+};
+
 module.exports = {
     isValidHttpUrl,
     clearRequireCache,
@@ -155,4 +184,5 @@ module.exports = {
     addSpendRequestToGoogleSheets,
     addRowToGoogleSheets,
     getColumnValues,
+    createCompanyCode,
 };

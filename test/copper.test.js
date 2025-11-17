@@ -327,3 +327,72 @@ describe("#addWonOpportunitiesToProjectBoard", function () {
         }
     });
 });
+
+describe("#getOpportunityWithWizardData", function () {
+    it("should get opportunity with wizard data", async function () {
+        const {
+            getOpportunityWithWizardData,
+        } = require("../services/copper/opportunities");
+
+        const opportunityId = 36373179; // Replace with a valid opportunity ID
+
+        try {
+            const result = await getOpportunityWithWizardData(opportunityId);
+
+            console.dir(result, { depth: null });
+
+            assert(result);
+        } catch (error) {
+            console.error("Error getting opportunity with wizard data:", error);
+        }
+    });
+});
+
+describe("#updateOpportunityWizardData", function () {
+    it("should update opportunity wizard data", async function () {
+        const {
+            updateOpportunityWizardData,
+        } = require("../services/copper/opportunities");
+
+        const opportunityId = 36373179; // Replace with a valid opportunity ID
+
+        const wizardData = { testField: "testValue" }; // Replace with valid wizard data
+
+        try {
+            const result = await updateOpportunityWizardData(
+                opportunityId,
+                wizardData
+            );
+
+            console.dir(result, { depth: null });
+
+            assert(result);
+        } catch (error) {
+            console.error("Error updating opportunity wizard data:", error);
+        }
+    });
+
+    it("should throw an error when opportunity wizard data is too large", async function () {
+        const {
+            updateOpportunityWizardData,
+        } = require("../services/copper/opportunities");
+
+        const opportunityId = 36373179; // Replace with a valid opportunity ID
+
+        // Create wizard data that exceeds the size limit
+        const wizardData = {
+            largeField: "x".repeat(100000), // 100,000 characters
+        };
+
+        try {
+            await updateOpportunityWizardData(opportunityId, wizardData);
+            assert.fail("Expected error was not thrown");
+        } catch (error) {
+            console.log("Caught expected error:", error.message);
+            assert(
+                error.message.includes("Wizard data is too large"),
+                "Unexpected error message"
+            );
+        }
+    });
+});

@@ -1,6 +1,26 @@
 const axios = require("axios");
 const { setCache, getCache } = require("./cache");
 
+/**
+ * SDK for Copper CRM
+ *
+ * @param {string} apiKey - Copper API Key
+ * @returns {object} Copper SDK instance
+ */
+const copperSdk = () => {
+    const instance = axios.create({
+        baseURL: "https://api.copper.com/developer_api/v1/",
+        headers: {
+            "X-PW-AccessToken": process.env.COPPER_API_KEY,
+            "X-PW-Application": "developer_api",
+            "X-PW-UserEmail": process.env.COPPER_API_EMAIL,
+            "Content-Type": "application/json",
+        },
+    });
+
+    return instance;
+};
+
 const copperHeaders = {
     "X-PW-AccessToken": process.env.COPPER_API_KEY,
     "X-PW-Application": "developer_api",
@@ -42,23 +62,31 @@ const selectCustomFieldIDByName = (
 };
 
 const getPipelines = async () => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/pipelines`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/pipelines`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get("/pipelines");
 
     return response.data;
 };
 
 const getCustomFieldDefinitions = async () => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/custom_field_definitions`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/custom_field_definitions`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get("/custom_field_definitions");
 
     return response.data;
 };
@@ -87,23 +115,31 @@ const getValidPipelineStageIDs = async () => {
 };
 
 const getValidContactTypes = async () => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/contact_types`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/contact_types`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get("/contact_types");
 
     return response.data;
 };
 
 const getOpportunity = async (opportunityId) => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/opportunities/${opportunityId}`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/opportunities/${opportunityId}`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get(`/opportunities/${opportunityId}`);
 
     if (!response.data) {
         throw new Error("Opportunity not found");
@@ -115,17 +151,28 @@ const getOpportunity = async (opportunityId) => {
 };
 
 const getOpportunityByProjectCode = async (projectCode) => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/opportunities/search`,
-        {
-            headers: copperHeaders,
-            params: {
-                custom_field_definition_id:
-                    selectCustomFieldIDByName("projectCode"),
-                custom_field_value: projectCode,
-            },
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/opportunities/search`,
+    //     {
+    //         headers: copperHeaders,
+    //         params: {
+    //             custom_field_definition_id:
+    //                 selectCustomFieldIDByName("projectCode"),
+    //             custom_field_value: projectCode,
+    //         },
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get(`/opportunities/search`, {
+        headers: copperHeaders,
+        params: {
+            custom_field_definition_id:
+                selectCustomFieldIDByName("projectCode"),
+            custom_field_value: projectCode,
+        },
+    });
 
     return response.data;
 };
@@ -160,14 +207,21 @@ const getOpportunities = async (filter = () => true) => {
         minimum_stage_change_date: oneMonthAgoTodayTimestamp,
     };
 
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
     while (true) {
-        const response = await axios.post(
-            `${process.env.COPPER_API_URL}/opportunities/search`,
-            { ...payload, page_number: page },
-            {
-                headers: copperHeaders,
-            }
-        );
+        // const response = await axios.post(
+        //     `${process.env.COPPER_API_URL}/opportunities/search`,
+        //     { ...payload, page_number: page },
+        //     {
+        //         headers: copperHeaders,
+        //     }
+        // );
+
+        const response = await copper.post("/opportunities/search", {
+            ...payload,
+            page_number: page,
+        });
 
         const opportunities = response.data;
 
@@ -249,14 +303,21 @@ const getCompanies = async () => {
         contact_type_ids: validCompanyTypesIds,
     };
 
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
     while (true) {
-        const response = await axios.post(
-            `${process.env.COPPER_API_URL}/companies/search`,
-            { ...payload, page_number: page },
-            {
-                headers: copperHeaders,
-            }
-        );
+        // const response = await axios.post(
+        //     `${process.env.COPPER_API_URL}/companies/search`,
+        //     { ...payload, page_number: page },
+        //     {
+        //         headers: copperHeaders,
+        //     }
+        // );
+
+        const response = await copper.post("/companies/search", {
+            ...payload,
+            page_number: page,
+        });
 
         const companies = response.data;
 
@@ -290,30 +351,46 @@ const getCompanies = async () => {
  * Get the company from the company ID
  */
 const getCompany = async (companyId) => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/companies/${companyId}`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/companies/${companyId}`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get(`/companies/${companyId}`);
 
     return response.data;
 };
 
 const getCompanyByCompanyCode = async (companyCode) => {
-    const response = await axios.get(
-        `${process.env.COPPER_API_URL}/companies/search`,
-        {
-            headers: copperHeaders,
-            params: {
-                custom_field_definition_id: selectCustomFieldIDByName(
-                    "companyCode",
-                    companyCustomFieldMap
-                ),
-                custom_field_value: companyCode,
-            },
-        }
-    );
+    // const response = await axios.get(
+    //     `${process.env.COPPER_API_URL}/companies/search`,
+    //     {
+    //         headers: copperHeaders,
+    //         params: {
+    //             custom_field_definition_id: selectCustomFieldIDByName(
+    //                 "companyCode",
+    //                 companyCustomFieldMap
+    //             ),
+    //             custom_field_value: companyCode,
+    //         },
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get(`/companies/search`, {
+        params: {
+            custom_field_definition_id: selectCustomFieldIDByName(
+                "companyCode",
+                companyCustomFieldMap
+            ),
+            custom_field_value: companyCode,
+        },
+    });
 
     return response.data;
 };
@@ -328,24 +405,39 @@ const assignCompanyCode = async (companyData, dryRun = false) => {
         };
     }
 
-    const response = await axios.post(
-        `${process.env.COPPER_API_URL}/companies`,
-        {
-            name: companyData.name,
-            custom_fields: [
-                {
-                    custom_field_definition_id: selectCustomFieldIDByName(
-                        "companyCode",
-                        companyCustomFieldMap
-                    ),
-                    value: companyCode,
-                },
-            ],
-        },
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.post(
+    //     `${process.env.COPPER_API_URL}/companies`,
+    //     {
+    //         name: companyData.name,
+    //         custom_fields: [
+    //             {
+    //                 custom_field_definition_id: selectCustomFieldIDByName(
+    //                     "companyCode",
+    //                     companyCustomFieldMap
+    //                 ),
+    //                 value: companyCode,
+    //             },
+    //         ],
+    //     },
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.post("/companies", {
+        name: companyData.name,
+        custom_fields: [
+            {
+                custom_field_definition_id: selectCustomFieldIDByName(
+                    "companyCode",
+                    companyCustomFieldMap
+                ),
+                value: companyCode,
+            },
+        ],
+    });
 
     return response.data;
 };
@@ -380,43 +472,69 @@ const createCompanyCode = (companyName) => {
 };
 
 const updateCompanyOpportunityCount = async (companyId, count) => {
-    const response = await axios.put(
-        `${process.env.COPPER_API_URL}/companies/${companyId}`,
-        {
-            custom_fields: [
-                {
-                    custom_field_definition_id: selectCustomFieldIDByName(
-                        "opportunityCounter",
-                        companyCustomFieldMap
-                    ),
-                    value: count,
-                },
-            ],
-        },
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.put(
+    //     `${process.env.COPPER_API_URL}/companies/${companyId}`,
+    //     {
+    //         custom_fields: [
+    //             {
+    //                 custom_field_definition_id: selectCustomFieldIDByName(
+    //                     "opportunityCounter",
+    //                     companyCustomFieldMap
+    //                 ),
+    //                 value: count,
+    //             },
+    //         ],
+    //     },
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.put(`/companies/${companyId}`, {
+        custom_fields: [
+            {
+                custom_field_definition_id: selectCustomFieldIDByName(
+                    "opportunityCounter",
+                    companyCustomFieldMap
+                ),
+                value: count,
+            },
+        ],
+    });
 
     return response.data;
 };
 
 const updateOpportunityProjectCode = async (opportunityId, projectCode) => {
-    const response = await axios.put(
-        `${process.env.COPPER_API_URL}/opportunities/${opportunityId}`,
-        {
-            custom_fields: [
-                {
-                    custom_field_definition_id:
-                        selectCustomFieldIDByName("projectCode"),
-                    value: projectCode,
-                },
-            ],
-        },
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.put(
+    //     `${process.env.COPPER_API_URL}/opportunities/${opportunityId}`,
+    //     {
+    //         custom_fields: [
+    //             {
+    //                 custom_field_definition_id:
+    //                     selectCustomFieldIDByName("projectCode"),
+    //                 value: projectCode,
+    //             },
+    //         ],
+    //     },
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.put(`/opportunities/${opportunityId}`, {
+        custom_fields: [
+            {
+                custom_field_definition_id:
+                    selectCustomFieldIDByName("projectCode"),
+                value: projectCode,
+            },
+        ],
+    });
 
     return response.data;
 };
@@ -425,36 +543,52 @@ const updateOpportunityProjectCode = async (opportunityId, projectCode) => {
  * Subscribe to Copper webhook events
  */
 const subscribeToCopperWebhook = async (webhookUrl) => {
-    const response = await axios.post(
-        `${process.env.COPPER_API_URL}/webhooks`,
-        {
-            target: webhookUrl,
-            type: "opportunity",
-            event: "update",
-        },
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.post(
+    //     `${process.env.COPPER_API_URL}/webhooks`,
+    //     {
+    //         target: webhookUrl,
+    //         type: "opportunity",
+    //         event: "update",
+    //     },
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.post("/webhooks", {
+        target: webhookUrl,
+        type: "opportunity",
+        event: "update",
+    });
 
     return response.data;
 };
 
 const unsubscribeFromCopperWebhook = async (webhookId) => {
-    const response = await axios.delete(
-        `${process.env.COPPER_API_URL}/webhooks/${webhookId}`,
-        {
-            headers: copperHeaders,
-        }
-    );
+    // const response = await axios.delete(
+    //     `${process.env.COPPER_API_URL}/webhooks/${webhookId}`,
+    //     {
+    //         headers: copperHeaders,
+    //     }
+    // );
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.delete(`/webhooks/${webhookId}`);
 
     return response.data;
 };
 
 const listAllCopperWebhooks = async () => {
-    const response = await axios.get(`${process.env.COPPER_API_URL}/webhooks`, {
-        headers: copperHeaders,
-    });
+    // const response = await axios.get(`${process.env.COPPER_API_URL}/webhooks`, {
+    //     headers: copperHeaders,
+    // });
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get("/webhooks");
 
     return response.data;
 };
@@ -739,10 +873,19 @@ const getCopperUsers = async () => {
         return copperUsers;
     }
 
-    const response = await axios.get(`${process.env.COPPER_API_URL}users/`, {
-        headers: copperHeaders,
-        page_number: 1,
-        page_size: 100,
+    // const response = await axios.get(`${process.env.COPPER_API_URL}users/`, {
+    //     headers: copperHeaders,
+    //     page_number: 1,
+    //     page_size: 100,
+    // });
+
+    const copper = copperSdk(process.env.COPPER_API_KEY);
+
+    const response = await copper.get("/users/", {
+        params: {
+            page_number: 1,
+            page_size: 100,
+        },
     });
 
     setCache("copperUsers", response.data, 1000 * 60 * 60 * 24); // Cache for 24 hours

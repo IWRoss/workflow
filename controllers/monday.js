@@ -332,6 +332,135 @@ const getMarketingCampaignOptions = async () => {
     return options;
 };
 
+const getProjectCodeColumnId = async (boardId) => {
+    const response = await getMondayBoardColumns(boardId);
+
+    console.log("Board columns response", JSON.stringify(response));
+
+    const columns = response.data.boards[0].columns;
+
+    // Find the column with title "Project Code"
+    const projectCodeColumn = columns.find(
+        (column) => column.title === "Project Code"
+    );
+
+    if (!projectCodeColumn) {
+        throw new Error("Project Code column not found");
+    }
+
+    return projectCodeColumn.id;
+};
+
+const getItemByProjectCode = async (boardId, projectCode) => {
+    const columnId = await getProjectCodeColumnId(boardId);
+
+    const boardIdAsString = boardId.toString();
+
+    const response = await monday.api(
+        `query ($boardId: ID!, $columnId: String!, $projectCode: String!) {
+            items_page_by_column_values (
+                board_id: $boardId,
+                columns: [{ column_id: $columnId, column_values: [$projectCode] }],
+                limit: 1
+            ) {
+                items {
+                    id
+                    name
+                }
+            }
+        }`,
+        { variables: { boardId: boardIdAsString, columnId, projectCode } }
+    );
+
+    console.log("Get item by project code response", response);
+
+    const items = response.data.items_page_by_column_values?.items || [];
+
+    return items.length > 0 ? items[0] : null;
+};
+
+const getGroupIdByTitle = async (boardId, groupTitleOrTitles) => {
+    const response = await monday.api(
+        `query ($boardId: [ID!]) {
+      boards (ids: $boardId) {
+        groups {
+          id
+          title
+        }
+      }
+    }`,
+        { variables: { boardId } }
+    );
+
+    const groups = response.data.boards[0].groups;
+
+    const candidateTitles = Array.isArray(groupTitleOrTitles)
+        ? groupTitleOrTitles
+        : [groupTitleOrTitles];
+
+    const normalizedCandidates = candidateTitles
+        .filter(Boolean)
+        .map((title) => title.trim().toLowerCase());
+
+    const matchingGroup = groups.find((group) => {
+        if (!group.title) {
+            return false;
+        }
+
+        const normalizedGroupTitle = group.title.trim().toLowerCase();
+
+        return normalizedCandidates.includes(normalizedGroupTitle);
+    });
+
+    return {
+        groupId: matchingGroup ? matchingGroup.id : null,
+        groups,
+    };
+};
+
+const moveTaskToCompletedGroup = async (taskId, boardId) => {
+    const envProvidedTitles = (process.env.MONDAY_COMPLETED_GROUP_TITLES || "")
+        .split(",")
+        .map((title) => title.trim())
+        .filter(Boolean);
+
+    const { groupId: completedGroupId, groups } = await getGroupIdByTitle(
+        boardId,
+        [...envProvidedTitles, "Completed", "Complete", "Done"]
+    );
+
+    if (!completedGroupId) {
+        throw new Error(
+            `Completed group not found. Looked for: ${[
+                ...envProvidedTitles,
+                "Completed",
+                "Complete",
+                "Done",
+            ]
+                .filter(Boolean)
+                .join(", ")}. Available groups: ${groups
+                .map((group) => group.title || "<untitled>")
+                .join(", ")}`
+        );
+    }
+
+    const result = await monday.api(
+        `mutation ($itemId: ID!, $groupId: String!) {
+        move_item_to_group (item_id: $itemId, group_id: $groupId) {
+            id
+        }
+    }`,
+        {
+            variables: {
+                itemId: taskId.toString(),
+                groupId: completedGroupId.toString(),
+            },
+        }
+    );
+
+    return result;
+};
+
 module.exports = {
     getMonday,
     getMondayBoard,
@@ -349,4 +478,7 @@ module.exports = {
     assignCompanyCode,
     getMarketingCampaignOptions,
     addTaskToBoardWithColumns,
+    getItemByProjectCode,
+    getGroupIdByTitle,
+    moveTaskToCompletedGroup,
 };

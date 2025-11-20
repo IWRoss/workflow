@@ -684,6 +684,54 @@ const addOpportunityToProjectBoardOnWebhook = async (payload) => {
     );
 };
 
+const moveOpportunityToCompletedGroupOnWebhook = async (payload) => {
+    return handleCopperOpportunityWebhook(
+        payload,
+        // Filter function to only process certain stage changes
+        (opportunity, payload) => {
+            // Check if the stage has changed to "Completed"
+            return (
+                payload.updated_attributes.stage &&
+                payload.updated_attributes.stage[1] === "Completed"
+            );
+        },
+        // Action function to perform when the filter passes
+        async (opportunity, payload) => {
+            const {
+                getItemByProjectCode,
+                moveTaskToCompletedGroup,
+            } = require("./monday");
+
+            const projectCode = opportunity.projectCode;
+
+            if (!projectCode) {
+                console.log(
+                    "Opportunity does not have a project code, cannot move task"
+                );
+                return;
+            }
+
+            const item = await getItemByProjectCode(
+                process.env.PROJECT_MONDAY_BOARD,
+                projectCode
+            );
+
+            if (!item) {
+                console.log(
+                    "No Monday.com item found for project code:",
+                    projectCode
+                );
+                return;
+            }
+
+            return await moveTaskToCompletedGroup(
+                item.id,
+                process.env.PROJECT_MONDAY_BOARD
+            );
+        }
+    );
+};
+
 const addOpportunityToProjectBoard = async (opportunity) => {
     const { addProjectToProjectBoard } = require("./monday");
 
@@ -778,6 +826,7 @@ module.exports = {
     listAllCopperWebhooks,
     setupCopperWebhook,
     addOpportunityToProjectBoardOnWebhook,
+    moveOpportunityToCompletedGroupOnWebhook,
     addOpportunityToProjectBoard,
     addWonOpportunitiesToProjectBoard,
     createCompanyCode,

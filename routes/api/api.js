@@ -157,13 +157,13 @@ router.post("/slack/receive", async (req, res) => {
 
         //Check if the actions are block suggestions (for external select)
         if (payload.type === "block_suggestion") {
-            console.log("Full payload:", JSON.stringify(payload, null, 2));
+            //console.log("Full payload:", JSON.stringify(payload, null, 2));
             
             // Handle external select options loading
             if (payload.action_id === "project_select") {
                 console.log("Project select detected, calling handleProjectSelectOptions");
                 const options = await handleProjectSelectOptions(payload);
-                console.log("Options returned:", JSON.stringify(options, null, 2));
+                //console.log("Options returned:", JSON.stringify(options, null, 2));
                 return res.json(options);
             }
             

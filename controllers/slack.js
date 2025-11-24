@@ -803,7 +803,7 @@ const handleProjectSelectOptions = async (payload) => {
     try {
         const searchTerm = payload.value || ""; 
         
-        console.log("Searching for projects with term:", searchTerm);
+        //console.log("Searching for projects with term:", searchTerm);
         
         // Fetch all projects from Monday.com
         const rows = await getAllTaskRowsFromBoard(

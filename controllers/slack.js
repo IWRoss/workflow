@@ -178,7 +178,7 @@ const openRequestForm = async (payload, callbackName) => {
     console.log("Callback name inside openRequestForm", callbackName);
 
     try {
-        // Clone the modal template (it's an object, not a function)
+        // Call the function to get the modal with populated project options
         const modalView = _.cloneDeep(templates.requestModal);
 
         modalView.callback_id =
@@ -186,52 +186,14 @@ const openRequestForm = async (payload, callbackName) => {
 
         const categories = require("../data/categories");
 
-        /**
-         * Define a const theCategories containing either the categories corresponding to the callbackName,
-         * or, if that does not exist, flatten the categories object and return all values, removing duplicates
-         */
-
         const optionGroup = categories[callbackName] ?? [
             ...new Set(Object.values(categories).flat()),
         ];
 
-        //Get cached project codes
-        let projectOptions = getCache("mondayProjectOptions");
-
-       
-        
-
-        if (!projectOptions) {
-
-            // If not cached, fetch and cache for 1 hour
-            const rows = await getAllTaskRowsFromBoard(
-                process.env.OPS_MONDAY_BOARD
-            );
-            
-            projectOptions = rows.map((row) => {
-                const displayName =
-                    row.name.length > 75 ? `${row.name.slice(0, 72)}...` : row.name;
-
-                return {
-                    text: {
-                        type: "plain_text",
-                        text: displayName,
-                        emoji: true,
-                    },
-                    value: row.projectCode,
-                };
-            });
-            
-            // Cache for 1 hour (3600000 milliseconds)
-            setCache("mondayProjectOptions", projectOptions, 3600000);
-        }
-
-           modalView.blocks[0].element.options = projectOptions;
-
         // Update the media/categories dropdown (block index 4)
         modalView.blocks[4].element.option_groups = optionGroup;
 
-        // Send leave request form to Slack
+        // Send modal to Slack
         const result = await slack.views.open({
             trigger_id: payload.trigger_id,
             view: modalView,
@@ -831,6 +793,60 @@ const handleRequestResponse = async (payload, locations) => {
     });
 
     return results;
+};
+
+
+/**
+ * Handle project select options load (called when user types in the dropdown)
+ */
+const handleProjectSelectOptions = async (payload) => {
+    try {
+        const searchTerm = payload.value || ""; 
+        
+        console.log("Searching for projects with term:", searchTerm);
+        
+        // Fetch all projects from Monday.com
+        const rows = await getAllTaskRowsFromBoard(
+            process.env.OPS_MONDAY_BOARD
+        );
+        
+        // Filter projects based on search term
+        const filteredRows = rows.filter((row) => {
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                row.name.toLowerCase().includes(searchLower) ||
+                row.projectCode.toLowerCase().includes(searchLower)
+            );
+        });
+        
+        // Convert to Slack options format (max 100 results)
+        const options = filteredRows.slice(0, 100).map((row) => {
+            const displayName =
+                row.name.length > 75 
+                    ? `${row.name.slice(0, 72)}...` 
+                    : row.name;
+
+            return {
+                text: {
+                    type: "plain_text",
+                    text: `${row.projectCode} - ${displayName}`,
+                    emoji: true,
+                },
+                value: row.projectCode,
+            };
+        });
+        
+        // Return options to Slack
+        return {
+            options: options,
+        };
+    } catch (error) {
+        await reportErrorToSlack(error, "handleProjectSelectOptions");
+        console.error("Error loading project options:", error);
+        return {
+            options: [],
+        };
+    }
 };
 
 const handleStudioRequestResponse = async (payload) =>
@@ -2330,4 +2346,5 @@ module.exports = {
     handlePasswordCommand,
     handlePasswordsListCommand,
     reportErrorToSlack,
+    handleProjectSelectOptions,
 };

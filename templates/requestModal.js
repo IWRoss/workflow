@@ -30,6 +30,25 @@ module.exports = {
     blocks: [
         {
             type: "input",
+            block_id: "project_select_block",
+            element: {
+                type: "static_select",
+                action_id: "project_select",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Choose a project",
+                    emoji: true,
+                },
+                options: [], 
+            },
+            label: {
+                type: "plain_text",
+                text: "Select Project",
+                emoji: true,
+            },
+        },
+        {
+            type: "input",
             element: {
                 type: "static_select",
                 placeholder: {

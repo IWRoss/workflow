@@ -25,7 +25,7 @@ const getMondayBoard = async (boardId) => {
         `query ($boardId: [ID!]) {
       boards (ids: $boardId) {
         name
-        items_page {
+        items_page (limit: 100) {
           items {
             id
             name
@@ -35,15 +35,54 @@ const getMondayBoard = async (boardId) => {
                 title
               }
               value
+              ... on BoardRelationValue {
+                linked_item_ids
+                display_value
+              }
             }
           }
         }
       }
     }`,
-        { variables: { boardId } } // Adjust page and limit as needed
+        { variables: { boardId } }
     );
 
     return board;
+};
+
+/**
+ * Link a task to a parent project via the Project board relation column
+ */
+const linkTaskToProject = async (taskId, projectId, boardId) => {
+    // The Project column ID (board_relation_mkxsg758 for Studio board)
+    const projectColumnId = "board_relation_mkxsg758";
+
+    // Link the task to the project
+    const result = await monday.api(
+        `mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+            change_column_value (
+                board_id: $boardId,
+                item_id: $itemId,
+                column_id: $columnId,
+                value: $value
+            ) {
+                id
+            }
+        }`,
+        {
+            variables: {
+                boardId: boardId.toString(),
+                itemId: taskId.toString(),
+                columnId: projectColumnId,
+                value: JSON.stringify({
+                    item_ids: [parseInt(projectId)],
+                }),
+            },
+        }
+    );
+
+    console.log(`Successfully linked task ${taskId} to project ${projectId}`);
+    return result;
 };
 
 /**
@@ -461,6 +500,35 @@ const moveTaskToCompletedGroup = async (taskId, boardId) => {
     return result;
 };
 
+//Function to select each row from the board
+const getAllTaskRowsFromBoard = async (boardId) => {
+    const result = await getMondayBoard(boardId);
+
+    console.log("Get all task rows from board response", result);
+
+    //Select the rows from the board
+    const rows = result.data.boards[0].items_page.items;
+
+    //Return an object selecting the rows name and the project code from the column values
+    const selectedRows = rows.map((row) => {
+        const projectCodeColumn = row.column_values.find(
+            (col) => col.column.title === "Project Code"
+        );
+
+        return {
+            id: row.id,
+            name: row.name,
+            projectCode: projectCodeColumn?.value
+                ? JSON.parse(projectCodeColumn.value)
+                : null,
+        };
+    });
+
+    return selectedRows;
+};
+
+//Function to attach the task to project by project code
+
 module.exports = {
     getMonday,
     getMondayBoard,
@@ -481,4 +549,6 @@ module.exports = {
     getItemByProjectCode,
     getGroupIdByTitle,
     moveTaskToCompletedGroup,
+    getAllTaskRowsFromBoard,
+    linkTaskToProject,
 };

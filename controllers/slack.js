@@ -710,7 +710,7 @@ const handleRequestResponse = async (payload, locations) => {
     );
 
     //Get the project code from the dropdown
-    const projectCode = findField(fields, "project_select").value;
+    const projectCode = findField(fields, "project_select")?.selected_option?.value;
 
     console.log("Project Code:", projectCode);
 

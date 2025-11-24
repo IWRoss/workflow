@@ -829,7 +829,7 @@ const handleProjectSelectOptions = async (payload) => {
             return {
                 text: {
                     type: "plain_text",
-                    text: `${row.projectCode} - ${displayName}`,
+                    text: `${displayName}`,
                     emoji: true,
                 },
                 value: row.projectCode,

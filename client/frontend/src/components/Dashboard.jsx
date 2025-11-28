@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { mondayService } from "../services/mondayService";
 
 export default function Dashboard() {
-    const [board, setBoard] = useState(null);
+    const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -11,7 +11,17 @@ export default function Dashboard() {
             try {
                 const data = await mondayService.getBoard(import.meta.env.VITE_OPS_MONDAY_BOARD);
                 console.log("Monday Board Data:", data);
-                setBoard(data);
+                
+                const boardItems = data?.data?.boards[0]?.items_page?.items || [];
+                
+                // Map items once, then set state once
+                const formattedItems = boardItems.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    column_values: item.column_values
+                }));
+                
+                setItems(formattedItems);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -25,16 +35,20 @@ export default function Dashboard() {
     if (loading) return <div>Loading...</div>;
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
-    const items = board?.data?.boards[0]?.items_page?.items || [];
-
     return (
         <div>
             <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-            <h2 className="text-xl mb-2">{board?.data?.boards[0]?.name}</h2>
-            <ul className="space-y-2">
-                {items.map(item => (
-                    <li key={item.id} className="p-4 border rounded">
-                        {item.name}
+            <ul>
+                {items.map((item) => (
+                    <li key={item.id} className="mb-2 p-4 border rounded">
+                        <h2 className="text-xl font-semibold">{item.name}</h2>
+                        <div className="mt-2">
+                            {item.column_values.map((col) => (
+                                <div key={col.column.id} className="mb-1">
+                                    <strong>{col.column.title}:</strong> {col.value || "—"}
+                                </div>
+                            ))}
+                        </div>
                     </li>
                 ))}
             </ul>

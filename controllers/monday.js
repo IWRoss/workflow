@@ -20,30 +20,102 @@ const getMonday = async () => {
  * Get Monday board
  */
 const getMondayBoard = async (boardId) => {
-    // Get the board
-    const board = await monday.api(
-        `query ($boardId: [ID!]) {
-      boards (ids: $boardId) {
-        name
-        items_page {
-          items {
-            id
-            name
-            column_values {
-              column {
-                id
-                title
-              }
-              value
-            }
-          }
-        }
-      }
-    }`,
-        { variables: { boardId } } // Adjust page and limit as needed
-    );
 
-    return board;
+    // Initialize variables for pagination
+    // allItems will store all items retrieved from the board
+    // cursor will be used for pagination
+    // boardName will store the name of the board
+    let allItems = [];
+    let cursor = null;
+    let boardName = null;
+
+    do{
+        const query = cursor ? `query ($boardId: [ID!], $cursor: String!) {
+                boards (ids: $boardId) {
+                    name
+                    items_page (limit: 500, cursor: $cursor) {
+                        cursor
+                        items {
+                            id
+                            name
+                            group {
+                                id
+                                title
+                            }
+                            column_values {
+                                column {
+                                    id
+                                    title
+                                }
+                                value
+                                ... on BoardRelationValue {
+                                    linked_item_ids
+                                    display_value
+                                }
+                            }
+                        }
+                    }
+                }
+            }`: `query ($boardId: [ID!]) {
+                boards (ids: $boardId) {
+                    name
+                    items_page (limit: 500) {
+                        cursor
+                        items {
+                            id
+                            name
+                            group {
+                                id
+                                title
+                            }
+                            column_values {
+                                column {
+                                    id
+                                    title
+                                }
+                                value
+                                ... on BoardRelationValue {
+                                    linked_item_ids
+                                    display_value
+                                }
+                            }
+                        }
+                    }
+                }
+            }`;
+
+        // Set variables for the query
+        const variables = cursor ? { boardId, cursor } : { boardId };
+
+        // Execute the query
+        const response = await monday.api(query, { variables });
+
+        // Extract board data from results
+        const boardData = response.data.boards[0];
+
+        // Update boardName and allItems
+        boardName = boardData.name;
+        allItems = allItems.concat(boardData.items_page.items);
+
+        // Update cursor for pagination
+        cursor = boardData.items_page.cursor;
+
+    } while (cursor);
+
+    return {
+        data: {
+            boards: [
+                {
+                    name: boardName,
+                    items_page: {
+                        items: allItems,
+                    },
+                },
+            ],
+        },
+    };
+
+
 };
 
 /**

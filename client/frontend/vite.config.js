@@ -9,7 +9,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
             '/copper': 'http://localhost:4000',
-            '/slack': 'http://localhost:4000'
+            '/slack': 'http://localhost:4000',
+            '/monday': 'http://localhost:4000'
         }
     }
 })

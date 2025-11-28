@@ -21,9 +21,14 @@ app.use(bodyParser.json({ verify: rawBodyBuffer }));
 
 // Import routes
 const apiRoutes = require("./routes/api/api");
+const copperRoutes = require("./routes/api/copper/get");
+const mondayRoutes = require("./routes/api/monday/get");
+
 
 // Use routes
 app.use(apiRoutes);
+app.use(copperRoutes);
+app.use(mondayRoutes);
 // app.get("*", (req, res) => {
 //     res.status(200).json({
 //         status: "ok",

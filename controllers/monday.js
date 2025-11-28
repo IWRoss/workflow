@@ -481,4 +481,5 @@ module.exports = {
     getItemByProjectCode,
     getGroupIdByTitle,
     moveTaskToCompletedGroup,
+    getMondayMembers,
 };

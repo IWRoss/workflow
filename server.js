@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
+const path = require("path");
 
 const PORT = process.env.PORT || 4000;
 
@@ -22,20 +23,31 @@ app.use(bodyParser.json({ verify: rawBodyBuffer }));
 const apiRoutes = require("./routes/api/api");
 
 // Use routes
-app.post("*", apiRoutes);
+app.use(apiRoutes);
+// app.get("*", (req, res) => {
+//     res.status(200).json({
+//         status: "ok",
+//         timestamp: new Date().toISOString(),
+//         uptime: process.uptime(),
+//         service: "workflow",
+//     });
+// });
+
+
+// Serve Vite static files
+app.use(express.static(path.join(__dirname, "client/frontend/dist")));
+
+// Catch-all: serve React app for client-side routing
 app.get("*", (req, res) => {
-    res.status(200).json({
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        service: "workflow",
-    });
+    res.sendFile(path.join(__dirname, "client/dist/index.html"));
 });
 
 // Start the server
 server.listen(PORT, function () {
     console.log("listening on port 4000");
 });
+
+
 
 /**
  * If any Slack events need to be run on app initialisation, run them here

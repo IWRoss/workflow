@@ -646,7 +646,6 @@ const handleRequestResponse = async (payload, locations) => {
 
     console.log("All fields:", JSON.stringify(fields, null, 2));
 
-
     // Get the user
     const user = await getUserById(payload.user.id);
 
@@ -672,12 +671,10 @@ const handleRequestResponse = async (payload, locations) => {
     );
 
     //Get the project code from the dropdown
-    const projectCode = findField(fields, "project_select")?.selected_option?.value;
+    const projectCode = findField(fields, "project_select")?.selected_option
+        ?.value;
 
     console.log("Project Code:", projectCode);
-
-    //Studio's Project Column ID
-    const studioProjectColumnId = "board_relation_mkxsg758";
 
     const newTask = {
         name: projectTitle,
@@ -702,18 +699,17 @@ const handleRequestResponse = async (payload, locations) => {
 
     console.log("New Task:", newTask);
 
-
     // Add task to boards
     const results = locations.map(async ({ boardId, slackChannel }) => {
-            console.log("Before adding to board:", boardId, slackChannel);
+        console.log("Before adding to board:", boardId, slackChannel);
+
+        
 
         const result = await addTaskToBoardWithColumns(newTask, boardId);
 
-
-
         console.log("Task added to board:", result);
 
-        //1. Get all the tasks from Ops board 
+        //1. Get all the tasks from Ops board
         const rows = await getAllTaskRowsFromBoard(
             process.env.OPS_MONDAY_BOARD
         );
@@ -732,18 +728,30 @@ const handleRequestResponse = async (payload, locations) => {
 
         const opsProjectId = matchedProject.id;
 
-        //Link the task to project
-        const linkResult = await linkTaskToProject(
-            result.data.create_item.id,
-            opsProjectId,
-            process.env.STUDIO_MONDAY_BOARD
-        );
+        switch (boardId) {
+            case process.env.STUDIO_MONDAY_BOARD:
+                console.log(
+                    `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                );
+                await linkTaskToProject(
+                    result.data.create_item.id,
+                    opsProjectId,
+                    process.env.STUDIO_MONDAY_BOARD
+                );
+                break;
+            case process.env.COMMTECH_MONDAY_BOARD:
+                console.log(
+                    `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                );
+                await linkTaskToProject(
+                    result.data.create_item.id,
+                    opsProjectId,
+                    process.env.COMMTECH_MONDAY_BOARD
+                );
+                break;
+        }
 
-        console.log("Link result:", linkResult);
-
-
-
-
+       
 
         let newRequestMessageTemplate = _.cloneDeep(
             templates.newRequestMessage
@@ -795,21 +803,20 @@ const handleRequestResponse = async (payload, locations) => {
     return results;
 };
 
-
 /**
  * Handle project select options load (called when user types in the dropdown)
  */
 const handleProjectSelectOptions = async (payload) => {
     try {
-        const searchTerm = payload.value || ""; 
-        
+        const searchTerm = payload.value || "";
+
         //console.log("Searching for projects with term:", searchTerm);
-        
+
         // Fetch all projects from Monday.com
         const rows = await getAllTaskRowsFromBoard(
             process.env.OPS_MONDAY_BOARD
         );
-        
+
         // Filter projects based on search term
         const filteredRows = rows.filter((row) => {
             const searchLower = searchTerm.toLowerCase();
@@ -818,13 +825,11 @@ const handleProjectSelectOptions = async (payload) => {
                 row.projectCode.toLowerCase().includes(searchLower)
             );
         });
-        
+
         // Convert to Slack options format (max 100 results)
         const options = filteredRows.slice(0, 100).map((row) => {
             const displayName =
-                row.name.length > 75 
-                    ? `${row.name.slice(0, 72)}...` 
-                    : row.name;
+                row.name.length > 75 ? `${row.name.slice(0, 72)}...` : row.name;
 
             return {
                 text: {
@@ -835,7 +840,7 @@ const handleProjectSelectOptions = async (payload) => {
                 value: row.projectCode,
             };
         });
-        
+
         // Return options to Slack
         return {
             options: options,

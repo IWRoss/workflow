@@ -48,18 +48,7 @@ export default function Navbar({ session, signOut }) {
                         >
                             Dashboard
                         </Link>
-                        <Link
-                            to="/projects"
-                            className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                            Projects
-                        </Link>
-                        <Link
-                            to="/companies"
-                            className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                            Companies
-                        </Link>
+                        
                     </div>
                 </div>
 

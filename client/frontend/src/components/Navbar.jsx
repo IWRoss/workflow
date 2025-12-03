@@ -43,7 +43,7 @@ export default function Navbar({ session, signOut }) {
 
                     <div className="hidden md:flex gap-6">
                         <Link
-                            to="/dashboard"
+                            to="/"
                             className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
                         >
                             Dashboard

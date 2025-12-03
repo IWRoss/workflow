@@ -20,17 +20,13 @@ const getMonday = async () => {
  * Get Monday board
  */
 const getMondayBoard = async (boardId) => {
-
-    // Initialize variables for pagination
-    // allItems will store all items retrieved from the board
-    // cursor will be used for pagination
-    // boardName will store the name of the board
     let allItems = [];
     let cursor = null;
     let boardName = null;
 
-    do{
-        const query = cursor ? `query ($boardId: [ID!], $cursor: String!) {
+    do {
+        const query = cursor 
+            ? `query ($boardId: [ID!], $cursor: String!) {
                 boards (ids: $boardId) {
                     name
                     items_page (limit: 500, cursor: $cursor) {
@@ -46,17 +42,49 @@ const getMondayBoard = async (boardId) => {
                                 column {
                                     id
                                     title
+                                    type
                                 }
                                 value
                                 ... on BoardRelationValue {
                                     linked_item_ids
                                     display_value
                                 }
+                                ... on MirrorValue {
+                                    display_value
+                                    mirrored_items {
+                                        linked_item {
+                                            id
+                                            name
+                                            board {
+                                                id
+                                                name
+                                            }
+                                            column_values {
+                                                column {
+                                                    id
+                                                    title
+                                                    type
+                                                }
+                                                ... on TimeTrackingValue {
+                                                    running
+                                                    started_at
+                                                    duration
+                                                    history {
+                                                        started_at
+                                                        ended_at
+                                                        started_user_id
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }`: `query ($boardId: [ID!]) {
+            }`
+            : `query ($boardId: [ID!]) {
                 boards (ids: $boardId) {
                     name
                     items_page (limit: 500) {
@@ -72,11 +100,42 @@ const getMondayBoard = async (boardId) => {
                                 column {
                                     id
                                     title
+                                    type
                                 }
                                 value
                                 ... on BoardRelationValue {
                                     linked_item_ids
                                     display_value
+                                }
+                                ... on MirrorValue {
+                                    display_value
+                                    mirrored_items {
+                                        linked_item {
+                                            id
+                                            name
+                                            board {
+                                                id
+                                                name
+                                            }
+                                            column_values {
+                                                column {
+                                                    id
+                                                    title
+                                                    type
+                                                }
+                                                ... on TimeTrackingValue {
+                                                    running
+                                                    started_at
+                                                    duration
+                                                    history {
+                                                        started_at
+                                                        ended_at
+                                                        started_user_id
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -84,38 +143,24 @@ const getMondayBoard = async (boardId) => {
                 }
             }`;
 
-        // Set variables for the query
         const variables = cursor ? { boardId, cursor } : { boardId };
-
-        // Execute the query
         const response = await monday.api(query, { variables });
-
-        // Extract board data from results
+        
         const boardData = response.data.boards[0];
-
-        // Update boardName and allItems
         boardName = boardData.name;
         allItems = allItems.concat(boardData.items_page.items);
-
-        // Update cursor for pagination
         cursor = boardData.items_page.cursor;
 
     } while (cursor);
 
     return {
         data: {
-            boards: [
-                {
-                    name: boardName,
-                    items_page: {
-                        items: allItems,
-                    },
-                },
-            ],
+            boards: [{
+                name: boardName,
+                items_page: { items: allItems },
+            }],
         },
     };
-
-
 };
 
 /**

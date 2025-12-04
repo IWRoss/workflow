@@ -36,7 +36,6 @@ export default function Dashboard() {
                             cv.column?.title === "Currency"
                     );
 
-
                     let currency = null;
                     //Parse Currency Type
 
@@ -146,7 +145,18 @@ export default function Dashboard() {
         fetchBoard();
     }, []);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading)
+        return (
+            <div className="fixed inset-0 bg-white flex items-center justify-center transition-opacity ">
+                <div className="flex flex-col items-center gap-3">
+                <div className="h-10 w-10 animate-spin border border-gray-200 rounded-full border-t-blue-600"></div>
+
+                    <p className="animate-pulse text-sm font-medium tracking-wide text-gray-500">
+                        Loading...
+                    </p>
+                    </div>
+            </div>
+        );
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (

@@ -160,7 +160,7 @@ export default function Dashboard() {
     if (error) return <div className="text-red-500">Error: {error}</div>;
 
     return (
-        <div>
+        <div className="h-full">
             <Calendar items={items} />
         </div>
     );

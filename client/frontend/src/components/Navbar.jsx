@@ -25,7 +25,7 @@ export default function Navbar({ session, signOut }) {
     }, [settingsModalOpen]);
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur ">
+        <nav className=" w-full border-b border-gray-200 bg-white/95 backdrop-blur ">
             <div className="w-full px-4 h-16 flex justify-between items-center">
                 <div className="flex items-center gap-8">
                     <Link to="/" className="flex items-center gap-2">

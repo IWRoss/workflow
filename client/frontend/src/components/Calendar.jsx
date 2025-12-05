@@ -18,37 +18,40 @@ export const Calendar = ({ items = [] }) => {
                     ? task.earliestStart
                     : new Date(task.earliestStart);
 
-            return date.getMonth() === monthIndex && date.getFullYear() === yearSelected;
+            return (
+                date.getMonth() === monthIndex &&
+                date.getFullYear() === yearSelected
+            );
         });
     };
 
     // Function to calculate the Total from Items by linking each Month
-const calculateMonthlyTotal = (item, monthIndex, yearIndex) => {
-    const total = item.totalProjectAmmountCol;
-    if (!total || total === 0) return 0;
+    const calculateMonthlyTotal = (item, monthIndex, yearIndex) => {
+        const total = item.totalProjectAmmountCol;
+        if (!total || total === 0) return 0;
 
-    const tasksInThisMonth = getTasksForMonth(item, monthIndex, yearIndex);
-    if (tasksInThisMonth.length === 0) return 0;
+        const tasksInThisMonth = getTasksForMonth(item, monthIndex, yearIndex);
+        if (tasksInThisMonth.length === 0) return 0;
 
-    let totalMonthsWithTasks = 0;
-    
-    if (item.time_tracking) {
-        const monthsWithTasks = new Set();
-        Object.values(item.time_tracking).forEach((task) => {
-            if (!task.earliestStart) return;
-            const date =
-                task.earliestStart instanceof Date
-                    ? task.earliestStart
-                    : new Date(task.earliestStart);
-            monthsWithTasks.add(`${date.getFullYear()}-${date.getMonth()}`);
-        });
-        totalMonthsWithTasks = monthsWithTasks.size;
-    }
+        let totalMonthsWithTasks = 0;
 
-    if (totalMonthsWithTasks === 0) return 0;
+        if (item.time_tracking) {
+            const monthsWithTasks = new Set();
+            Object.values(item.time_tracking).forEach((task) => {
+                if (!task.earliestStart) return;
+                const date =
+                    task.earliestStart instanceof Date
+                        ? task.earliestStart
+                        : new Date(task.earliestStart);
+                monthsWithTasks.add(`${date.getFullYear()}-${date.getMonth()}`);
+            });
+            totalMonthsWithTasks = monthsWithTasks.size;
+        }
 
-    return total / totalMonthsWithTasks;
-};
+        if (totalMonthsWithTasks === 0) return 0;
+
+        return total / totalMonthsWithTasks;
+    };
 
     const formatMoney = (amount, currency) => {
         if (amount == null) return "";
@@ -57,36 +60,53 @@ const calculateMonthlyTotal = (item, monthIndex, yearIndex) => {
     };
 
     return (
-        <div className="relative overflow-x-auto">
+<div className="relative overflow-x-auto overflow-y-auto h-full w-full">
+
             <table className="min-w-full border-collapse text-xs">
                 <thead>
                     <tr>
-                        <th className="flex flex-row gap-4 justify-between items-center border border-gray-300 px-3 py-2 bg-gray-50 text-left sticky left-0 z-20 min-w-[220px]">
-                            <p className="text-gray-500 text-xs">Item</p>
+                        <th
+                            className="
+            sticky top-0 left-0 z-20
+            bg-gray-50 px-3 py-2 text-left
+            min-w-[220px]
+          "
+                        >
+                            <div className="flex flex-row gap-4 justify-between items-center">
+                                <p className="text-gray-500 text-xs">Item</p>
 
-                            <div className="flex items-center space-x-1">
-                                <span className="text-gray-500 text-xs">
-                                    Year:
-                                </span>
-                                <select
-                                    value={yearSelected}
-                                    onChange={(e) =>
-                                        setYearSelected(Number(e.target.value))
-                                    }
-                                    className="border border-gray-300 rounded-md p-1 text-xs"
-                                >
-                                    {Years.map((year) => (
-                                        <option key={year} value={year}>
-                                            {year}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="flex items-center space-x-1">
+                                    <span className="text-gray-500 text-xs">
+                                        Year:
+                                    </span>
+                                    <select
+                                        value={yearSelected}
+                                        onChange={(e) =>
+                                            setYearSelected(
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                        className="border border-gray-300 rounded-md p-1 text-xs"
+                                    >
+                                        {Years.map((year) => (
+                                            <option key={year} value={year}>
+                                                {year}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         </th>
+
                         {Months.map((month, index) => (
                             <th
                                 key={index}
-                                className="border border-gray-300 px-3 py-2 bg-gray-50 text-center whitespace-nowrap"
+                                className="
+              sticky top-0
+               px-3 py-2
+              bg-gray-50 text-center whitespace-nowrap
+              z-10
+            "
                             >
                                 {month}
                             </th>
@@ -97,7 +117,7 @@ const calculateMonthlyTotal = (item, monthIndex, yearIndex) => {
                 <tbody>
                     {items.map((item) => (
                         <tr key={item.id}>
-                            <td className="border border-gray-300 p-3 font-semibold sticky left-0 bg-white z-10 min-w-[220px] max-w-[220px] whitespace-nowrap overflow-hidden text-ellipsis ">
+                            <td className="p-3 font-semibold sticky left-0 bg-white z-10 min-w-[220px] max-w-[220px] whitespace-nowrap overflow-hidden text-ellipsis ">
                                 <div className="truncate" title={item.name}>
                                     {item.name}
                                 </div>
@@ -113,11 +133,13 @@ const calculateMonthlyTotal = (item, monthIndex, yearIndex) => {
                             {Months.map((_, monthIndex) => {
                                 const tasks = getTasksForMonth(
                                     item,
-                                    monthIndex, yearSelected
+                                    monthIndex,
+                                    yearSelected
                                 );
                                 const monthlyTotal = calculateMonthlyTotal(
                                     item,
-                                    monthIndex, yearSelected
+                                    monthIndex,
+                                    yearSelected
                                 );
                                 const hasValue =
                                     tasks.length > 0 || monthlyTotal > 0;

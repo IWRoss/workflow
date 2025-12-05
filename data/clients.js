@@ -85,6 +85,7 @@ module.exports = [
     "Save The Children",
     "Savills",
     "Schindler",
+    "Sequoia",
     "Shell",
     "Sherwin-williams",
     "Siemens",
@@ -107,7 +108,7 @@ module.exports = [
     "VML",
     "Warner Music",
     "Whitworth Food Group",
-    
+
     "Zoopla",
     "eFinancialCareers",
     "Other Client",

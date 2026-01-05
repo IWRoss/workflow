@@ -108,7 +108,7 @@ module.exports = [
     "VML",
     "Warner Music",
     "Whitworth Food Group",
-
+    "Multiverse",
     "Zoopla",
     "eFinancialCareers",
     "Other Client",

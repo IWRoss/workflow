@@ -9,6 +9,8 @@ const tomorrowsDate = new Date(); // Get the current date
 tomorrowsDate.setDate(tomorrowsDate.getDate() + 1); // Add a day
 const tomorrowsDateString = tomorrowsDate.toISOString().split("T")[0]; // Format the date as a string
 
+
+
 module.exports = {
     type: "modal",
     callback_id: "",
@@ -28,6 +30,25 @@ module.exports = {
         emoji: true,
     },
     blocks: [
+        {
+            type: "input",
+            block_id: "project_select_block",
+            element: {
+                type: "external_select",
+                action_id: "project_select",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Choose a project",
+                    emoji: true,
+                },
+                min_query_length: 5,
+            },
+            label: {
+                type: "plain_text",
+                text: "Select Project",
+                emoji: true,
+            },
+        },
         {
             type: "input",
             element: {

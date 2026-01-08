@@ -636,6 +636,9 @@ const handleSpendRequest = async (payload, locations) => {
 /**
  * Handle Request Response
  */
+/**
+ * Handle Request Response
+ */
 const handleRequestResponse = async (payload, locations) => {
     console.log(
         "Payload inside handleRequestResponse",
@@ -652,35 +655,28 @@ const handleRequestResponse = async (payload, locations) => {
     // Get the Monday user
     const mondayUser = await getMondayUserByEmail(user.profile.email);
 
-    // const newTask = {
-    //     user: mondayUser.id ?? "",
-    //     client: findField(fields, "clientSelect").selected_option.value,
-    //     producerDeadline: findField(fields, "producerDeadline").selected_date,
-    //     clientDeadline: findField(fields, "clientDeadline").selected_date,
-    //     media: findField(fields, "mediaSelect")
-    //         .selected_options.map((m) => m.value)
-    //         .join(", "),
-    //     dropboxLink: findField(fields, "dropboxLink").value,
-    //     notes: findField(fields, "notes").value,
-    //     projectCode: findField(fields, "projectCode").value,
-    // };
-
     const projectTitle = await generateTitleFromRequest(
         findField(fields, "clientSelect").selected_option.value,
         findField(fields, "notes").value
     );
 
-    //Get the project code from the dropdown
+    //Get the project code from the dropdown (may be undefined if not selected)
     const projectCode = findField(fields, "project_select")?.selected_option
-        ?.value;
+        ?.value || findField(fields, "projectCode")?.value;
 
     console.log("Project Code:", projectCode);
+
+    const rawDropboxLink = findField(fields, "dropboxLink").value;
+
+    const formattedDropboxLink = rawDropboxLink && !rawDropboxLink.startsWith('http') 
+    ? 'https://' + rawDropboxLink 
+    : rawDropboxLink;
 
     const newTask = {
         name: projectTitle,
 
         Producer: mondayUser.id ?? "",
-        "Project Code": projectCode,
+        "Project Code": projectCode || "",
         Client: findField(fields, "clientSelect").selected_option.value,
 
         "Client Deadline": findField(fields, "clientDeadline").selected_date,
@@ -690,8 +686,10 @@ const handleRequestResponse = async (payload, locations) => {
         Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
+         dropboxLink: formattedDropboxLink,
+
         Dropbox: {
-            url: findField(fields, "dropboxLink").value,
+            url: formattedDropboxLink,
             text: "Link",
         },
         Details: findField(fields, "notes").value,
@@ -703,56 +701,11 @@ const handleRequestResponse = async (payload, locations) => {
     const results = locations.map(async ({ boardId, slackChannel }) => {
         console.log("Before adding to board:", boardId, slackChannel);
 
-        
-
         const result = await addTaskToBoardWithColumns(newTask, boardId);
 
         console.log("Task added to board:", result);
 
-        //1. Get all the tasks from Ops board
-        const rows = await getAllTaskRowsFromBoard(
-            process.env.OPS_MONDAY_BOARD
-        );
-
-        //2.Match the project code to get the project ID
-        const matchedProject = rows.find(
-            (row) => row.projectCode === projectCode
-        );
-
-        if (!matchedProject) {
-            console.error(
-                `No matching project found in Ops board for project code: ${projectCode}`
-            );
-            return result;
-        }
-
-        const opsProjectId = matchedProject.id;
-
-        switch (boardId) {
-            case process.env.STUDIO_MONDAY_BOARD:
-                console.log(
-                    `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`
-                );
-                await linkTaskToProject(
-                    result.data.create_item.id,
-                    opsProjectId,
-                    process.env.STUDIO_MONDAY_BOARD
-                );
-                break;
-            case process.env.COMMTECH_MONDAY_BOARD:
-                console.log(
-                    `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`
-                );
-                await linkTaskToProject(
-                    result.data.create_item.id,
-                    opsProjectId,
-                    process.env.COMMTECH_MONDAY_BOARD
-                );
-                break;
-        }
-
-       
-
+        // Prepare and send Slack message FIRST (before project linking)
         let newRequestMessageTemplate = _.cloneDeep(
             templates.newRequestMessage
         );
@@ -766,15 +719,15 @@ const handleRequestResponse = async (payload, locations) => {
             newTask["Client Deadline"];
         newRequestMessageTemplate.blocks[3].fields[0].text += newTask.Details;
         newRequestMessageTemplate.blocks[3].fields[1].text +=
-            newTask["Project Code"];
+            newTask["Project Code"] || "Not specified";
         newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
             boardId,
             taskTitle: projectTitle,
-
             itemId: result.data.create_item.id,
         });
         newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
+        
         if (isValidHttpUrl(newTask.dropboxLink)) {
             newRequestMessageTemplate.blocks[4].elements[2].url =
                 newTask.dropboxLink;
@@ -782,19 +735,73 @@ const handleRequestResponse = async (payload, locations) => {
             newRequestMessageTemplate.blocks[4].elements.splice(2, 1);
         }
 
+        // Send Slack message
         try {
-            // Send message to users
             const message = await slack.chat.postMessage({
                 channel: slackChannel,
                 ...newRequestMessageTemplate,
             });
+            console.log("Slack message sent successfully");
         } catch (error) {
             await reportErrorToSlack(
                 error,
                 "Add Task to Board - handleRequestResponse"
             );
-
             console.log(error);
+        }
+
+        // Now try to link to project (only if projectCode is provided)
+        if (projectCode) {
+            try {
+                // Get all the tasks from Ops board
+                const rows = await getAllTaskRowsFromBoard(
+                    process.env.OPS_MONDAY_BOARD
+                );
+
+                // Match the project code to get the project ID
+                const matchedProject = rows.find(
+                    (row) => row.projectCode === projectCode
+                );
+
+                if (!matchedProject) {
+                    console.warn(
+                        `No matching project found in Ops board for project code: ${projectCode}`
+                    );
+                } else {
+                    const opsProjectId = matchedProject.id;
+
+                    switch (boardId) {
+                        case process.env.STUDIO_MONDAY_BOARD:
+                            console.log(
+                                `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                            );
+                            await linkTaskToProject(
+                                result.data.create_item.id,
+                                opsProjectId,
+                                process.env.STUDIO_MONDAY_BOARD
+                            );
+                            break;
+                        case process.env.COMMTECH_MONDAY_BOARD:
+                            console.log(
+                                `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                            );
+                            await linkTaskToProject(
+                                result.data.create_item.id,
+                                opsProjectId,
+                                process.env.COMMTECH_MONDAY_BOARD
+                            );
+                            break;
+                    }
+                }
+            } catch (error) {
+                await reportErrorToSlack(
+                    error,
+                    "Project linking - handleRequestResponse"
+                );
+                console.error("Error linking project:", error);
+            }
+        } else {
+            console.log("No project code selected, skipping project linking");
         }
 
         return result;

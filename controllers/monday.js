@@ -265,7 +265,17 @@ const addTaskToBoardWithColumns = async (newTask, boardId) => {
         if (columnId) {
             //Get the value for the column
             let getColumnValue = newTask[column];
-            if (typeof getColumnValue === "string") {
+             if (typeof getColumnValue === "object" && getColumnValue !== null && getColumnValue.url !== undefined) {
+            // Ensure URL has protocol
+            let url = getColumnValue.url;
+            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            getColumnValue = {
+                url: url,
+                text: getColumnValue.text || "Link"
+            };
+        }else if (typeof getColumnValue === "string") {
                 getColumnValue = getColumnValue
                     .replace(/\\/g, "\\\\") // Escape backslashes first
                     .replace(/"/g, '\\"') // Escape double quotes

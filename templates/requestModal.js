@@ -33,6 +33,7 @@ module.exports = {
         {
             type: "input",
             block_id: "project_select_block",
+            optional: true,
             element: {
                 type: "external_select",
                 action_id: "project_select",

@@ -819,28 +819,27 @@ const handleProjectSelectOptions = async (payload) => {
 
         // Filter projects based on search term
         const filteredRows = rows.filter((row) => {
-    const searchLower = searchTerm.toLowerCase();
-    const nameMatch = row.name.toLowerCase().includes(searchLower);
-    const codeMatch = row.projectCode && row.projectCode.toLowerCase().includes(searchLower);
-    return nameMatch || codeMatch;
-});
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                row.name.toLowerCase().includes(searchLower) ||
+                row.projectCode.toLowerCase().includes(searchLower)
+            );
+        });
 
         // Convert to Slack options format (max 100 results)
         const options = filteredRows.slice(0, 100).map((row) => {
-    const projectCode = row.projectCode || "No Code";
-    const fullDisplay = `${projectCode} - ${row.name}`;
-    const displayName =
-        fullDisplay.length > 75 ? `${fullDisplay.slice(0, 72)}...` : fullDisplay;
+            const displayName =
+                row.name.length > 75 ? `${row.name.slice(0, 72)}...` : row.name;
 
-    return {
-        text: {
-            type: "plain_text",
-            text: displayName,
-            emoji: true,
-        },
-        value: row.projectCode || row.id,  // fallback to id if no project code
-    };
-});
+            return {
+                text: {
+                    type: "plain_text",
+                    text: `${displayName}`,
+                    emoji: true,
+                },
+                value: row.projectCode,
+            };
+        });
 
         // Return options to Slack
         return {

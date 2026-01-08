@@ -588,12 +588,20 @@ const getAllTaskRowsFromBoard = async (boardId) => {
                 (col) => col.column.title === "Project Code"
             );
 
+            let projectCode = "";
+            if (projectCodeColumn?.value) {
+                try {
+                    const parsed = JSON.parse(projectCodeColumn.value);
+                    projectCode = parsed || "";
+                } catch (e) {
+                    projectCode = projectCodeColumn.value || "";
+                }
+            }
+
             return {
                 id: row.id,
                 name: row.name,
-                projectCode: projectCodeColumn?.value
-                    ? JSON.parse(projectCodeColumn.value)
-                    : null,
+                projectCode: projectCode,
             };
         });
 

@@ -31,6 +31,7 @@ module.exports = [
     "ElecLink",
     "Equifax",
     "Evelyn Partners",
+    "Endress+Hauser",
     "FFX",
     "Farfetch",
     "Fidelity",

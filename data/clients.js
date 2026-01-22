@@ -56,6 +56,7 @@ module.exports = [
     "Kingswood-Group",
     "LBC",
     "Lincoln's Inn",
+    "L’Oréal",
     "Lowell Group",
     "M&S",
     "MRC Global",

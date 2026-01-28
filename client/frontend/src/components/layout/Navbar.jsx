@@ -1,13 +1,27 @@
-// client/src/components/Navbar/Navbar.jsx
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
-import cegosLogo from "../assets/CegosLogo.jpg";
+import { Link, useNavigate } from "react-router-dom";
+import cegosLogo from "../../assets/CegosLogo.jpg";
+import { useAuth } from "../../hooks/useAuth";
 
-export default function Navbar({ session, signOut }) {
+export default function Navbar() {  
+    const { 
+        isAuthenticated,
+        user,      
+        logout     
+    } = useAuth();
+    
+    const navigate = useNavigate();
     const [settingsModalOpen, setSettingsModalOpen] = useState(false);
     const settingsRef = useRef(null);
 
     const toggleSettingsModal = () => setSettingsModalOpen(!settingsModalOpen);
+
+    // Handle logout
+    const handleSignOut = () => {
+        logout();
+        navigate('/login');
+        setSettingsModalOpen(false);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -25,7 +39,7 @@ export default function Navbar({ session, signOut }) {
     }, [settingsModalOpen]);
 
     return (
-        <nav className=" w-full border-b border-gray-200 bg-white/95 backdrop-blur ">
+        <nav className="w-full border-b border-gray-200 bg-white/95 backdrop-blur">
             <div className="w-full px-4 h-16 flex justify-between items-center">
                 <div className="flex items-center gap-8">
                     <Link to="/" className="flex items-center gap-2">
@@ -42,17 +56,18 @@ export default function Navbar({ session, signOut }) {
                     </Link>
 
                     <div className="hidden md:flex gap-6">
-                        <Link
-                            to="/"
-                            className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-                        >
-                            Dashboard
-                        </Link>
-                        
+                        {isAuthenticated && (
+                            <Link
+                                to="/dashboard"
+                                className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+                            >
+                                Dashboard
+                            </Link>
+                        )}
                     </div>
                 </div>
 
-                {session && (
+                {isAuthenticated && user && ( 
                     <div className="relative" ref={settingsRef}>
                         <button
                             onClick={toggleSettingsModal}
@@ -60,7 +75,7 @@ export default function Navbar({ session, signOut }) {
                         >
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-medium text-gray-700 group-hover:text-black transition-colors">
-                                    {session.user.name}
+                                    {user.name}  
                                 </p>
                             </div>
                             <div
@@ -72,8 +87,8 @@ export default function Navbar({ session, signOut }) {
                             >
                                 <img
                                     className="h-full w-full rounded-full object-cover"
-                                    src={session.user.image}
-                                    alt={session.user.name}
+                                    src={user.avatar || user.picture}  
+                                    alt={user.name}
                                 />
                             </div>
                         </button>
@@ -86,14 +101,13 @@ export default function Navbar({ session, signOut }) {
                                         Signed in as
                                     </p>
                                     <p className="text-sm text-gray-900 truncate font-medium">
-                                        {session.user.email ||
-                                            session.user.name}
+                                        {user.email || user.name} 
                                     </p>
                                 </div>
 
                                 <div className="border-t border-gray-100 mt-2 pt-2">
                                     <button
-                                        onClick={signOut}
+                                        onClick={handleSignOut} 
                                         className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
                                     >
                                         Sign out

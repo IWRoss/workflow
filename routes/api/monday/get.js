@@ -4,6 +4,7 @@ const router = express.Router();
 const {
     getMondayBoard,
     getMondayMembers,
+    getMondayBoardByProjectCode,
 } = require("../../../controllers/monday");
 
 // Get a specific board by ID
@@ -24,6 +25,18 @@ router.get("/monday/members", async (req, res) => {
         res.json(members);
     } catch (error) {
         console.error("Error fetching members:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get a specific board (simple) by ID and project code
+router.get("/monday/boards/:boardId/project/:projectCode", async (req, res) => {
+    try {
+        const { boardId, projectCode } = req.params;
+        const board = await getMondayBoardByProjectCode(boardId, projectCode);
+        res.json(board);
+    } catch (error) {
+        console.error("Error fetching board by project code:", error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -16,6 +16,73 @@ const getMonday = async () => {
     return monday;
 };
 
+
+
+/**
+ * Get Monday board items by project code
+ */
+
+const getMondayBoardByProjectCode = async (boardId, projectCode) => {
+    try {
+        let allItems = [];
+        let cursor = null;
+
+        // Fetch ALL items with pagination
+        do {
+            const query = `query ($boardId: [ID!], $cursor: String) {
+                boards (ids: $boardId) {
+                    items_page (limit: 500, cursor: $cursor) {
+                        cursor
+                        items {
+                            id
+                            name
+                            column_values {
+                                column { id, title }
+                                value
+                                text
+                            }
+                        }
+                    }
+                }
+            }`;
+            
+            const variables = cursor 
+                ? { boardId: boardId.toString(), cursor }
+                : { boardId: boardId.toString() };
+
+            const response = await monday.api(query, { variables });
+            
+            const pageData = response.data?.boards?.[0]?.items_page;
+            const items = pageData?.items || [];
+            
+            allItems = allItems.concat(items);
+            cursor = pageData?.cursor;
+
+        } while (cursor);
+
+        // Filter by project code
+        const filteredItems = allItems.filter(item => {
+            const projCode = item.column_values.find(c => c.column.title === 'Project Code');
+            return projCode?.text === projectCode || projCode?.value === `"${projectCode}"`;
+        });
+
+        return {
+            data: {
+                boards: [{
+                    name: 'Filtered Results',
+                    items_page: { items: filteredItems },
+                }],
+            },
+        };
+
+    } catch (error) {
+        console.error('Error fetching board by project code:', error.message);
+        throw error;
+    }
+};
+
+
+
 /**
  * Get Monday board
  */
@@ -599,4 +666,5 @@ module.exports = {
     getGroupIdByTitle,
     moveTaskToCompletedGroup,
     getMondayMembers,
+    getMondayBoardByProjectCode,
 };

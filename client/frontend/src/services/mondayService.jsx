@@ -10,4 +10,9 @@ export const mondayService = {
         if (!res.ok) throw new Error("Failed to fetch members");
         return res.json();
     },
+    getBoardByProjectCode: async (boardId, projectCode) => {
+    const res = await fetch(`/monday/boards/${boardId}/project/${projectCode}`);
+    if (!res.ok) throw new Error("Failed to fetch board by project code");
+    return res.json();
+}
 };

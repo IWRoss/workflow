@@ -14,6 +14,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Card for Revenue Recognition Calendar */}
                     <div
+                        id="revenue-calendar"
                         onClick={() => navigate("/revenue-calendar")}
                         className="bg-gray-100 hover:bg-gray-50 hover:cursor-pointer rounded-lg shadow-md flex flex-col items-center justify-center p-6  transition-colors"
                     >
@@ -38,6 +39,7 @@ const Dashboard = () => {
 
                     {/* Card for Sequoia Dashboard */}
                     <div
+                        id="sequoia-dashboard"
                         onClick={() => navigate("/sequoia-dashboard")}
                         className="bg-gray-100 hover:bg-gray-50 hover:cursor-pointer rounded-lg shadow-md flex flex-col items-center justify-center p-6  transition-colors"
                     >

@@ -2,12 +2,18 @@ import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../../hooks/useAuth";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const GoogleLoginButton = () => {
+
+    const [errorMessage, setErrorMessage] = useState(null);
+
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const API_URL = import.meta.env.VITE_API_URL;
+
+    
 
     const handleGoogleLoginSuccess = async (credentialResponse) => {
         try {
@@ -31,6 +37,13 @@ const GoogleLoginButton = () => {
                 login(userData);
                 navigate("/dashboard");
             }
+
+            //error 403 show Denied message
+            if (data.error) {
+                console.error("Login Error:", data.error);
+                setErrorMessage(data.error);
+                
+            }
         } catch (error) {
             console.error("Google Login Error:", error);
         }
@@ -41,12 +54,19 @@ const GoogleLoginButton = () => {
     };
 
     return (
+        <>
+        {errorMessage && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded">
+                {errorMessage}
+            </div>
+        )}
         <GoogleLogin
             onSuccess={handleGoogleLoginSuccess}
             onError={handleGoogleLoginError}
             theme="outline"
             size="large"
         />
+        </>
     );
 };
 

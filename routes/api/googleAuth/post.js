@@ -7,9 +7,13 @@ const router = express.Router();
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 //Check Google Auth Token
+//Allow certain email domains to login
 router.post('/login', async (req, res) => {
     try {
         const { token } = req.body;
+
+        const allowedDomains = process.env.ALLOWED_EMAIL_DOMAINS.split(',');
+
 
         if (!token) {
             return res.status(400).json({ error: 'Token is required' });
@@ -21,7 +25,27 @@ router.post('/login', async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
+
+
+        
+
         const payload = ticket.getPayload();
+        const emailDomain = payload.email.split('@')[1];
+
+        if (!allowedDomains.includes(emailDomain)) {
+            return res.status(403).json({ error: 'Email domain not allowed' });
+        }
+
+
+
+
+
+
+
+
+
+
+        
 
         // Create a JWT for session management
         const jwtToken = jwt.sign(

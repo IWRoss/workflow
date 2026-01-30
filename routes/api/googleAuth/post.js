@@ -2,7 +2,7 @@ const  express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
-
+const { getPermissionsByDomain } =  require('../../../helpers/domainPermissions');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -26,26 +26,17 @@ router.post('/login', async (req, res) => {
         });
 
 
-
-        
-
         const payload = ticket.getPayload();
         const emailDomain = payload.email.split('@')[1];
 
         if (!allowedDomains.includes(emailDomain)) {
-            return res.status(403).json({ error: 'Email domain not allowed' });
+            return res.status(403).json({ error: 'You are not authorized to access this application.' });
         }
 
+        //Check the permissions the user has
+        const permissions= getPermissionsByDomain(emailDomain);
 
-
-
-
-
-
-
-
-
-        
+        console.log('User permissions:', permissions);
 
         // Create a JWT for session management
         const jwtToken = jwt.sign(
@@ -54,6 +45,8 @@ router.post('/login', async (req, res) => {
                 email: payload.email,
                 name: payload.name,
                 picture: payload.picture,
+                permissions: permissions,
+                domain: emailDomain,
             },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
@@ -67,6 +60,8 @@ router.post('/login', async (req, res) => {
                 email: payload.email,
                 name: payload.name,
                 avatar: payload.picture,  
+                permissions: permissions,
+                domain: emailDomain,
             }
         });
     } catch (error) {
@@ -84,12 +79,26 @@ router.post('/verify-token', async (req, res) => {
         if (!token) {
             return res.status(400).json({ 
                 success: false,
+                valid: false,
                 error: 'Token is required' 
             });
         }
 
         // Verify JWT
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        
+        const allowedDomains = process.env.ALLOWED_EMAIL_DOMAINS.split(',');
+        if (!allowedDomains.includes(decoded.domain)) {
+            return res.status(403).json({ 
+                success: false,
+                valid: false,
+                error: 'You are not authorized to access this application.' 
+            });
+        }
+
+                const freshPermissions = getPermissionsByDomain(decoded.domain);
+
 
         res.json({ 
             success: true,
@@ -99,6 +108,8 @@ router.post('/verify-token', async (req, res) => {
                 email: decoded.email,
                 name: decoded.name,
                 avatar: decoded.picture,
+                permissions: freshPermissions,
+                domain: decoded.domain,
             }
         });
     } catch (error) {

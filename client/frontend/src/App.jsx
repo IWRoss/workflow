@@ -5,6 +5,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SequoiaDashboard from "./pages/SequoiaDashboard";
+import RevenueCalendar from "./pages/RevenueCalendar";
 
 
 function App() {
@@ -21,14 +22,23 @@ function App() {
                 }
             />
 
-            <Route
-                path="/sequoia-dashboard"
-                element={
-                    <ProtectedRoute>
-                        <SequoiaDashboard />
-                    </ProtectedRoute>
-                }
-            />
+            <Route 
+                    path="/sequoia-dashboard" 
+                    element={
+                        <ProtectedRoute requiredPermission="sequoia-dashboard">
+                            <SequoiaDashboard />
+                        </ProtectedRoute>
+                    } 
+                />
+
+            <Route 
+                    path="/revenue-calendar" 
+                    element={
+                        <ProtectedRoute requiredPermission="revenue-calendar">
+                            <RevenueCalendar />
+                        </ProtectedRoute>
+                    } 
+                />
 
             <Route path="*" element={<Navigate to="/login" replace />} />
 

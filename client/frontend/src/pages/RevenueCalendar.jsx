@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { mondayService } from "../services/mondayService";
-import { Calendar } from "./Calendar";
+import { Calendar } from "../components/calendar/Calendar";
 
-export default function Dashboard() {
+export default function RevenueCalendar() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

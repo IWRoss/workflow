@@ -34,7 +34,15 @@ export const AuthProvider = ({ children }) => {
         console.log('Token verification response:', data);
 
         if (data.success && data.valid) {
-          setUser(userData);  
+
+            const updatedUserData = {
+                ...userData,
+            ...data.user,
+            };
+
+
+          setUser(updatedUserData); 
+            localStorage.setItem('user', JSON.stringify(updatedUserData)); 
         } else {
           localStorage.removeItem('user');  
           setUser(null);

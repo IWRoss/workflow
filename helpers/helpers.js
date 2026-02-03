@@ -117,6 +117,7 @@ const addSpendRequestToGoogleSheets = async (
         requestData.numberOfAttendees || "",
         requestData.numberOfClients || "",
         requestData.numberOfInternalStaff || "",
+        requestData.totalSpendAmount || "",
     ];
 
     return await addRowToGoogleSheets(rowData, {

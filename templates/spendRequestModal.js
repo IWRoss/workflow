@@ -146,6 +146,22 @@ module.exports = {
             type: "input",
             element: {
                 type: "plain_text_input",
+                action_id: "totalSpendAmount",
+                placeholder: {
+                    type: "plain_text",
+                    text: "Input the total spend amount here",
+                },
+            },
+            label: {
+                type: "plain_text",
+                text: "Total Spend Amount",
+                emoji: true,
+            },
+        },
+        {
+            type: "input",
+            element: {
+                type: "plain_text_input",
                 multiline: true,
                 action_id: "notes",
                 max_length: 2000,

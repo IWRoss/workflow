@@ -16,6 +16,73 @@ const getMonday = async () => {
     return monday;
 };
 
+
+
+/**
+ * Get Monday board items by project code
+ */
+
+const getMondayBoardByProjectCode = async (boardId, projectCode) => {
+    try {
+        let allItems = [];
+        let cursor = null;
+
+        // Fetch ALL items with pagination
+        do {
+            const query = `query ($boardId: [ID!], $cursor: String) {
+                boards (ids: $boardId) {
+                    items_page (limit: 500, cursor: $cursor) {
+                        cursor
+                        items {
+                            id
+                            name
+                            column_values {
+                                column { id, title }
+                                value
+                                text
+                            }
+                        }
+                    }
+                }
+            }`;
+            
+            const variables = cursor 
+                ? { boardId: boardId.toString(), cursor }
+                : { boardId: boardId.toString() };
+
+            const response = await monday.api(query, { variables });
+            
+            const pageData = response.data?.boards?.[0]?.items_page;
+            const items = pageData?.items || [];
+            
+            allItems = allItems.concat(items);
+            cursor = pageData?.cursor;
+
+        } while (cursor);
+
+        // Filter by project code
+        const filteredItems = allItems.filter(item => {
+            const projCode = item.column_values.find(c => c.column.title === 'Project Code');
+            return projCode?.text === projectCode || projCode?.value === `"${projectCode}"`;
+        });
+
+        return {
+            data: {
+                boards: [{
+                    name: 'Filtered Results',
+                    items_page: { items: filteredItems },
+                }],
+            },
+        };
+
+    } catch (error) {
+        console.error('Error fetching board by project code:', error.message);
+        throw error;
+    }
+};
+
+
+
 /**
  * Get Monday board
  */
@@ -29,8 +96,9 @@ const getMondayBoard = async (boardId) => {
     let cursor = null;
     let boardName = null;
 
-    do{
-        const query = cursor ? `query ($boardId: [ID!], $cursor: String!) {
+    do {
+        const query = cursor 
+            ? `query ($boardId: [ID!], $cursor: String!) {
                 boards (ids: $boardId) {
                     name
                     items_page (limit: 500, cursor: $cursor) {
@@ -46,17 +114,49 @@ const getMondayBoard = async (boardId) => {
                                 column {
                                     id
                                     title
+                                    type
                                 }
                                 value
                                 ... on BoardRelationValue {
                                     linked_item_ids
                                     display_value
                                 }
+                                ... on MirrorValue {
+                                    display_value
+                                    mirrored_items {
+                                        linked_item {
+                                            id
+                                            name
+                                            board {
+                                                id
+                                                name
+                                            }
+                                            column_values {
+                                                column {
+                                                    id
+                                                    title
+                                                    type
+                                                }
+                                                ... on TimeTrackingValue {
+                                                    running
+                                                    started_at
+                                                    duration
+                                                    history {
+                                                        started_at
+                                                        ended_at
+                                                        started_user_id
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }`: `query ($boardId: [ID!]) {
+            }`
+            : `query ($boardId: [ID!]) {
                 boards (ids: $boardId) {
                     name
                     items_page (limit: 500) {
@@ -72,11 +172,42 @@ const getMondayBoard = async (boardId) => {
                                 column {
                                     id
                                     title
+                                    type
                                 }
                                 value
                                 ... on BoardRelationValue {
                                     linked_item_ids
                                     display_value
+                                }
+                                ... on MirrorValue {
+                                    display_value
+                                    mirrored_items {
+                                        linked_item {
+                                            id
+                                            name
+                                            board {
+                                                id
+                                                name
+                                            }
+                                            column_values {
+                                                column {
+                                                    id
+                                                    title
+                                                    type
+                                                }
+                                                ... on TimeTrackingValue {
+                                                    running
+                                                    started_at
+                                                    duration
+                                                    history {
+                                                        started_at
+                                                        ended_at
+                                                        started_user_id
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -84,73 +215,24 @@ const getMondayBoard = async (boardId) => {
                 }
             }`;
 
-        // Set variables for the query
         const variables = cursor ? { boardId, cursor } : { boardId };
-
-        // Execute the query
         const response = await monday.api(query, { variables });
-
-        // Extract board data from results
+        
         const boardData = response.data.boards[0];
-
-        // Update boardName and allItems
         boardName = boardData.name;
         allItems = allItems.concat(boardData.items_page.items);
-
-        // Update cursor for pagination
         cursor = boardData.items_page.cursor;
 
     } while (cursor);
 
     return {
         data: {
-            boards: [
-                {
-                    name: boardName,
-                    items_page: {
-                        items: allItems,
-                    },
-                },
-            ],
+            boards: [{
+                name: boardName,
+                items_page: { items: allItems },
+            }],
         },
     };
-
-
-};
-
-/**
- * Link a task to a parent project via the Project board relation column
- */
-const linkTaskToProject = async (taskId, projectId, boardId) => {
-    // The Project column ID (board_relation_mkxsg758 for Studio board)
-    const projectColumnId = "board_relation_mkxsg758";
-
-    // Link the task to the project
-    const result = await monday.api(
-        `mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
-            change_column_value (
-                board_id: $boardId,
-                item_id: $itemId,
-                column_id: $columnId,
-                value: $value
-            ) {
-                id
-            }
-        }`,
-        {
-            variables: {
-                boardId: boardId.toString(),
-                itemId: taskId.toString(),
-                columnId: projectColumnId,
-                value: JSON.stringify({
-                    item_ids: [parseInt(projectId)],
-                }),
-            },
-        }
-    );
-
-    console.log(`Successfully linked task ${taskId} to project ${projectId}`);
-    return result;
 };
 
 /**
@@ -640,6 +722,8 @@ module.exports = {
     getItemByProjectCode,
     getGroupIdByTitle,
     moveTaskToCompletedGroup,
+    getMondayMembers,
+    getMondayBoardByProjectCode,
     getAllTaskRowsFromBoard,
     linkTaskToProject,
 };

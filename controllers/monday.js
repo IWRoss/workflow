@@ -700,7 +700,40 @@ const getAllTaskRowsFromBoard = async (boardId) => {
     return selectedRows;
 };
 
-//Function to attach the task to project by project code
+/**
+ * Link a task to a parent project via the Project board relation column
+ */
+const linkTaskToProject = async (taskId, projectId, boardId) => {
+    // The Project column ID (board_relation_mkxsg758 for Studio board)
+    const projectColumnId = "board_relation_mkxsg758";
+
+    // Link the task to the project
+    const result = await monday.api(
+        `mutation ($boardId: ID!, $itemId: ID!, $columnId: String!, $value: JSON!) {
+            change_column_value (
+                board_id: $boardId,
+                item_id: $itemId,
+                column_id: $columnId,
+                value: $value
+            ) {
+                id
+            }
+        }`,
+        {
+            variables: {
+                boardId: boardId.toString(),
+                itemId: taskId.toString(),
+                columnId: projectColumnId,
+                value: JSON.stringify({
+                    item_ids: [parseInt(projectId)],
+                }),
+            },
+        }
+    );
+
+    console.log(`Successfully linked task ${taskId} to project ${projectId}`);
+    return result;
+};
 
 module.exports = {
     getMonday,

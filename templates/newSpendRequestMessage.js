@@ -41,6 +41,15 @@ module.exports = {
             },
         },
         {
+            type: "section",
+            fields: [
+                {
+                    type: "mrkdwn",
+                    text: "", 
+                },
+            ],
+        },
+        {
             type: "divider",
         },
         {

@@ -481,6 +481,7 @@ const handleSpendRequest = async (payload, locations) => {
         numberOfClients: findField(fields, "number_of_clients").value,
         numberOfInternalStaff: findField(fields, "number_of_internal_staff")
             .value,
+        totalSpendAmount: findField(fields, "totalSpendAmount").value,
     };
 
     //Custom message template to display on slack
@@ -501,6 +502,9 @@ const handleSpendRequest = async (payload, locations) => {
 
     // Notes
     newSpendRequestMessageTemplate.blocks[3].text.text = `*Notes:*\n${fieldsPayload.notes}`;
+
+    // Total Spend Amount
+    newSpendRequestMessageTemplate.blocks[4].fields[0].text = `*Total Spend Amount:*\n${fieldsPayload.totalSpendAmount}£`;
 
     console.log("numberOfAttendees", fieldsPayload.numberOfAttendees);
     console.log("numberOfClients", fieldsPayload.numberOfClients);
@@ -556,7 +560,7 @@ const handleSpendRequest = async (payload, locations) => {
     console.log("User", user);
 
     // Approve button
-    newSpendRequestMessageTemplate.blocks[5].elements[0].value = JSON.stringify(
+    newSpendRequestMessageTemplate.blocks[6].elements[0].value = JSON.stringify(
         {
             action: "Approved",
             requestId: `spend_${Date.now()}`,
@@ -571,11 +575,12 @@ const handleSpendRequest = async (payload, locations) => {
             numberOfAttendees: fieldsPayload.numberOfAttendees,
             numberOfClients: fieldsPayload.numberOfClients,
             numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
+            totalSpendAmount: fieldsPayload.totalSpendAmount,
         }
     );
 
     // Decline button
-    newSpendRequestMessageTemplate.blocks[5].elements[1].value = JSON.stringify(
+    newSpendRequestMessageTemplate.blocks[6].elements[1].value = JSON.stringify(
         {
             action: "Declined",
             requestId: `spend_${Date.now()}`,
@@ -590,6 +595,7 @@ const handleSpendRequest = async (payload, locations) => {
             numberOfAttendees: fieldsPayload.numberOfAttendees,
             numberOfClients: fieldsPayload.numberOfClients,
             numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
+            totalSpendAmount: fieldsPayload.totalSpendAmount,
         }
     );
 
@@ -633,9 +639,7 @@ const handleSpendRequest = async (payload, locations) => {
     };
 };
 
-/**
- * Handle Request Response
- */
+
 /**
  * Handle Request Response
  */

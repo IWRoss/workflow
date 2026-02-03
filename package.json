@@ -7,6 +7,8 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "nodemon server.js",
         "start": "node server.js",
+        "heroku-postbuild": "cd client/frontend && npm install && npm run build",
+
         "heroku:passwords": "node scripts/set-heroku-passwords.js",
         "heroku:passwords:dry": "node scripts/set-heroku-passwords.js --dry-run",
         "heroku:commands": "node scripts/generate-heroku-commands.js"

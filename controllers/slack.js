@@ -15,6 +15,8 @@ const {
     addTaskToMarketingBoard,
     getMarketingCampaignOptions,
     addTaskToBoardWithColumns,
+    getAllTaskRowsFromBoard,
+    linkTaskToProject,
 } = require("./monday");
 
 const { getOpportunity } = require("./copper");
@@ -174,30 +176,27 @@ const putAppIntoMaintenanceMode = async () => {
 const openRequestForm = async (payload, callbackName) => {
     console.log("Payload inside openRequestForm", payload);
     console.log("Callback name inside openRequestForm", callbackName);
-    // Get templates
-    const requestModal = _.cloneDeep(templates.requestModal);
-
-    requestModal.callback_id =
-        callbackName || "handleMultipleTeamsRequestResponse";
-
-    const categories = require("../data/categories");
-
-    /**
-     * Define a const theCategories containing either the categories corresponding to the callbackName,
-     * or, if that does not exist, flatten the categories object and return all values, removing duplicates
-     */
-
-    const optionGroup = categories[callbackName] ?? [
-        ...new Set(Object.values(categories).flat()),
-    ];
-
-    requestModal.blocks[3].element.option_groups = _.cloneDeep(optionGroup);
 
     try {
-        // Send leave request form to Slack
+        // Call the function to get the modal with populated project options
+        const modalView = _.cloneDeep(templates.requestModal);
+
+        modalView.callback_id =
+            callbackName || "handleMultipleTeamsRequestResponse";
+
+        const categories = require("../data/categories");
+
+        const optionGroup = categories[callbackName] ?? [
+            ...new Set(Object.values(categories).flat()),
+        ];
+
+        // Update the media/categories dropdown (block index 4)
+        modalView.blocks[4].element.option_groups = optionGroup;
+
+        // Send modal to Slack
         const result = await slack.views.open({
             trigger_id: payload.trigger_id,
-            view: requestModal,
+            view: modalView,
         });
     } catch (error) {
         await reportErrorToSlack(error, "openRequestForm");
@@ -301,7 +300,6 @@ const handleCustomerComplaint = async (payload, locations) => {
 
     //Remove any non-numeric values from the existing IDs
     const existingIdsFlat = rawExistingIds.filter((v) => /^\d+$/.test(v));
-
 
     // Compute the next sequential ID
     const nextId = generateNextId(existingIdsFlat);
@@ -638,6 +636,9 @@ const handleSpendRequest = async (payload, locations) => {
 /**
  * Handle Request Response
  */
+/**
+ * Handle Request Response
+ */
 const handleRequestResponse = async (payload, locations) => {
     console.log(
         "Payload inside handleRequestResponse",
@@ -646,35 +647,36 @@ const handleRequestResponse = async (payload, locations) => {
     console.log("Locations inside handleRequestResponse", locations);
     const fields = Object.values(payload.view.state.values);
 
+    console.log("All fields:", JSON.stringify(fields, null, 2));
+
     // Get the user
     const user = await getUserById(payload.user.id);
 
     // Get the Monday user
     const mondayUser = await getMondayUserByEmail(user.profile.email);
 
-    // const newTask = {
-    //     user: mondayUser.id ?? "",
-    //     client: findField(fields, "clientSelect").selected_option.value,
-    //     producerDeadline: findField(fields, "producerDeadline").selected_date,
-    //     clientDeadline: findField(fields, "clientDeadline").selected_date,
-    //     media: findField(fields, "mediaSelect")
-    //         .selected_options.map((m) => m.value)
-    //         .join(", "),
-    //     dropboxLink: findField(fields, "dropboxLink").value,
-    //     notes: findField(fields, "notes").value,
-    //     projectCode: findField(fields, "projectCode").value,
-    // };
-
     const projectTitle = await generateTitleFromRequest(
         findField(fields, "clientSelect").selected_option.value,
         findField(fields, "notes").value
     );
 
+    //Get the project code from the dropdown (may be undefined if not selected)
+    const projectCode = findField(fields, "project_select")?.selected_option
+        ?.value || findField(fields, "projectCode")?.value;
+
+    console.log("Project Code:", projectCode);
+
+    const rawDropboxLink = findField(fields, "dropboxLink").value;
+
+    const formattedDropboxLink = rawDropboxLink && !rawDropboxLink.startsWith('http') 
+    ? 'https://' + rawDropboxLink 
+    : rawDropboxLink;
+
     const newTask = {
         name: projectTitle,
 
         Producer: mondayUser.id ?? "",
-        "Project Code": findField(fields, "projectCode").value,
+        "Project Code": projectCode || "",
         Client: findField(fields, "clientSelect").selected_option.value,
 
         "Client Deadline": findField(fields, "clientDeadline").selected_date,
@@ -684,17 +686,26 @@ const handleRequestResponse = async (payload, locations) => {
         Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
+         dropboxLink: formattedDropboxLink,
+
         Dropbox: {
-            url: findField(fields, "dropboxLink").value,
+            url: formattedDropboxLink,
             text: "Link",
         },
         Details: findField(fields, "notes").value,
     };
 
+    console.log("New Task:", newTask);
+
     // Add task to boards
     const results = locations.map(async ({ boardId, slackChannel }) => {
+        console.log("Before adding to board:", boardId, slackChannel);
+
         const result = await addTaskToBoardWithColumns(newTask, boardId);
 
+        console.log("Task added to board:", result);
+
+        // Prepare and send Slack message FIRST (before project linking)
         let newRequestMessageTemplate = _.cloneDeep(
             templates.newRequestMessage
         );
@@ -708,15 +719,15 @@ const handleRequestResponse = async (payload, locations) => {
             newTask["Client Deadline"];
         newRequestMessageTemplate.blocks[3].fields[0].text += newTask.Details;
         newRequestMessageTemplate.blocks[3].fields[1].text +=
-            newTask["Project Code"];
+            newTask["Project Code"] || "Not specified";
         newRequestMessageTemplate.blocks[4].elements[0].value = JSON.stringify({
             boardId,
             taskTitle: projectTitle,
-
             itemId: result.data.create_item.id,
         });
         newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
+        
         if (isValidHttpUrl(newTask.dropboxLink)) {
             newRequestMessageTemplate.blocks[4].elements[2].url =
                 newTask.dropboxLink;
@@ -724,25 +735,130 @@ const handleRequestResponse = async (payload, locations) => {
             newRequestMessageTemplate.blocks[4].elements.splice(2, 1);
         }
 
+        // Send Slack message
         try {
-            // Send message to users
             const message = await slack.chat.postMessage({
                 channel: slackChannel,
                 ...newRequestMessageTemplate,
             });
+            console.log("Slack message sent successfully");
         } catch (error) {
             await reportErrorToSlack(
                 error,
                 "Add Task to Board - handleRequestResponse"
             );
-
             console.log(error);
+        }
+
+        // Now try to link to project (only if projectCode is provided)
+        if (projectCode) {
+            try {
+                // Get all the tasks from Ops board
+                const rows = await getAllTaskRowsFromBoard(
+                    process.env.OPS_MONDAY_BOARD
+                );
+
+                // Match the project code to get the project ID
+                const matchedProject = rows.find(
+                    (row) => row.projectCode === projectCode
+                );
+
+                if (!matchedProject) {
+                    console.warn(
+                        `No matching project found in Ops board for project code: ${projectCode}`
+                    );
+                } else {
+                    const opsProjectId = matchedProject.id;
+
+                    switch (boardId) {
+                        case process.env.STUDIO_MONDAY_BOARD:
+                            console.log(
+                                `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                            );
+                            await linkTaskToProject(
+                                result.data.create_item.id,
+                                opsProjectId,
+                                process.env.STUDIO_MONDAY_BOARD
+                            );
+                            break;
+                        case process.env.COMMTECH_MONDAY_BOARD:
+                            console.log(
+                                `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                            );
+                            await linkTaskToProject(
+                                result.data.create_item.id,
+                                opsProjectId,
+                                process.env.COMMTECH_MONDAY_BOARD
+                            );
+                            break;
+                    }
+                }
+            } catch (error) {
+                await reportErrorToSlack(
+                    error,
+                    "Project linking - handleRequestResponse"
+                );
+                console.error("Error linking project:", error);
+            }
+        } else {
+            console.log("No project code selected, skipping project linking");
         }
 
         return result;
     });
 
     return results;
+};
+
+/**
+ * Handle project select options load (called when user types in the dropdown)
+ */
+const handleProjectSelectOptions = async (payload) => {
+    try {
+        const searchTerm = payload.value || "";
+
+        //console.log("Searching for projects with term:", searchTerm);
+
+        // Fetch all projects from Monday.com
+        const rows = await getAllTaskRowsFromBoard(
+            process.env.OPS_MONDAY_BOARD
+        );
+
+        // Filter projects based on search term
+        const filteredRows = rows.filter((row) => {
+            const searchLower = searchTerm.toLowerCase();
+            return (
+                row.name.toLowerCase().includes(searchLower) ||
+                row.projectCode.toLowerCase().includes(searchLower)
+            );
+        });
+
+        // Convert to Slack options format (max 100 results)
+        const options = filteredRows.slice(0, 100).map((row) => {
+            const displayName =
+                row.name.length > 75 ? `${row.name.slice(0, 72)}...` : row.name;
+
+            return {
+                text: {
+                    type: "plain_text",
+                    text: `${displayName}`,
+                    emoji: true,
+                },
+                value: row.projectCode,
+            };
+        });
+
+        // Return options to Slack
+        return {
+            options: options,
+        };
+    } catch (error) {
+        await reportErrorToSlack(error, "handleProjectSelectOptions");
+        console.error("Error loading project options:", error);
+        return {
+            options: [],
+        };
+    }
 };
 
 const handleStudioRequestResponse = async (payload) =>
@@ -2242,4 +2358,5 @@ module.exports = {
     handlePasswordCommand,
     handlePasswordsListCommand,
     reportErrorToSlack,
+    handleProjectSelectOptions,
 };

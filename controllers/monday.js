@@ -87,6 +87,11 @@ const getMondayBoardByProjectCode = async (boardId, projectCode) => {
  * Get Monday board
  */
 const getMondayBoard = async (boardId) => {
+
+    // Initialize variables for pagination
+    // allItems will store all items retrieved from the board
+    // cursor will be used for pagination
+    // boardName will store the name of the board
     let allItems = [];
     let cursor = null;
     let boardName = null;
@@ -342,7 +347,17 @@ const addTaskToBoardWithColumns = async (newTask, boardId) => {
         if (columnId) {
             //Get the value for the column
             let getColumnValue = newTask[column];
-            if (typeof getColumnValue === "string") {
+             if (typeof getColumnValue === "object" && getColumnValue !== null && getColumnValue.url !== undefined) {
+            // Ensure URL has protocol
+            let url = getColumnValue.url;
+            if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+            getColumnValue = {
+                url: url,
+                text: getColumnValue.text || "Link"
+            };
+        }else if (typeof getColumnValue === "string") {
                 getColumnValue = getColumnValue
                     .replace(/\\/g, "\\\\") // Escape backslashes first
                     .replace(/"/g, '\\"') // Escape double quotes
@@ -645,6 +660,48 @@ const moveTaskToCompletedGroup = async (taskId, boardId) => {
     return result;
 };
 
+//Function to select each row from the board
+const getAllTaskRowsFromBoard = async (boardId) => {
+    const result = await getMondayBoard(boardId);
+
+    console.log("Get all task rows from board response", result);
+
+    const excludedTitles = ["completed"];
+
+    const rows = result.data.boards[0].items_page.items;
+
+    const selectedRows = rows
+        .filter((row) => {
+            const groupTitle = row.group?.title?.trim().toLowerCase();
+            return !excludedTitles.includes(groupTitle);
+        })
+        .map((row) => {
+            const projectCodeColumn = row.column_values.find(
+                (col) => col.column.title === "Project Code"
+            );
+
+            let projectCode = "";
+            if (projectCodeColumn?.value) {
+                try {
+                    const parsed = JSON.parse(projectCodeColumn.value);
+                    projectCode = parsed || "";
+                } catch (e) {
+                    projectCode = projectCodeColumn.value || "";
+                }
+            }
+
+            return {
+                id: row.id,
+                name: row.name,
+                projectCode: projectCode,
+            };
+        });
+
+    return selectedRows;
+};
+
+//Function to attach the task to project by project code
+
 module.exports = {
     getMonday,
     getMondayBoard,
@@ -667,4 +724,6 @@ module.exports = {
     moveTaskToCompletedGroup,
     getMondayMembers,
     getMondayBoardByProjectCode,
+    getAllTaskRowsFromBoard,
+    linkTaskToProject,
 };

@@ -35,7 +35,7 @@ const SequoiaDashboard = () => {
     const studioRate = 156.25;
     const consultantRate = 312.5;
     const projectBudget = 15000;
-    const projectCode = "COU011";
+    const projectCode = "SBL001";
 
     useEffect(() => {
         let cancelled = false;

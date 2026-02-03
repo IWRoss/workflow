@@ -6,7 +6,7 @@ export const usePermissions = () => {
     // Function to check if the user has permission for a given feature
     const hasPermission = (cardId) => {
         if (!user || !user.permissions || !user.permissions.features) {
-            console.log("User or user permissions not defined");
+            //console.log("User or user permissions not defined");
             return false;
         }
 

@@ -35,7 +35,7 @@ const SequoiaDashboard = () => {
     const studioRate = 156.25;
     const consultantRate = 312.5;
     const projectBudget = 15000;
-    const projectCode = "SBL001";
+    const projectCode = import.meta.env.VITE_SEQUOIA_DASHBOARD_PROJECT_CODE;
 
     useEffect(() => {
         let cancelled = false;
@@ -59,7 +59,7 @@ const SequoiaDashboard = () => {
                 const opsProjects = opsResult.data.boards[0].items_page.items;
                 const opsProjectID = opsProjects[0].id;
 
-                console.log("ProjectID", opsProjectID);
+                //console.log("ProjectID", opsProjectID);
                 setOpsBoardData(opsProjects);
 
                 const studioProjects =
@@ -86,12 +86,12 @@ const SequoiaDashboard = () => {
 
                 setConsultantBoardData(filteredConsultantProjects);
 
-                console.log(
-                    "Filtered Consultant Projects:",
-                    filteredConsultantProjects
-                );
+                //console.log(
+                //    "Filtered Consultant Projects:",
+                //    filteredConsultantProjects
+                //);
 
-                console.log("Consultant Projects:", consultantProjects);
+                //console.log("Consultant Projects:", consultantProjects);
 
                 // Calculate total hours for studio projects
                 const studioTimeTrackingProjects =
@@ -100,22 +100,22 @@ const SequoiaDashboard = () => {
                 const consultantTimeTrackingProjects =
                     getProjectsWithTimeTracking(filteredConsultantProjects);
 
-                console.log(
-                    "Consultant Time Tracking Projects:",
-                    consultantTimeTrackingProjects
-                );
+                //console.log(
+                //    "Consultant Time Tracking Projects:",
+                //    consultantTimeTrackingProjects
+                //);
                 setTotalConsultantHours(consultantTimeTrackingProjects);
 
-                console.log(
-                    "Studio Time Tracking Projects:",
-                    studioTimeTrackingProjects
-                );
+                //console.log(
+                //    "Studio Time Tracking Projects:",
+                //    studioTimeTrackingProjects
+                //);
                 setTotalStudioHours(studioTimeTrackingProjects);
 
                 setStudioBoardData(studioProjects);
 
-                console.log("Filtered Ops Projects:", opsProjects);
-                console.log("Filtered Studio Projects:", studioProjects);
+                //console.log("Filtered Ops Projects:", opsProjects);
+                //console.log("Filtered Studio Projects:", studioProjects);
             } catch (error) {
                 console.error("Error:", error);
                 setError(error.message);
@@ -157,7 +157,7 @@ const SequoiaDashboard = () => {
         const totalCost = filteredStudioHours.reduce((acc, proj) => {
             return acc + (proj.duration / 3600) * studioRate;
         }, 0);
-        console.log("Total Studio Cost:", totalCost);
+        //console.log("Total Studio Cost:", totalCost);
         setTotalStudioCost(totalCost.toFixed(2));
     }, [filteredStudioHours]);
 
@@ -167,7 +167,7 @@ const SequoiaDashboard = () => {
         const totalHours = filteredConsultantHours.reduce((acc, proj) => {
             return acc + proj.duration;
         }, 0);
-        console.log("Total Consultant Hours (seconds):", totalHours);
+        //console.log("Total Consultant Hours (seconds):", totalHours);
         setTotalConsultantCost(
             ((totalHours / 3600) * consultantRate).toFixed(2)
         );

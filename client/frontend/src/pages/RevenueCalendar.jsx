@@ -16,7 +16,7 @@ export default function RevenueCalendar() {
                 const data = await mondayService.getBoard(
                     import.meta.env.VITE_OPS_MONDAY_BOARD
                 );
-                console.log("Monday Board Data:", data);
+                //console.log("Monday Board Data:", data);
 
                 const boardItems =
                     data?.data?.boards[0]?.items_page?.items || [];

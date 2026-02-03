@@ -79,7 +79,7 @@ export const Calendar = ({ items = [] }) => {
         });
 
         totalMonthsWithTasks = monthsWithTasks.size;
-        console.log("Total months with tasks for item", item.id, ":", totalMonthsWithTasks);
+        //console.log("Total months with tasks for item", item.id, ":", totalMonthsWithTasks);
     }
 
     if (totalMonthsWithTasks === 0) return 0;

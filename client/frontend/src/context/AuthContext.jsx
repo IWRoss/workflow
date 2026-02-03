@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
         const data = await response.json();
 
-        console.log('Token verification response:', data);
+        //console.log('Token verification response:', data);
 
         if (data.success && data.valid) {
 

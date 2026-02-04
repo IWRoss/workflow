@@ -559,46 +559,6 @@ const handleSpendRequest = async (payload, locations) => {
     const user = await getMemberById(payload.user.id);
     console.log("User", user);
 
-    // Approve button
-    newSpendRequestMessageTemplate.blocks[6].elements[0].value = JSON.stringify(
-        {
-            action: "Approved",
-            requestId: `spend_${Date.now()}`,
-            requestedBy: user.real_name,
-            userId: payload.user.id,
-            spendType: fieldsPayload.spendType,
-            department: fieldsPayload.department,
-            client: fieldsPayload.client,
-            projectCode: fieldsPayload.projectCode,
-            notes: fieldsPayload.notes,
-            submittedAt: new Date().toISOString(),
-            numberOfAttendees: fieldsPayload.numberOfAttendees,
-            numberOfClients: fieldsPayload.numberOfClients,
-            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
-            totalSpendAmount: fieldsPayload.totalSpendAmount,
-        }
-    );
-
-    // Decline button
-    newSpendRequestMessageTemplate.blocks[6].elements[1].value = JSON.stringify(
-        {
-            action: "Declined",
-            requestId: `spend_${Date.now()}`,
-            requestedBy: user.real_name,
-            userId: payload.user.id,
-            spendType: fieldsPayload.spendType,
-            department: fieldsPayload.department,
-            client: fieldsPayload.client,
-            projectCode: fieldsPayload.projectCode,
-            notes: fieldsPayload.notes,
-            submittedAt: new Date().toISOString(),
-            numberOfAttendees: fieldsPayload.numberOfAttendees,
-            numberOfClients: fieldsPayload.numberOfClients,
-            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
-            totalSpendAmount: fieldsPayload.totalSpendAmount,
-        }
-    );
-
     if (additionalBlocks.length > 0) {
         console.log("Adding additional blocks");
 
@@ -614,8 +574,48 @@ const handleSpendRequest = async (payload, locations) => {
             });
         });
 
-        newSpendRequestMessageTemplate.blocks.splice(4, 0, combinedBlock);
+        newSpendRequestMessageTemplate.blocks.splice(5, 0, combinedBlock);
     }
+
+    const buttonIndex = additionalBlocks.length > 0 ? 7 : 6;
+
+    // Approve button
+    newSpendRequestMessageTemplate.blocks[buttonIndex].elements[0].value =
+        JSON.stringify({
+            action: "Approved",
+            requestId: `spend_${Date.now()}`,
+            requestedBy: user.real_name,
+            userId: payload.user.id,
+            spendType: fieldsPayload.spendType,
+            department: fieldsPayload.department,
+            client: fieldsPayload.client,
+            projectCode: fieldsPayload.projectCode,
+            notes: fieldsPayload.notes,
+            submittedAt: new Date().toISOString(),
+            numberOfAttendees: fieldsPayload.numberOfAttendees,
+            numberOfClients: fieldsPayload.numberOfClients,
+            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
+            totalSpendAmount: fieldsPayload.totalSpendAmount,
+        });
+
+    // Decline button
+    newSpendRequestMessageTemplate.blocks[buttonIndex].elements[1].value =
+        JSON.stringify({
+            action: "Declined",
+            requestId: `spend_${Date.now()}`,
+            requestedBy: user.real_name,
+            userId: payload.user.id,
+            spendType: fieldsPayload.spendType,
+            department: fieldsPayload.department,
+            client: fieldsPayload.client,
+            projectCode: fieldsPayload.projectCode,
+            notes: fieldsPayload.notes,
+            submittedAt: new Date().toISOString(),
+            numberOfAttendees: fieldsPayload.numberOfAttendees,
+            numberOfClients: fieldsPayload.numberOfClients,
+            numberOfInternalStaff: fieldsPayload.numberOfInternalStaff,
+            totalSpendAmount: fieldsPayload.totalSpendAmount,
+        });
 
     //Separate monday board id and slack channel from locations
     const { boardId, slackChannel } = locations[0];
@@ -638,7 +638,6 @@ const handleSpendRequest = async (payload, locations) => {
         message: "Spend request submitted successfully.",
     };
 };
-
 
 /**
  * Handle Request Response
@@ -665,16 +664,18 @@ const handleRequestResponse = async (payload, locations) => {
     );
 
     //Get the project code from the dropdown (may be undefined if not selected)
-    const projectCode = findField(fields, "project_select")?.selected_option
-        ?.value || findField(fields, "projectCode")?.value;
+    const projectCode =
+        findField(fields, "project_select")?.selected_option?.value ||
+        findField(fields, "projectCode")?.value;
 
     console.log("Project Code:", projectCode);
 
     const rawDropboxLink = findField(fields, "dropboxLink").value;
 
-    const formattedDropboxLink = rawDropboxLink && !rawDropboxLink.startsWith('http') 
-    ? 'https://' + rawDropboxLink 
-    : rawDropboxLink;
+    const formattedDropboxLink =
+        rawDropboxLink && !rawDropboxLink.startsWith("http")
+            ? "https://" + rawDropboxLink
+            : rawDropboxLink;
 
     const newTask = {
         name: projectTitle,
@@ -690,7 +691,7 @@ const handleRequestResponse = async (payload, locations) => {
         Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
-         dropboxLink: formattedDropboxLink,
+        dropboxLink: formattedDropboxLink,
 
         Dropbox: {
             url: formattedDropboxLink,
@@ -731,7 +732,6 @@ const handleRequestResponse = async (payload, locations) => {
         });
         newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
-        
         if (isValidHttpUrl(newTask.dropboxLink)) {
             newRequestMessageTemplate.blocks[4].elements[2].url =
                 newTask.dropboxLink;
@@ -1434,10 +1434,15 @@ const handleAcceptSpendRequestModal = async (payload) => {
         //Retrive the orignal block from the message history
         const originalBlocks = messageHistory.messages[0].blocks;
 
+        // Find where the actions/buttons block is
+        const actionsBlockIndex = originalBlocks.findIndex(
+            (block) => block.type === "actions"
+        );
+
         //Remove the action buttons from the original blocks
         //Add a new section block with the user that declined the request
         const updatedBlocks = [
-            ...originalBlocks.slice(0, 5),
+            ...originalBlocks.slice(0, actionsBlockIndex),
             {
                 type: "section",
                 text: {
@@ -1612,10 +1617,16 @@ const handleDenySpendRequestModal = async (payload) => {
         //Retrive the orignal block from the message history
         const originalBlocks = messageHistory.messages[0].blocks;
 
+
+        // Find where the actions/buttons block is
+const actionsBlockIndex = originalBlocks.findIndex(
+    (block) => block.type === "actions"
+);
+
         //Remove the action buttons from the original blocks
         //Add a new section block with the user that declined the request
         const updatedBlocks = [
-            ...originalBlocks.slice(0, 5),
+            ...originalBlocks.slice(0, actionsBlockIndex),
             {
                 type: "section",
                 text: {

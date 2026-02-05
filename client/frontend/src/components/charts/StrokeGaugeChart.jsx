@@ -7,6 +7,7 @@ const StrokeGaugeChart = ({ value, label }) => {
             type: 'radialBar',
             offsetY: -10
         },
+        colors: ['#00845A'],
         plotOptions: {
             radialBar: {
                 startAngle: -135,
@@ -14,20 +15,22 @@ const StrokeGaugeChart = ({ value, label }) => {
                 dataLabels: {
                     name: {
                         fontSize: '16px',
-                        color: undefined,
-                        offsetY: 120
+                        color: '#64748b',
+                        offsetY: 80,
+                        fontWeight: 'bold'
                     },
                     value: {
-                        offsetY: 76,
+                        offsetY: 40,
                         fontSize: '22px',
-                        color: undefined,
+                        color: '#64748b',
                         formatter: function (val) {
                             //2 decimal places
                             return val.toFixed(2) + "%";
                         }
 
                     }
-                }
+                },
+                
             }
         },
         fill: {
@@ -38,7 +41,8 @@ const StrokeGaugeChart = ({ value, label }) => {
                 inverseColors: false,
                 opacityFrom: 1,
                 opacityTo: 1,
-                stops: [0, 50, 65, 91]
+                stops: [0, 100],
+                gradientToColors: ['#006b49'],
             },
         },
         stroke: {

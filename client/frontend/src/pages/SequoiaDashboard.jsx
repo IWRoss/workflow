@@ -454,7 +454,7 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    £
+                                                    $
                                                     {Number(
                                                         totalConsultantCost
                                                     ).toLocaleString()}
@@ -527,7 +527,7 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    £
+                                                    $
                                                     {Number(
                                                         totalStudioCost
                                                     ).toLocaleString()}

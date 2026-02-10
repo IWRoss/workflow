@@ -504,7 +504,7 @@ const handleSpendRequest = async (payload, locations) => {
     newSpendRequestMessageTemplate.blocks[3].text.text = `*Notes:*\n${fieldsPayload.notes}`;
 
     // Total Spend Amount
-    newSpendRequestMessageTemplate.blocks[4].fields[0].text = `*Total Spend Amount:*\n${fieldsPayload.totalSpendAmount}£`;
+    newSpendRequestMessageTemplate.blocks[4].fields[0].text = `*Total Spend Amount:*\n £${fieldsPayload.totalSpendAmount}`;
 
     console.log("numberOfAttendees", fieldsPayload.numberOfAttendees);
     console.log("numberOfClients", fieldsPayload.numberOfClients);

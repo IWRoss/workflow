@@ -98,7 +98,7 @@ const SequoiaDashboard = () => {
                 const opsProjects = opsResult.data.boards[0].items_page.items;
                 const opsProjectID = opsProjects[0].id;
 
-                console.log("ProjectID", opsProjectID);
+                //console.log("ProjectID", opsProjectID);
                 setOpsBoardData(opsProjects);
 
                 const studioProjects =
@@ -180,7 +180,7 @@ const SequoiaDashboard = () => {
                     now.getDate(),
                 );
 
-                console.log("Three Months Ago:", threeMonthsAgo);
+               // console.log("Three Months Ago:", threeMonthsAgo);
 
                 const studioLast3MonthsHours =
                     studioTimeTrackingProjects.filter(
@@ -203,15 +203,15 @@ const SequoiaDashboard = () => {
                     studioCompletedLast3MonthsHours,
                 );
 
-                console.log("studioLast3MonthsHours", studioLast3MonthsHours);
-                console.log(
-                    "consultantLast3MonthsHours",
-                    consultantLast3MonthsHours,
-                );
-                console.log(
-                    "studioCompletedLast3MonthsHours",
-                    studioCompletedLast3MonthsHours,
-                );
+                //console.log("studioLast3MonthsHours", studioLast3MonthsHours);
+                //console.log(
+                //     "consultantLast3MonthsHours",
+                //     consultantLast3MonthsHours,
+                // );
+                // console.log(
+                //     "studioCompletedLast3MonthsHours",
+                //     studioCompletedLast3MonthsHours,
+                // );
 
                 setTotalStudioCompletedHours(
                     studioCompletedTimeTrackingProjects,

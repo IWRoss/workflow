@@ -22,7 +22,7 @@ const SequoiaDashboard = () => {
     const [totalStudioDays, setTotalStudioDays] = useState(0);
     const [totalStudioCost, setTotalStudioCost] = useState(0);
     const [totalStudioCompletedHours, setTotalStudioCompletedHours] = useState(
-        []
+        [],
     );
     const [totalConsultantHours, setTotalConsultantHours] = useState([]);
     const [totalConsultantCost, setTotalConsultantCost] = useState(0);
@@ -52,19 +52,18 @@ const SequoiaDashboard = () => {
             try {
                 const opsResult = await mondayService.getBoardByProjectCode(
                     opsBoardId,
-                    projectCode
+                    projectCode,
                 );
                 const studioResult = await mondayService.getBoardByProjectCode(
                     studioBoardId,
-                    projectCode
+                    projectCode,
                 );
 
-                const consultantResult = await mondayService.getBoard(
-                    consultantBoardId
-                );
+                const consultantResult =
+                    await mondayService.getBoard(consultantBoardId);
 
                 const studioCompletedResult = await mondayService.getBoard(
-                    import.meta.env.VITE_STUDIO_COMPLETED_MONDAY_BOARD
+                    import.meta.env.VITE_STUDIO_COMPLETED_MONDAY_BOARD,
                 );
 
                 console.log("Studio Completed Result:", studioCompletedResult);
@@ -88,7 +87,7 @@ const SequoiaDashboard = () => {
 
                 console.log(
                     "studioCompletedProjects:",
-                    studioCompletedProjects
+                    studioCompletedProjects,
                 );
 
                 //Filter consultantProjects by opsProjectID
@@ -104,7 +103,7 @@ const SequoiaDashboard = () => {
                             }
                         }
                         return false;
-                    }
+                    },
                 );
 
                 //Filter studioCompletedProjects by opsProjectID
@@ -124,7 +123,7 @@ const SequoiaDashboard = () => {
 
                 console.log(
                     "Filtered Studio Completed Projects:",
-                    filteredStudioCompletedProjects
+                    filteredStudioCompletedProjects,
                 );
                 setStudioCompletedBoardData(filteredStudioCompletedProjects);
                 setConsultantBoardData(filteredConsultantProjects);
@@ -145,16 +144,16 @@ const SequoiaDashboard = () => {
 
                 const studioCompletedTimeTrackingProjects =
                     getProjectsWithTimeTracking(
-                        filteredStudioCompletedProjects
+                        filteredStudioCompletedProjects,
                     );
 
                 setTotalStudioCompletedHours(
-                    studioCompletedTimeTrackingProjects
+                    studioCompletedTimeTrackingProjects,
                 );
 
                 console.log(
                     "Studio Completed Time Tracking Projects:",
-                    studioCompletedTimeTrackingProjects
+                    studioCompletedTimeTrackingProjects,
                 );
 
                 setTotalConsultantHours(consultantTimeTrackingProjects);
@@ -167,7 +166,7 @@ const SequoiaDashboard = () => {
 
                 console.log(
                     "Combined Studio Projects:",
-                    studioTimeTrackingProjects
+                    studioTimeTrackingProjects,
                 );
 
                 setTotalStudioHours(combinedStudioProjects);
@@ -198,13 +197,13 @@ const SequoiaDashboard = () => {
         const filtered = filterProjectsByDateRange(
             totalStudioHours,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
         );
 
         return filtered.map((proj) => ({
             ...proj,
             hours: (proj.duration / 3600).toFixed(2),
-            days: (proj.duration / 3600 / 24).toFixed(3),
+            days: (Math.round((proj.duration / 3600 / 8) * 2) / 2).toFixed(1),
         }));
     }, [totalStudioHours, dateRange.start, dateRange.end]);
 
@@ -212,13 +211,13 @@ const SequoiaDashboard = () => {
         const filtered = filterProjectsByDateRange(
             totalConsultantHours,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
         );
 
         //Add total days from the total hours
         const formatTotalDays = filtered.map((proj) => ({
             ...proj,
-            days: (proj.duration / 3600 / 24).toFixed(2),
+            days: (Math.round((proj.duration / 3600 / 8) * 2) / 2).toFixed(1),
 
             hours: (proj.duration / 3600).toFixed(2),
         }));
@@ -241,11 +240,11 @@ const SequoiaDashboard = () => {
 
     useMemo(() => {
         const totalDays = filteredStudioHours.reduce((acc, proj) => {
-            return acc + proj.duration / 3600 / 24;
+            return acc + proj.duration / 3600 / 8;
         }, 0);
 
         //console.log("Total Studio Days:", totalDays);
-        setTotalStudioDays(totalDays.toFixed(3));
+        setTotalStudioDays((Math.round(totalDays * 2) / 2).toFixed(1));
     }, [filteredStudioHours]);
 
     // Calculate total consultant hours whenever totalConsultantHours changes
@@ -256,7 +255,7 @@ const SequoiaDashboard = () => {
         }, 0);
         //console.log("Total Consultant Hours (seconds):", totalHours);
         setTotalConsultantCost(
-            ((totalHours / 3600) * consultantRate).toFixed(2)
+            ((totalHours / 3600) * consultantRate).toFixed(2),
         );
     }, [filteredConsultantHours]);
 
@@ -265,8 +264,8 @@ const SequoiaDashboard = () => {
         const totalHours = filteredConsultantHours.reduce((acc, proj) => {
             return acc + proj.duration;
         }, 0);
-        const totalDays = totalHours / 3600 / 24;
-        setTotalConsultantDays(totalDays.toFixed(3));
+        const totalDays = totalHours / 3600 / 8;
+        setTotalConsultantDays((Math.round(totalDays * 2) / 2).toFixed(1));
     }, [filteredConsultantHours]);
 
     if (loading) {
@@ -403,10 +402,10 @@ const SequoiaDashboard = () => {
                             <div className="text-lg font-medium text-gray-900">
                                 <SimplePieChart
                                     series={filteredConsultantHours.map(
-                                        (proj) => parseFloat(proj.hours)
+                                        (proj) => parseFloat(proj.hours),
                                     )}
                                     labels={filteredConsultantHours.map(
-                                        (proj) => proj.name
+                                        (proj) => proj.name,
                                     )}
                                     unit=" hrs"
                                     title="Consultant Hours Breakdown"
@@ -440,8 +439,8 @@ const SequoiaDashboard = () => {
                                                             (acc, proj) =>
                                                                 acc +
                                                                 proj.duration,
-                                                            0
-                                                        )
+                                                            0,
+                                                        ),
                                                     )}
                                                 </p>
                                             </div>
@@ -454,10 +453,7 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    $
-                                                    {Number(
-                                                        totalConsultantCost
-                                                    ).toLocaleString()}
+                                                    $ {(Math.round(Number(totalConsultantCost) / 50) * 50).toLocaleString()}
                                                 </p>
                                             </div>
                                         </div>
@@ -480,10 +476,10 @@ const SequoiaDashboard = () => {
                             <div className="text-lg font-medium text-gray-900">
                                 <SimplePieChart
                                     series={filteredStudioHours.map((proj) =>
-                                        parseFloat(proj.hours)
+                                        parseFloat(proj.hours),
                                     )}
                                     labels={filteredStudioHours.map(
-                                        (proj) => proj.name
+                                        (proj) => proj.name,
                                     )}
                                     unit=" hrs"
                                     title="Studio Hours Breakdown"
@@ -515,8 +511,8 @@ const SequoiaDashboard = () => {
                                                             (acc, proj) =>
                                                                 acc +
                                                                 proj.duration,
-                                                            0
-                                                        )
+                                                            0,
+                                                        ),
                                                     )}
                                                 </p>
                                             </div>
@@ -527,10 +523,7 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    $
-                                                    {Number(
-                                                        totalStudioCost
-                                                    ).toLocaleString()}
+                                                    $ {(Math.round(Number(totalStudioCost) / 50) * 50).toLocaleString()}
                                                 </p>
                                             </div>
                                         </div>

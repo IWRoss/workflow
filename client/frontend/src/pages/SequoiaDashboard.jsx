@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { mondayService } from "../services/mondayService";
 import {
     getProjectsWithTimeTracking,
@@ -8,7 +8,7 @@ import { useMemo } from "react";
 import StrokeGaugeChart from "../components/charts/StrokeGaugeChart";
 import { filterProjectsByDateRange } from "../utils/filterProjectsByDateRange";
 import SimplePieChart from "../components/charts/SimplePieChart";
-import { set } from "lodash";
+import BarChart from "../components/charts/BarChart";
 
 const SequoiaDashboard = () => {
     const [opsBoardData, setOpsBoardData] = useState(null);
@@ -18,15 +18,40 @@ const SequoiaDashboard = () => {
     const [consultantBoardData, setConsultantBoardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
     const [totalStudioHours, setTotalStudioHours] = useState([]);
+    const [totalStudioLast3MonthsHours, setTotalStudioLast3MonthsHours] =
+        useState([]);
+
     const [totalStudioDays, setTotalStudioDays] = useState(0);
+    const [totalStudioLast3MonthsDays, setTotalStudioLast3MonthsDays] =
+        useState([]);
+
     const [totalStudioCost, setTotalStudioCost] = useState(0);
+    const [totalStudioLast3MonthsCost, setTotalStudioLast3MonthsCost] =
+        useState(0);
+
     const [totalStudioCompletedHours, setTotalStudioCompletedHours] = useState(
         [],
     );
+    const [
+        totalStudio3MonthsCompletedHours,
+        setTotalStudio3MonthsCompletedHours,
+    ] = useState([]);
+
     const [totalConsultantHours, setTotalConsultantHours] = useState([]);
+    const [
+        totalConsultantLast3MonthsHours,
+        setTotalConsultantLast3MonthsHours,
+    ] = useState([]);
+
     const [totalConsultantCost, setTotalConsultantCost] = useState(0);
+    const [totalConsultantLast3MonthsCost, setTotalConsultantLast3MonthsCost] =
+        useState(0);
+
     const [totalConsultantDays, setTotalConsultantDays] = useState(0);
+    const [totalConsultantLast3MonthsDays, setTotalConsultantLast3MonthsDays] =
+        useState(0);
 
     const [dateRange, setDateRange] = useState(() => {
         const now = new Date();
@@ -66,7 +91,7 @@ const SequoiaDashboard = () => {
                     import.meta.env.VITE_STUDIO_COMPLETED_MONDAY_BOARD,
                 );
 
-                console.log("Studio Completed Result:", studioCompletedResult);
+                //console.log("Studio Completed Result:", studioCompletedResult);
 
                 if (cancelled) return;
 
@@ -85,10 +110,10 @@ const SequoiaDashboard = () => {
                 const studioCompletedProjects =
                     studioCompletedResult.data.boards[0].items_page.items;
 
-                console.log(
-                    "studioCompletedProjects:",
-                    studioCompletedProjects,
-                );
+                // console.log(
+                //     "studioCompletedProjects:",
+                //     studioCompletedProjects,
+                // );
 
                 //Filter consultantProjects by opsProjectID
                 const filteredConsultantProjects = consultantProjects.filter(
@@ -121,10 +146,10 @@ const SequoiaDashboard = () => {
                         return false;
                     });
 
-                console.log(
-                    "Filtered Studio Completed Projects:",
-                    filteredStudioCompletedProjects,
-                );
+                // console.log(
+                //     "Filtered Studio Completed Projects:",
+                //     filteredStudioCompletedProjects,
+                // );
                 setStudioCompletedBoardData(filteredStudioCompletedProjects);
                 setConsultantBoardData(filteredConsultantProjects);
 
@@ -147,14 +172,55 @@ const SequoiaDashboard = () => {
                         filteredStudioCompletedProjects,
                     );
 
+                //Check which month is currently and separate each last 3 months into different arrays for both studio and consultant
+                const now = new Date();
+                const threeMonthsAgo = new Date(
+                    now.getFullYear(),
+                    now.getMonth() - 2,
+                    now.getDate(),
+                );
+
+                console.log("Three Months Ago:", threeMonthsAgo);
+
+                const studioLast3MonthsHours =
+                    studioTimeTrackingProjects.filter(
+                        (proj) => new Date(proj.startDate) >= threeMonthsAgo,
+                    );
+
+                const consultantLast3MonthsHours =
+                    consultantTimeTrackingProjects.filter(
+                        (proj) => new Date(proj.startDate) >= threeMonthsAgo,
+                    );
+
+                const studioCompletedLast3MonthsHours =
+                    studioCompletedTimeTrackingProjects.filter(
+                        (proj) => new Date(proj.startDate) >= threeMonthsAgo,
+                    );
+
+                setTotalStudioLast3MonthsHours(studioLast3MonthsHours);
+                setTotalConsultantLast3MonthsHours(consultantLast3MonthsHours);
+                setTotalStudio3MonthsCompletedHours(
+                    studioCompletedLast3MonthsHours,
+                );
+
+                console.log("studioLast3MonthsHours", studioLast3MonthsHours);
+                console.log(
+                    "consultantLast3MonthsHours",
+                    consultantLast3MonthsHours,
+                );
+                console.log(
+                    "studioCompletedLast3MonthsHours",
+                    studioCompletedLast3MonthsHours,
+                );
+
                 setTotalStudioCompletedHours(
                     studioCompletedTimeTrackingProjects,
                 );
 
-                console.log(
-                    "Studio Completed Time Tracking Projects:",
-                    studioCompletedTimeTrackingProjects,
-                );
+                // console.log(
+                //     "Studio Completed Time Tracking Projects:",
+                //     studioCompletedTimeTrackingProjects,
+                // );
 
                 setTotalConsultantHours(consultantTimeTrackingProjects);
 
@@ -164,10 +230,10 @@ const SequoiaDashboard = () => {
                     ...studioCompletedTimeTrackingProjects,
                 ];
 
-                console.log(
-                    "Combined Studio Projects:",
-                    studioTimeTrackingProjects,
-                );
+                // console.log(
+                //     "Combined Studio Projects:",
+                //     studioTimeTrackingProjects,
+                // );
 
                 setTotalStudioHours(combinedStudioProjects);
 
@@ -267,6 +333,78 @@ const SequoiaDashboard = () => {
         const totalDays = totalHours / 3600 / 8;
         setTotalConsultantDays((Math.round(totalDays * 2) / 2).toFixed(1));
     }, [filteredConsultantHours]);
+
+    //Calculation for last 3 months
+
+    // Calculate last 3 months studio cost
+    useMemo(() => {
+        const combinedLast3Months = [
+            ...totalStudioLast3MonthsHours,
+            ...totalStudio3MonthsCompletedHours,
+        ];
+
+        const totalCost = combinedLast3Months.reduce((acc, proj) => {
+            return acc + (proj.duration / 3600) * studioRate;
+        }, 0);
+
+        setTotalStudioLast3MonthsCost(totalCost.toFixed(2));
+    }, [totalStudioLast3MonthsHours, totalStudio3MonthsCompletedHours]);
+
+    //Calculate last 3 months studio days
+    useMemo(() => {
+        const combinedLast3Months = [
+            ...totalStudioLast3MonthsHours,
+            ...totalStudio3MonthsCompletedHours,
+        ];
+
+        const totalDays = combinedLast3Months.reduce((acc, proj) => {
+            return acc + proj.duration / 3600 / 8;
+        }, 0);
+
+        setTotalStudioLast3MonthsDays(
+            (Math.round(totalDays * 2) / 2).toFixed(1),
+        );
+    }, [totalStudioLast3MonthsHours, totalStudio3MonthsCompletedHours]);
+
+    // Calculate last 3 months consultant cost
+    useMemo(() => {
+        const totalHours = totalConsultantLast3MonthsHours.reduce(
+            (acc, proj) => {
+                return acc + proj.duration;
+            },
+            0,
+        );
+
+        setTotalConsultantLast3MonthsCost(
+            ((totalHours / 3600) * consultantRate).toFixed(2),
+        );
+    }, [totalConsultantLast3MonthsHours]);
+
+    // Calculate last 3 months consultant days
+    useMemo(() => {
+        const totalHours = totalConsultantLast3MonthsHours.reduce(
+            (acc, proj) => {
+                return acc + proj.duration;
+            },
+            0,
+        );
+        const totalDays = totalHours / 3600 / 8;
+        setTotalConsultantLast3MonthsDays(
+            (Math.round(totalDays * 2) / 2).toFixed(1),
+        );
+    }, [totalConsultantLast3MonthsHours]);
+
+    // Combined last 3 months arrays for display
+    const combinedStudioLast3Months = useMemo(() => {
+        return [
+            ...totalStudioLast3MonthsHours,
+            ...totalStudio3MonthsCompletedHours,
+        ];
+    }, [totalStudioLast3MonthsHours, totalStudio3MonthsCompletedHours]);
+
+    const combinedConsultantLast3Months = useMemo(() => {
+        return totalConsultantLast3MonthsHours;
+    }, [totalConsultantLast3MonthsHours]);
 
     if (loading) {
         return (
@@ -453,7 +591,14 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    $ {(Math.round(Number(totalConsultantCost) / 50) * 50).toLocaleString()}
+                                                    ${" "}
+                                                    {(
+                                                        Math.round(
+                                                            Number(
+                                                                totalConsultantCost,
+                                                            ) / 50,
+                                                        ) * 50
+                                                    ).toLocaleString()}
                                                 </p>
                                             </div>
                                         </div>
@@ -523,7 +668,14 @@ const SequoiaDashboard = () => {
                                                     Total
                                                 </span>
                                                 <p className="text-xl font-bold text-white leading-none break-all">
-                                                    $ {(Math.round(Number(totalStudioCost) / 50) * 50).toLocaleString()}
+                                                    ${" "}
+                                                    {(
+                                                        Math.round(
+                                                            Number(
+                                                                totalStudioCost,
+                                                            ) / 50,
+                                                        ) * 50
+                                                    ).toLocaleString()}
                                                 </p>
                                             </div>
                                         </div>
@@ -538,6 +690,19 @@ const SequoiaDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A]">
                         <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
+                            Number of tasks (Consultant)
+                        </h3>
+                        <div className="text-lg font-medium text-gray-900">
+                            {filteredConsultantHours.length}
+                            <div className="mt-2 flex flex-col gap-2 text-sm text-gray-600">
+                                {filteredConsultantHours.map((proj, idx) => (
+                                    <span key={idx}>⦾ {proj.name}</span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A]">
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
                             Number of Tasks (Studio)
                         </h3>
                         <div className="text-lg font-medium text-gray-900">
@@ -549,17 +714,177 @@ const SequoiaDashboard = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A]">
+            {/* Last 3 months overview */}
+            <div className="bg-white rounded-lg shadow-md p-4 border border-gray-200 mt-10">
+                <h2 className="text-2xl font-bold mb-4">
+                    Last 3 Months Overview
+                </h2>
+
+                {/* Main Grid Container: 1 column on mobile, 3 columns on large screens */}
+                <div className="grid grid-cols-1  gap-6 mb-6">
+                    {/* Budget Usage Card */}
+                    <div className="bg-white rounded-lg   p-4">
                         <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
-                            Number of tasks (Consultant)
+                            Budget Usage
                         </h3>
-                        <div className="text-lg font-medium text-gray-900">
-                            {filteredConsultantHours.length}
-                            <div className="mt-2 flex flex-col gap-2 text-sm text-gray-600">
-                                {filteredConsultantHours.map((proj, idx) => (
-                                    <span key={idx}>⦾ {proj.name}</span>
-                                ))}
+
+                        <BarChart
+                            series={[
+                                {
+                                    name: "Studio",
+                                    data: [totalStudioLast3MonthsCost],
+                                },
+                                {
+                                    name: "Consultant",
+                                    data: [totalConsultantLast3MonthsCost],
+                                },
+                            ]}
+                            categories={["Total Cost"]}
+                            unit="$"
+                            title="Budget Usage"
+                            maxValue={45000}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A]">
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
+                                    Number of tasks (Consultant)
+                                </h3>
+                                <div className="text-lg font-medium text-gray-900">
+                                    {combinedConsultantLast3Months.length}
+                                    <div className="mt-2 flex flex-col gap-2 text-sm text-gray-600">
+                                        {combinedConsultantLast3Months.map(
+                                            (proj, idx) => (
+                                                <span key={idx}>
+                                                    ⦾ {proj.name}
+                                                </span>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 px-4 sm:px-0">
+                                    {/* Internal Stats Grid */}
+                                    <div className="flex flex-col xl:flex-row gap-3 sm:gap-4">
+                                        <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A] flex flex-col">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+                                                    Total Days
+                                                </span>
+                                                <p className="text-xl font-semibold text-slate-900 leading-none">
+                                                    {
+                                                        totalConsultantLast3MonthsDays
+                                                    }{" "}
+                                                    <span className="text-xs font-normal text-slate-400 ml-1">
+                                                        days
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A] flex flex-col">
+                                            <div className="flex  flex-col">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+                                                    Total Effort
+                                                </span>
+                                                <p className="text-xl font-semibold text-slate-900 leading-none">
+                                                    {formatSeconds(
+                                                        combinedConsultantLast3Months.reduce(
+                                                            (acc, proj) =>
+                                                                acc +
+                                                                proj.duration,
+                                                            0,
+                                                        ),
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-[#00845A] rounded-lg shadow-md p-4 border-t-4 border-[#00845A] flex flex-col min-w-0 flex-1">
+                                            <div className="flex flex-col min-w-0 flex-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-widest text-green-100/80 mb-1">
+                                                    Total
+                                                </span>
+                                                <p className="text-xl font-bold text-white leading-none break-all">
+                                                    ${" "}
+                                                    {(
+                                                        Math.round(
+                                                            Number(
+                                                                totalConsultantLast3MonthsCost,
+                                                            ) / 50,
+                                                        ) * 50
+                                                    ).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-lg shadow-sm p-4 border hover:bg-gray-50 border-t-4 border-[#00845A] flex flex-col">
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">
+                                    Number of Tasks (Studio)
+                                </h3>
+                                <div className="text-lg font-medium text-gray-900 flex-1">
+                                    {combinedStudioLast3Months.length}
+                                    <div className="mt-2 flex flex-col gap-2 text-sm text-gray-600">
+                                        {combinedStudioLast3Months.map(
+                                            (proj, idx) => (
+                                                <span key={idx}>
+                                                    ⦾ {proj.name}
+                                                </span>
+                                            ),
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 mt-auto pt-6">
+                                    <div className="flex flex-1 items-center justify-between p-4 bg-white border-l-4 sm:border-l-0 sm:border-t-4 border-[#00845A] rounded-lg shadow-sm">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+                                                Total Days
+                                            </span>
+                                            <p className="text-xl font-semibold text-slate-900 leading-none">
+                                                {totalStudioLast3MonthsDays}{" "}
+                                                <span className="text-xs font-normal text-slate-400 ml-1">
+                                                    days
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-1 items-center justify-between p-4 bg-white border-l-4 sm:border-l-0 sm:border-t-4 border-[#00845A] rounded-lg shadow-sm">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">
+                                                Total Effort
+                                            </span>
+                                            <p className="text-xl font-semibold text-slate-900 leading-none">
+                                                {formatSeconds(
+                                                    combinedStudioLast3Months.reduce(
+                                                        (acc, proj) =>
+                                                            acc + proj.duration,
+                                                        0,
+                                                    ),
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-2 items-center justify-between p-4 bg-[#00845A] rounded-lg shadow-md min-w-0">
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-green-100/80 mb-1">
+                                                Total
+                                            </span>
+                                            <p className="text-xl font-bold text-white leading-none break-all">
+                                                ${" "}
+                                                {(
+                                                    Math.round(
+                                                        Number(
+                                                            totalStudioLast3MonthsCost,
+                                                        ) / 50,
+                                                    ) * 50
+                                                ).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

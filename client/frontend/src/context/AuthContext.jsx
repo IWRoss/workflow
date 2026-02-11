@@ -70,15 +70,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     await msalReady;
 
-    const account = msalInstance.getActiveAccount();
-    
-    if (account) {
-        await msalInstance.logoutRedirect({
-            account,
-            postLogoutRedirectUri: window.location.origin + "/login",
-            onRedirectNavigate: () => false, 
-        });
-    }
+    msalInstance.clearCache();
   };
 
   const value = {

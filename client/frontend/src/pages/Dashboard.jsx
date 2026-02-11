@@ -1,17 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { usePermissions } from "../hooks/usePermissions";
+import Sequoia_Logo from "../assets/sequoia_logo.png";
 
 const Dashboard = () => {
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
 
-
     const dashboardCards = [
         {
-            id: 'revenue-calendar',
-            title: 'Revenue Recognition Calendar',
-            route: '/revenue-calendar',
-            permission: 'revenue-calendar',
+            id: "revenue-calendar",
+            title: "Revenue Recognition Calendar",
+            route: "/revenue-calendar",
+            permission: "revenue-calendar",
             icon: (
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -27,33 +27,26 @@ const Dashboard = () => {
                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                 </svg>
-            )
+            ),
         },
         {
-            id: 'sequoia-dashboard',
-            title: 'Sequoia Dashboard',
-            route: '/sequoia-dashboard',
-            permission: 'sequoia-dashboard',
+            id: "sequoia-dashboard",
+            title: "Sequoia Dashboard",
+            route: "/sequoia-dashboard",
+            permission: "sequoia-dashboard",
             icon: (
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 text-green-500 mb-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 17a2 2 0 104 0v-5a2 2 0 10-4 0m4 0H9m4 0h4m-4 0v1m0 4h.01M5 13h.01M5 17h.01M5 9h.01M5 5h.01M19 13h.01M19 17h.01M19 9h.01M19 5h.01"
-                    />
-                </svg>
-            )
-        }
+                <img
+                    src={Sequoia_Logo}
+                    alt="Sequoia Logo"
+                    className="h-12 w-auto mb-4"
+                />
+            ),
+        },
     ];
 
-    const permittedCards = dashboardCards.filter(card => hasPermission(card.permission));
+    const permittedCards = dashboardCards.filter((card) =>
+        hasPermission(card.permission),
+    );
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">

@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import { msalInstance } from '../components/microsoftAuthConfig/msalConfig';
+import { msalInstance, msalReady } from '../components/microsoftAuthConfig/msalConfig';
 
 export const AuthContext = createContext(null);
 
@@ -65,9 +65,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem('user');
+    await msalReady;
 
     msalInstance.clearCache();
   };

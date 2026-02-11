@@ -76,7 +76,6 @@ export const AuthProvider = ({ children }) => {
         await msalInstance.logoutRedirect({
             account,
             postLogoutRedirectUri: window.location.origin + "/login",
-            onRedirectNavigate: () => false, // prevents redirect to Microsoft's logout page
         });
     }
   };

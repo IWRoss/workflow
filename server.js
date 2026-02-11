@@ -30,6 +30,8 @@ const apiRoutes = require("./routes/api/api");
 const copperRoutes = require("./routes/api/copper/get");
 const mondayRoutes = require("./routes/api/monday/get");
 const googleAuthRoutes = require("./routes/api/googleAuth/post");
+const microsoftAuth = require('./routes/api/microsoftAuth/post');
+
 
 
 // Use routes
@@ -37,6 +39,8 @@ app.use(apiRoutes);
 app.use(copperRoutes);
 app.use(mondayRoutes);
 app.use('/googleAuth', googleAuthRoutes);
+app.use('/microsoftAuth', microsoftAuth);
+
 // app.get("*", (req, res) => {
 //     res.status(200).json({
 //         status: "ok",

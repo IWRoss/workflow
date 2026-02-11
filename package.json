@@ -8,7 +8,6 @@
         "dev": "nodemon server.js",
         "start": "node server.js",
         "heroku-postbuild": "cd client/frontend && npm install --include=dev && npm run build",
-
         "heroku:passwords": "node scripts/set-heroku-passwords.js",
         "heroku:passwords:dry": "node scripts/set-heroku-passwords.js --dry-run",
         "heroku:commands": "node scripts/generate-heroku-commands.js"
@@ -29,6 +28,7 @@
         "google-auth-library": "^10.5.0",
         "googleapis": "^155.0.0",
         "jsonwebtoken": "^9.0.3",
+        "jwks-rsa": "^3.2.2",
         "lodash": "^4.17.21",
         "monday-sdk-js": "^0.1.4",
         "morgan": "~1.9.1",

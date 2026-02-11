@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { msalInstance } from '../components/microsoftAuthConfig/msalConfig';
 
 export const AuthContext = createContext(null);
 
@@ -67,6 +68,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+
+    msalInstance.clearCache();
   };
 
   const value = {

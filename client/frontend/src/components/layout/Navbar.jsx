@@ -87,7 +87,7 @@ export default function Navbar() {
                             >
                                 <img
                                     className="h-full w-full rounded-full object-cover"
-                                    src={user.avatar || user.picture}  
+                                    src={user.avatar || user.picture || "https://www.gravatar.com/avatar?d=mp&s=200"}  
                                     alt={user.name}
                                 />
                             </div>

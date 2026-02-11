@@ -10,6 +10,10 @@ const getPermissionsByDomain = (domain) =>{
             routes: ['/dashboard', '/sequoia-dashboard'],
             features: ['sequoia-dashboard']
         },
+        'sequoia.com': {
+            routes: ['/dashboard', '/sequoia-dashboard'],
+            features: ['sequoia-dashboard']
+        },
     };
 
     // Return permissions for the given domain or default permissions

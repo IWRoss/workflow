@@ -2,7 +2,10 @@ import "./App.css";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { msalInstance, msalReady } from "./components/microsoftAuthConfig/msalConfig";
+import {
+    msalInstance,
+    msalReady,
+} from "./components/microsoftAuthConfig/msalConfig";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -16,15 +19,21 @@ function App() {
     useEffect(() => {
         const handleRedirect = async () => {
             await msalReady;
-            const response = await msalInstance.handleRedirectPromise();
-            if (response) {
-                sessionStorage.setItem(
-                    "msalResponse",
-                    JSON.stringify({
-                        accessToken: response.accessToken,
-                        account: response.account,
-                    })
-                );
+            try {
+                const response = await msalInstance.handleRedirectPromise();
+                if (response) {
+                    sessionStorage.setItem(
+                        "msalResponse",
+                        JSON.stringify({
+                            accessToken: response.accessToken,
+                            account: response.account,
+                        }),
+                    );
+                }
+            } catch (err) {
+                console.warn("MSAL redirect handling failed:", err);
+                // Clear stale MSAL cache to prevent this from recurring
+                msalInstance.clearCache();
             }
             setMsalHandled(true);
         };

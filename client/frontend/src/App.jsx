@@ -1,10 +1,13 @@
 import "./App.css";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useAuth } from "./hooks/useAuth";
+import { useNavigate } from "react-router-dom"; 
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import {
     msalInstance,
     msalReady,
+    loginRequest,
 } from "./components/microsoftAuthConfig/msalConfig";
 
 import Login from "./pages/Login";
@@ -14,26 +17,54 @@ import RevenueCalendar from "./pages/RevenueCalendar";
 
 function App() {
     const [msalHandled, setMsalHandled] = useState(false);
+    const [msalError, setMsalError] = useState(null);
 
-    // This effect runs once on app load to handle the Microsoft login redirect response
+    const { login } = useAuth(); 
+    const navigate = useNavigate(); 
+    const API_URL = import.meta.env.VITE_API_URL;
+
     useEffect(() => {
         const handleRedirect = async () => {
             await msalReady;
             try {
                 const response = await msalInstance.handleRedirectPromise();
                 if (response) {
-                    sessionStorage.setItem(
-                        "msalResponse",
-                        JSON.stringify({
-                            accessToken: response.accessToken,
-                            account: response.account,
-                        }),
+                    // Set the active account for future token requests
+                    msalInstance.setActiveAccount(response.account);
+
+                    // Now we need to acquire a token to call our backend
+                    const tokenRes = await msalInstance.acquireTokenSilent({
+                        ...loginRequest,
+                        account: response.account,
+                    });
+
+                    const graphAccessToken = tokenRes.accessToken;
+
+                    const res = await fetch(
+                        `${API_URL}/microsoftAuth/microsoft-login`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ token: graphAccessToken }),
+                        },
                     );
+
+                    const data = await res.json();
+
+                    if (data.success) {
+                        login({ ...data.user, token: data.token });
+                        navigate("/dashboard");
+                    } else {
+                        console.error("Microsoft login failed:", data.error);
+                        setMsalError(data.error || "Microsoft login failed.");
+                        navigate("/login");
+                    }
                 }
             } catch (err) {
                 console.warn("MSAL redirect handling failed:", err);
-                // Clear stale MSAL cache to prevent this from recurring
                 msalInstance.clearCache();
+                setMsalError("Microsoft login failed. Please try again.");
+                navigate("/login");
             }
             setMsalHandled(true);
         };
@@ -44,8 +75,15 @@ function App() {
 
     return (
         <Routes>
-            <Route path="/login" element={<Login />} />
-
+            <Route
+                path="/login"
+                element={
+                    <Login
+                        msalError={msalError}
+                        clearMsalError={() => setMsalError(null)}
+                    />
+                }
+            />
             <Route
                 path="/dashboard"
                 element={
@@ -54,7 +92,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
             <Route
                 path="/sequoia-dashboard"
                 element={
@@ -63,7 +100,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
             <Route
                 path="/revenue-calendar"
                 element={
@@ -72,7 +108,6 @@ function App() {
                     </ProtectedRoute>
                 }
             />
-
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

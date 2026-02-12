@@ -25,9 +25,23 @@ router.post("/microsoft-login", async (req, res) => {
             },
         );
 
-        console.log("Microsoft Login response from Graph API:", response);
+        //console.log("Microsoft Login response from Graph API:", response);
 
         const user = response.data;
+
+
+        const allowedDomains = process.env.ALLOWED_EMAIL_DOMAINS.split(',').map(d => d.trim());
+
+        const emailDomain =
+            user.mail?.split("@")[1] || user.userPrincipalName.split("@")[1];
+
+         if (!allowedDomains.includes(emailDomain)) {
+            return res.status(403).json({ 
+                success: false,
+                valid: false,
+                error: 'You are not authorized to access this application.' 
+            });
+        }
 
         // Fetch profile photo
         let picture = null;
@@ -50,9 +64,18 @@ router.post("/microsoft-login", async (req, res) => {
 
         console.log("Microsoft Login user data:", user);
 
-        const emailDomain =
-            user.mail?.split("@")[1] || user.userPrincipalName.split("@")[1];
+        
+
+
+
+
+        
+
+
+        console.log("Microsoft Login email domain:", emailDomain);
         const permissions = getPermissionsByDomain(emailDomain);
+
+        console.log("Microsoft Login user permissions:", permissions);
 
         if (!permissions) {
             return res.status(403).json({ error: "Domain not authorized" });

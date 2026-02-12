@@ -109,7 +109,7 @@ module.exports = [
     "Victaulic",
     "VML",
     "Warner Music",
-    "Whitworth Food Group",
+    "Whitworths Food Group",
     "Multiverse",
     "Zoopla",
     "eFinancialCareers",

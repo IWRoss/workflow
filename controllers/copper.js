@@ -733,7 +733,7 @@ const moveOpportunityToCompletedGroupOnWebhook = async (payload) => {
 };
 
 const addOpportunityToProjectBoard = async (opportunity) => {
-    const { addProjectToProjectBoard } = require("./monday");
+    const { addProjectToProjectBoard,getItemByProjectCode } = require("./monday");
 
     try {
         console.log("Adding opportunity to project board:", opportunity);
@@ -752,6 +752,16 @@ const addOpportunityToProjectBoard = async (opportunity) => {
             compCode,
             company
         );
+
+        const existingItem = await getItemByProjectCode(
+            process.env.PROJECT_MONDAY_BOARD,
+            projectCode
+        );
+
+        if (existingItem) {
+            console.log("Project already exists on Monday.com:", projectCode, existingItem.id);
+            return existingItem; 
+        }
 
         const opportunityOwner = await getCopperUserById(opportunity.ownerId);
 
@@ -777,6 +787,7 @@ const addWonOpportunitiesToProjectBoard = async () => {
 
     for (const opportunity of wonOpportunities) {
         try {
+            console.log("Adding won opportunity to project board:", opportunity);
             await addOpportunityToProjectBoard(opportunity);
         } catch (error) {
             console.error(

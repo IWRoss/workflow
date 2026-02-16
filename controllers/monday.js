@@ -422,7 +422,7 @@ const getMondayMembers = async () => {
     }
   }`);
 
-    return members.data.users;
+    return members.data?.users;
 };
 
 /**

@@ -15,7 +15,7 @@ const getPermissionsByDomain = (domain) =>{
             features: ['sequoia-dashboard']
         },
         'outlook.com': {
-            routes: ['/dashboard', '/sequoia-dashboard'],
+            routes: ['/dashboard', ],
             features: ['sequoia-dashboard']
         },
     };

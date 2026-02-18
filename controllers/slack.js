@@ -442,15 +442,15 @@ const handleOpportunityToImprove = async (payload, locations) => {
         console.log(error);
     }
 
-    try {
-        const message = await slack.chat.postMessage({
-            channel: slackChannel,
-            ...newOpportunityToImproveTemplate,
-        });
-    } catch (error) {
-        await reportErrorToSlack(error, "handleOpportunityToImprove");
-        console.log(error);
-    }
+    // try {
+    //     const message = await slack.chat.postMessage({
+    //         channel: slackChannel,
+    //         ...newOpportunityToImproveTemplate,
+    //     });
+    // } catch (error) {
+    //     await reportErrorToSlack(error, "handleOpportunityToImprove");
+    //     console.log(error);
+    // }
 
     // Return a success message
     return {

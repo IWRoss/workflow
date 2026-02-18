@@ -15,11 +15,11 @@ export const usePermissions = () => {
         return hasAccess;
     };
 
-    //
-    const canAccessRoute = (route) => {
-        if (!user || !user.permissions) return false;
+    // Function to check if the user has access to a given route
+    const hasRoute = (route) => {
+        if (!user || !user.permissions || !user.permissions.routes) return false;
 
-        return user.permissions.includes(route);
+        return user.permissions.routes.includes(route);
     };
 
     const getUserDomain = () => {
@@ -28,7 +28,7 @@ export const usePermissions = () => {
 
     return {
         hasPermission,
-        canAccessRoute,
+        hasRoute,
         getUserDomain,
         permissions: user?.permissions || { routes: [], features: [] },
     };

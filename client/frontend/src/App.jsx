@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import SequoiaDashboard from "./pages/SequoiaDashboard";
 import RevenueCalendar from "./pages/RevenueCalendar";
+import StandRegister from "./pages/StandRegister";
 
 function App() {
     const [msalHandled, setMsalHandled] = useState(false);
@@ -108,6 +109,9 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
+            <Route path="/register" element={<StandRegister />} />
+
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

@@ -52,7 +52,7 @@ const StandLogin = () => {
 
             navigate("/dashboard");
         } catch (err) {
-            console.error("Login error:", err);
+           // console.error("Login error:", err);
             switch (err.code) {
                 case "auth/user-not-found":
                     setError("No account found with this email.");

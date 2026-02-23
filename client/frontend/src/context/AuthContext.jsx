@@ -4,6 +4,9 @@ import {
     msalReady,
 } from "../components/microsoftAuthConfig/msalConfig";
 
+import { signOut } from "firebase/auth";
+import { auth } from "../config/firebase";
+
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -75,6 +78,13 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         setUser(null);
         localStorage.removeItem("user");
+
+        // Sign out from Firebase
+        try {
+            await signOut(auth);
+        } catch (err) {
+            console.error("Firebase sign out error:", err);
+        }
 
         await msalReady;
 

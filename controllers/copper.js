@@ -220,6 +220,8 @@ const formatOpportunity = (opportunity) => {
         ownerId: opportunity.assignee_id,
         value: opportunity.monetary_value,
         currency: opportunity.monetary_unit,
+        companyName: opportunity.company_name,
+        primaryContactId: opportunity.primary_contact_id,
         ...customFields,
     };
 };
@@ -294,6 +296,17 @@ const getCompanies = async () => {
 const getCompany = async (companyId) => {
     const response = await axios.get(
         `${process.env.COPPER_API_URL}/companies/${companyId}`,
+        {
+            headers: copperHeaders,
+        }
+    );
+
+    return response.data;
+};
+
+const getContactById = async (contactId) => {
+    const response = await axios.get(
+        `${process.env.COPPER_API_URL}/people/${contactId}`,
         {
             headers: copperHeaders,
         }
@@ -845,4 +858,6 @@ module.exports = {
     getCopperUsers,
     getOpportunity,
     getCopperUserById,
+    getCompany,
+    getContactById,
 };

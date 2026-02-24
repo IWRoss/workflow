@@ -217,6 +217,52 @@ const blocks = {
                 action_id: "openOpportunityToImproveForm",
             },
         },
+
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "If you need to enter an opportunity to improve, please submit using this form. ",
+            },
+            accessory: {
+                type: "button",
+                text: {
+                    type: "plain_text",
+                    text: "Create ticket",
+                    emoji: true,
+                },
+                value: "click_me_123",
+                action_id: "openOpportunityToImproveForm",
+            },
+        },
+        {
+            type: "divider",
+        },
+        {
+            type: "header",
+            text: {
+                type: "plain_text",
+                text: "Statement of Work (SOW)",
+                emoji: true,
+            },
+        },
+        {
+            type: "section",
+            text: {
+                type: "mrkdwn",
+                text: "If you need to submit a new Statement of Work request, please use this form.",
+            },
+            accessory: {
+                type: "button",
+                text: {
+                    type: "plain_text",
+                    text: "Create SOW",
+                    emoji: true,
+                },
+                value: "click_me_123",
+                action_id: "open_sow_request",
+            },
+        },
     ],
 };
 

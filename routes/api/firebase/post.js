@@ -27,12 +27,16 @@ router.post("/sow", async (req, res) => {
             id,
             projectOwner,
             projectCode,
+            clientEmail,
+            primaryContactId,
             status,
             timelineStart,
             timelineEnd,
             projectName,
             client,
             workDescription,
+                        teamMembers,
+
         } = req.body;
 
         // Validate required fields
@@ -44,6 +48,8 @@ router.post("/sow", async (req, res) => {
             id,
             projectOwner: projectOwner || "",
             projectCode: projectCode || "",
+            clientEmail: clientEmail || "",
+            primaryContactId: primaryContactId || "",
             status: status || "",
             timeline: {
                 startDate: timelineStart || "",
@@ -52,6 +58,7 @@ router.post("/sow", async (req, res) => {
             projectName: projectName || "",
             client: client || "",
             workDescription: workDescription || "",
+            teamMembers: teamMembers || "",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
@@ -92,12 +99,15 @@ router.post("/sow/update", async (req, res) => {
         const allowedFields = [
             "projectOwner",
             "projectCode",
+            "clientEmail",
+            "primaryContactId",
             "status",
             "timelineStart",
             "timelineEnd",
             "projectName",
             "client",
             "workDescription",
+            "teamMembers",
         ];
 
         const updateData = {};

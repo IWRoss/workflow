@@ -1,6 +1,6 @@
 const express = require("express"),
     router = express.Router();
- 
+
 const {
     openStudioRequestForm,
     openCommTechRequestForm,
@@ -31,9 +31,10 @@ const {
     handlePasswordCommand,
     handlePasswordsListCommand,
     handleProjectSelectOptions,
+     openSowRequestForm,
+    handleSowRequestResponse,
+    handleSowProjectSelectOptions,
 } = require("../../controllers/slack");
-
-
 
 /**
  * To keep our route closure nice and clean, we'll define all our interactions
@@ -54,6 +55,9 @@ const actions = {
     },
     openOpportunityToImproveForm: (payload) => {
         openOpportunityToImproveForm(payload);
+    },
+    open_sow_request: (payload) => {
+        openSowRequestForm(payload);
     },
     approveSpendRequest: (payload) => {
         approveSpendRequest(payload);
@@ -110,6 +114,9 @@ const actions = {
     handleMarketingRequestResponse: (payload) => {
         handleMarketingRequestResponse(payload);
     },
+    sow_submit: (payload) => {
+        handleSowRequestResponse(payload);
+    },
     claimTask: (payload) => {
         claimTask(payload);
     },
@@ -150,6 +157,7 @@ router.post("/slack/receive", async (req, res) => {
             await actions[payload.actions[0].action_id](payload);
         }
 
+       
 
         //Check if the actions are modal submissions
         if (payload.type === "view_submission") {
@@ -160,21 +168,28 @@ router.post("/slack/receive", async (req, res) => {
         //Check if the actions are block suggestions (for external select)
         if (payload.type === "block_suggestion") {
             //console.log("Full payload:", JSON.stringify(payload, null, 2));
-            
+
             // Handle external select options loading
             if (payload.action_id === "project_select") {
-                console.log("Project select detected, calling handleProjectSelectOptions");
+                console.log(
+                    "Project select detected, calling handleProjectSelectOptions",
+                );
                 const options = await handleProjectSelectOptions(payload);
                 //console.log("Options returned:", JSON.stringify(options, null, 2));
                 return res.json(options);
             }
-            
+
             // Try to use the actions object for other block_suggestion types
             if (actions[payload.action_id]) {
                 const suggestions = await actions[payload.action_id](payload);
                 return res.json(suggestions);
             }
-            
+
+            if (payload.action_id === "project_code_select") {
+                const options = await handleSowProjectSelectOptions(payload);
+                return res.json(options);
+            }
+
             // Fallback for unknown block_suggestion types
             console.log("No matching action, returning empty options");
             return res.json({ options: [] });
@@ -242,7 +257,5 @@ router.post("/copper/receive", async (req, res) => {
 
     res.send();
 });
-
-
 
 module.exports = router;

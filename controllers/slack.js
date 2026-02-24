@@ -32,6 +32,8 @@ const {
     isValidHttpUrl,
     camelCaseToCapitalCase,
 } = require("../helpers/helpers.js");
+const { createSowDocument } = require("../helpers/updateDoc");
+
 
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
@@ -2387,6 +2389,16 @@ const handleSowRequestResponse = async (payload) => {
 
         // Write directly to Firebase
         await db.ref("sow").child(id).set(sowData);
+
+        //Create a SOW document on drive
+        const resultCreateSOW = await createSowDocument(sowData);
+
+        if (resultCreateSOW && resultCreateSOW.success) {
+            console.log("SOW document created successfully:", resultCreateSOW);
+        } else {
+            console.error("Failed to create SOW document:", resultCreateSOW);
+        }
+        
 
         // Post confirmation to Slack
         await slack.chat.postMessage({

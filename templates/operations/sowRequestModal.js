@@ -31,22 +31,7 @@ const sowRequestModal = {
         },
       },
     },
-    {
-      type: "input",
-      block_id: "client_block",
-      label: {
-        type: "plain_text",
-        text: "Client Email",
-      },
-      element: {
-        type: "plain_text_input",
-        action_id: "client_email",
-        placeholder: {
-          type: "plain_text",
-          text: "client@example.com",
-        },
-      },
-    },
+    
     {
       type: "input",
       block_id: "timeline_start_block",

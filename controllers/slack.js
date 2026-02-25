@@ -24,6 +24,7 @@ const {
     getOpportunity,
     getOpportunities,
     getContactById,
+    searchOpportunitiesBySearchTerm,
 } = require("./copper");
 
 const { setCache, getCache } = require("./cache");
@@ -878,7 +879,9 @@ const handleSowProjectSelectOptions = async (payload) => {
         const searchTerm = (payload.value || "").trim().toLowerCase();
         if (searchTerm.length < 4) return { options: [] };
 
-        const opportunities = await getOpportunities();
+        const opportunities = await searchOpportunitiesBySearchTerm(searchTerm);
+
+        console.log("opportunities",opportunities)
 
         console.log(
             `Fetched ${opportunities.length} opportunities from Copper`,
@@ -886,16 +889,9 @@ const handleSowProjectSelectOptions = async (payload) => {
         console.log(
             `Filtering opportunities with search term: "${searchTerm}"`,
         );
-        console.log("Opp:", opportunities);
+        //console.log("Opp:", opportunities);
 
-        const filtered = opportunities.filter((opp) => {
-            return (
-                (opp.projectCode || "").toLowerCase().includes(searchTerm) ||
-                (opp.name || "").toLowerCase().includes(searchTerm)
-            );
-        });
-
-        const options = filtered.slice(0, 100).map((opp) => ({
+        const options = opportunities.slice(0, 100).map((opp) => ({
             text: {
                 type: "plain_text",
                 text: `${opp.projectCode || ""} | ${opp.name}`.slice(0, 75),
@@ -905,6 +901,9 @@ const handleSowProjectSelectOptions = async (payload) => {
         }));
 
         return { options };
+
+        
+
     } catch (error) {
         console.error("Error fetching Copper opportunities:", error);
         return { options: [] };
@@ -2393,11 +2392,7 @@ const handleSowRequestResponse = async (payload) => {
         //Create a SOW document on drive
         const resultCreateSOW = await createSowDocument(sowData);
 
-        if (resultCreateSOW && resultCreateSOW.success) {
-            console.log("SOW document created successfully:", resultCreateSOW);
-        } else {
-            console.error("Failed to create SOW document:", resultCreateSOW);
-        }
+       
         
 
         // Post confirmation to Slack

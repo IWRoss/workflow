@@ -39,7 +39,6 @@ const createSowDocument = async (sowData) => {
 
     const newDocId = copy.data.id;
 
-    // Step 2: Replace placeholders in the document
     const replacements = {
         "{{PROJECT_CODE}}": sowData.projectCode || "",
         "{{PROJECT_NAME}}": sowData.projectName || "",
@@ -70,7 +69,6 @@ const createSowDocument = async (sowData) => {
         requestBody: { requests },
     });
 
-    // Step 3: Set permissions (anyone with link can edit)
     await drive.permissions.create({
         fileId: newDocId,
             supportsAllDrives: true,

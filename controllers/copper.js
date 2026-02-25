@@ -665,7 +665,7 @@ const handleCopperOpportunityWebhook = async (
         // Get the opportunity details
         const opportunity = await getOpportunity(payload.ids[0]);
 
-        console.log("Opportunity details:", opportunity);
+        //console.log("Opportunity details:", opportunity);
 
         // Apply the filter function
         if (!filter(opportunity, payload)) {
@@ -837,6 +837,71 @@ const getCopperUserById = async (userId) => {
     return copperUsers.find((user) => user.id === userId);
 };
 
+
+
+//Copper Search Opportunities function
+const searchOpportunitiesBySearchTerm = async (searchTerm) => {
+    let page = 1;
+    let allOpportunities = [];
+
+   
+    const stageIds = await getPipelineStageIds([
+        'proposal creation',
+         'proposal submitted', 
+        'agreed (backlog)'
+    ]);
+
+    while (true) {
+        const response = await axios.post(
+            `${process.env.COPPER_API_URL}/opportunities/search`,
+            {
+                pipeline_stage_ids: stageIds,
+                page_number: page,
+                page_size: 200,
+            },
+            { headers: copperHeaders }
+        );
+
+        const opportunities = response.data;
+        if (opportunities.length === 0) break;
+
+        allOpportunities = [...allOpportunities, ...opportunities];
+        page++;
+    }
+     const searchLower = searchTerm.toLowerCase();
+
+    // Filter by company name containing the search term (case-insensitive)
+    const filtered = allOpportunities.filter(opp => 
+        opp.name?.toLowerCase().includes(searchLower) ||           // Opportunity name
+        opp.company_name?.toLowerCase().includes(searchLower) ||      // Company name
+        opp.projectCode?.toLowerCase().includes(searchLower)        // Project code
+    );
+
+    return filtered.map(formatOpportunity);
+};
+
+// Helper function to get pipeline stage IDs
+const getPipelineStageIds = async (stageNames) => {
+   
+    
+    
+    const response = await axios.get(
+        `${process.env.COPPER_API_URL}/pipeline_stages`,
+        { headers: copperHeaders }
+    );
+    
+    const stages = response.data;
+    const stageIds = stages
+        .filter(stage => 
+            stageNames.some(name => 
+                stage.name.toLowerCase() === name.toLowerCase()
+            )
+        )
+        .map(stage => stage.id);
+    console.log("Pipeline stage IDs for search:", stageIds);
+    return stageIds;
+};
+
 module.exports = {
     getPipelines,
     getValidPipelineStageIDs,
@@ -860,4 +925,5 @@ module.exports = {
     getCopperUserById,
     getCompany,
     getContactById,
+    searchOpportunitiesBySearchTerm,
 };

@@ -844,11 +844,10 @@ const searchOpportunitiesBySearchTerm = async (searchTerm) => {
     let page = 1;
     let allOpportunities = [];
 
-   
     const stageIds = await getPipelineStageIds([
         'proposal creation',
-         'proposal submitted', 
-        'agreed (backlog)'
+        'proposal submitted', 
+      
     ]);
 
     while (true) {
@@ -856,6 +855,7 @@ const searchOpportunitiesBySearchTerm = async (searchTerm) => {
             `${process.env.COPPER_API_URL}/opportunities/search`,
             {
                 pipeline_stage_ids: stageIds,
+                statuses: ["Open", "Won"],
                 page_number: page,
                 page_size: 200,
             },
@@ -868,16 +868,22 @@ const searchOpportunitiesBySearchTerm = async (searchTerm) => {
         allOpportunities = [...allOpportunities, ...opportunities];
         page++;
     }
-     const searchLower = searchTerm.toLowerCase();
 
-    // Filter by company name containing the search term (case-insensitive)
-    const filtered = allOpportunities.filter(opp => 
-        opp.name?.toLowerCase().includes(searchLower) ||           // Opportunity name
-        opp.company_name?.toLowerCase().includes(searchLower) ||      // Company name
-        opp.projectCode?.toLowerCase().includes(searchLower)        // Project code
+    const searchLower = searchTerm.toLowerCase();
+
+    console.log('Total pages of opportunities fetched:', page);
+
+    // Format 
+    const formatted = allOpportunities.map(formatOpportunity);
+
+    // Filter the formatted data
+    const filtered = formatted.filter(opp => 
+        opp.name?.toLowerCase().includes(searchLower) ||
+        opp.companyName?.toLowerCase().includes(searchLower) ||  
+        opp.projectCode?.toLowerCase().includes(searchLower)
     );
 
-    return filtered.map(formatOpportunity);
+    return filtered; 
 };
 
 // Helper function to get pipeline stage IDs

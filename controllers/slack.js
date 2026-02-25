@@ -39,7 +39,7 @@ const { createSowDocument } = require("../helpers/updateDoc");
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
 const clients = require("../data/clients.js");
-const { generateTitleFromRequest } = require("./openai.js");
+const { generateTitleFromRequest, formatSowDescription } = require("./openai.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -873,11 +873,18 @@ const handleProjectSelectOptions = async (payload) => {
     }
 };
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+
 //Fetch projects from Copper and filter based on search term for the project select dropdown in the request form
 const handleSowProjectSelectOptions = async (payload) => {
     try {
         const searchTerm = (payload.value || "").trim().toLowerCase();
         if (searchTerm.length < 4) return { options: [] };
+
+        // Add a small delay to avoid hitting rate limits if user is typing quickly
+        // Delay for 2 seconds after user stops typing
+        await sleep(2000);
 
         const opportunities = await searchOpportunitiesBySearchTerm(searchTerm);
 
@@ -2365,7 +2372,7 @@ const handleSowRequestResponse = async (payload) => {
             findField(fields, "work_description")?.value || "";
         const teamMembers = findField(fields, "team_members")?.value || "";
 
-       
+       const formattedWorkDescription = await formatSowDescription(workDescription);
 
         const sowData = {
             id,
@@ -2378,7 +2385,7 @@ const handleSowRequestResponse = async (payload) => {
                 startDate: timelineStart,
                 endDate: timelineEnd,
             },
-            workDescription,
+            workDescription: formattedWorkDescription,
             teamMembers,
             status: "Submitted",
             projectOwner: payload.user.id,

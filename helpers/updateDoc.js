@@ -1,5 +1,7 @@
 const { google } = require("googleapis");
-
+const {
+    replaceWithFormattedMarkdown,
+} = require("../helpers/markdownToGoogleDocs");
 
 // Authenticate with Google using service account
 const getGoogleAuth = () => {
@@ -30,7 +32,9 @@ const createSowDocument = async (sowData) => {
 
         // Validate required environment variables
         if (!templateId) {
-            throw new Error("GOOGLE_SOW_TEMPLATE_ID is not configured in environment variables");
+            throw new Error(
+                "GOOGLE_SOW_TEMPLATE_ID is not configured in environment variables",
+            );
         }
 
         // Copy the template
@@ -52,7 +56,9 @@ const createSowDocument = async (sowData) => {
         const newDocId = copy.data.id;
 
         if (!newDocId) {
-            throw new Error("Failed to create document - no document ID returned");
+            throw new Error(
+                "Failed to create document - no document ID returned",
+            );
         }
 
         const replacements = {
@@ -62,7 +68,7 @@ const createSowDocument = async (sowData) => {
             "{{CLIENT_EMAIL}}": sowData.clientEmail || "",
             "{{TIMELINE_START}}": sowData.timeline?.startDate || "",
             "{{TIMELINE_END}}": sowData.timeline?.endDate || "",
-            "{{WORK_DESCRIPTION}}": sowData.workDescription || "",
+            //"{{WORK_DESCRIPTION}}": sowData.workDescription || "",
             "{{TEAM_MEMBERS}}": sowData.teamMembers || "",
             "{{STATUS}}": sowData.status || "",
             "{{DATE_CREATED}}": sowData.createdAt || new Date().toISOString(),
@@ -77,7 +83,7 @@ const createSowDocument = async (sowData) => {
                     },
                     replaceText: value,
                 },
-            })
+            }),
         );
 
         // Update document with replacements
@@ -90,11 +96,65 @@ const createSowDocument = async (sowData) => {
             console.error("Error updating document:", error);
             // Attempt to delete the created document to avoid orphans
             try {
-                await drive.files.delete({ fileId: newDocId, supportsAllDrives: true });
+                await drive.files.delete({
+                    fileId: newDocId,
+                    supportsAllDrives: true,
+                });
             } catch (deleteError) {
-                console.error("Failed to cleanup document after update error:", deleteError);
+                console.error(
+                    "Failed to cleanup document after update error:",
+                    deleteError,
+                );
             }
             throw new Error(`Failed to update SOW document: ${error.message}`);
+        }
+
+        if (sowData.workDescription) {
+            try {
+                await replaceWithFormattedMarkdown(
+                    docs,
+                    newDocId,
+                    "{{WORK_DESCRIPTION}}",
+                    sowData.workDescription,
+                );
+            } catch (error) {
+                console.error("Error applying markdown formatting:", error);
+                // Fallback to plain text if formatting fails
+                await docs.documents.batchUpdate({
+                    documentId: newDocId,
+                    requestBody: {
+                        requests: [
+                            {
+                                replaceAllText: {
+                                    containsText: {
+                                        text: "{{WORK_DESCRIPTION}}",
+                                        matchCase: true,
+                                    },
+                                    replaceText: sowData.workDescription,
+                                },
+                            },
+                        ],
+                    },
+                });
+            }
+        } else {
+            // Remove placeholder if no description
+            await docs.documents.batchUpdate({
+                documentId: newDocId,
+                requestBody: {
+                    requests: [
+                        {
+                            replaceAllText: {
+                                containsText: {
+                                    text: "{{WORK_DESCRIPTION}}",
+                                    matchCase: true,
+                                },
+                                replaceText: "",
+                            },
+                        },
+                    ],
+                },
+            });
         }
 
         // Set permissions
@@ -110,21 +170,27 @@ const createSowDocument = async (sowData) => {
         } catch (error) {
             console.error("Error setting permissions:", error);
             // Don't throw here - document is created, just permissions failed
-            console.warn("Document created but permissions could not be set. Continuing...");
+            console.warn(
+                "Document created but permissions could not be set. Continuing...",
+            );
         }
 
         const docUrl = `https://docs.google.com/document/d/${newDocId}/edit`;
 
-        return { docId: newDocId, docUrl };
+        let success = false;
+        if(newDocId) {
+            success = true;
+        }
 
+        return { docId: newDocId, docUrl, success };
     } catch (error) {
         console.error("Error in createSowDocument:", error);
-        
+
         // Re-throw with context if it's already our custom error
         if (error.message.includes("Failed to")) {
             throw error;
         }
-        
+
         // Otherwise wrap in a generic error
         throw new Error(`Unable to create SOW document: ${error.message}`);
     }

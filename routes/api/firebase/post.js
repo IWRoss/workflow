@@ -36,6 +36,7 @@ router.post("/sow", async (req, res) => {
             client,
             workDescription,
                         teamMembers,
+                        docId,
 
         } = req.body;
 
@@ -61,6 +62,8 @@ router.post("/sow", async (req, res) => {
             teamMembers: teamMembers || "",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+                docId: docId || "",
+
         };
 
         // Use the Copper Opportunity ID as the key
@@ -108,6 +111,7 @@ router.post("/sow/update", async (req, res) => {
             "client",
             "workDescription",
             "teamMembers",
+            "docId",
         ];
 
         const updateData = {};

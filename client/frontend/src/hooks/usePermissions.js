@@ -1,4 +1,5 @@
 import { useAuth } from "./useAuth";
+import { matchPath } from 'react-router-dom';
 
 export const usePermissions = () => {
     const { user } = useAuth();
@@ -19,7 +20,7 @@ export const usePermissions = () => {
     const hasRoute = (route) => {
         if (!user || !user.permissions || !user.permissions.routes) return false;
 
-        return user.permissions.routes.includes(route);
+        return user.permissions.routes.some((pattern)=> matchPath(pattern, route));
     };
 
     const getUserDomain = () => {

@@ -2391,6 +2391,7 @@ const handleSowRequestResponse = async (payload) => {
             projectOwner: payload.user.id,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            
         };
 
         // Write directly to Firebase
@@ -2398,6 +2399,16 @@ const handleSowRequestResponse = async (payload) => {
 
         //Create a SOW document on drive
         const resultCreateSOW = await createSowDocument(sowData);
+
+        //Add the document link to the Firebase entry
+        if (resultCreateSOW && resultCreateSOW.success) {
+            await db
+                .ref("sow")
+                .child(id)
+                .update({ docId: resultCreateSOW.docId });
+        } else {
+            console.error("Failed to create SOW document:", resultCreateSOW);
+        }
 
        
         

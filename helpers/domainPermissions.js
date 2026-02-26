@@ -3,8 +3,8 @@ const getPermissionsByDomain = (domain) =>{
     // Define permissions for each allowed domain
     const domainPermissions = {
         "cegos.uk": {
-            routes: ["/dashboard", "/sequoia-dashboard", ],
-            features: [ "sequoia-dashboard"],
+            routes: ["/dashboard", "/sequoia-dashboard", "/ops-dashboard", "/ops-dashboard/sow/:id"],
+            features: [ "sequoia-dashboard", "ops-dashboard"],
         },
         'cegos.us': {
             routes: ['/dashboard', '/sequoia-dashboard'],

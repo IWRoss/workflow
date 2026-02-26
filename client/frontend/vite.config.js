@@ -10,7 +10,9 @@ export default defineConfig({
     proxy: {
             '/copper': 'http://localhost:4000',
             '/slack': 'http://localhost:4000',
-            '/monday': 'http://localhost:4000'
+            '/monday': 'http://localhost:4000',
+            '/googleAuth': 'http://localhost:4000',
+            '/sows': 'http://localhost:4000',
         }
     }
 })

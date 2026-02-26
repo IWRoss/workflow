@@ -29,6 +29,8 @@ app.use(bodyParser.json({ verify: rawBodyBuffer }));
 const apiRoutes = require("./routes/api/api");
 const copperRoutes = require("./routes/api/copper/get");
 const mondayRoutes = require("./routes/api/monday/get");
+const firebaseGetRoutes = require("./routes/api/firebase/get");
+
 const googleAuthRoutes = require("./routes/api/googleAuth/post");
 const microsoftAuth = require('./routes/api/microsoftAuth/post');
 const firebaseAuth = require("./routes/api/firebaseAuth/post");
@@ -40,6 +42,8 @@ const firebaseRoutes = require("./routes/api/firebase/post");
 app.use(apiRoutes);
 app.use(copperRoutes);
 app.use(mondayRoutes);
+app.use(firebaseGetRoutes);
+
 app.use('/googleAuth', googleAuthRoutes);
 app.use('/microsoftAuth', microsoftAuth);
 app.use("/firebaseAuth", firebaseAuth);

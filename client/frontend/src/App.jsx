@@ -15,6 +15,8 @@ import Dashboard from "./pages/Dashboard";
 import SequoiaDashboard from "./pages/SequoiaDashboard";
 import RevenueCalendar from "./pages/RevenueCalendar";
 import StandRegister from "./pages/StandRegister";
+import OpsDashboard from "./pages/OpsDashboard";
+import SOWPage from "./pages/SOWPage";
 
 function App() {
     const [msalHandled, setMsalHandled] = useState(false);
@@ -106,6 +108,25 @@ function App() {
                 element={
                     <ProtectedRoute requiredPermission="revenue-calendar">
                         <RevenueCalendar />
+                    </ProtectedRoute>
+                }
+            />
+
+
+            <Route
+                path="/ops-dashboard"
+                element={
+                    <ProtectedRoute requiredPermission="ops-dashboard">
+                        <OpsDashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+             <Route
+                path="/ops-dashboard/sow/:id"
+                element={
+                    <ProtectedRoute requiredPermission="ops-dashboard">
+                        <SOWPage />
                     </ProtectedRoute>
                 }
             />

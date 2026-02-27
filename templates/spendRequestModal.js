@@ -1,5 +1,5 @@
 /**
- * This is the modal that is used to create a new design request.
+ * This is the modal that is used to create a new spend request.
  */
 
 const clients = require("../data/clients");

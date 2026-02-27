@@ -9,8 +9,6 @@ const tomorrowsDate = new Date(); // Get the current date
 tomorrowsDate.setDate(tomorrowsDate.getDate() + 1); // Add a day
 const tomorrowsDateString = tomorrowsDate.toISOString().split("T")[0]; // Format the date as a string
 
-
-
 module.exports = {
     type: "modal",
     callback_id: "",
@@ -81,7 +79,7 @@ module.exports = {
                         const firstLetter = client.charAt(0).toUpperCase();
 
                         const groupIndex = acc.findIndex(
-                            (group) => group.label.text === firstLetter
+                            (group) => group.label.text === firstLetter,
                         );
 
                         if (groupIndex === -1) {

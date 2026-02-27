@@ -6,6 +6,7 @@
 const { WebClient } = require("@slack/web-api");
 
 const _ = require("lodash");
+const admin = require("firebase-admin");
 
 const {
     addTaskToBoard,
@@ -19,7 +20,12 @@ const {
     linkTaskToProject,
 } = require("./monday");
 
-const { getOpportunity } = require("./copper");
+const {
+    getOpportunity,
+    getOpportunities,
+    getContactById,
+    searchOpportunitiesBySearchTerm,
+} = require("./copper");
 
 const { setCache, getCache } = require("./cache");
 
@@ -27,11 +33,13 @@ const {
     isValidHttpUrl,
     camelCaseToCapitalCase,
 } = require("../helpers/helpers.js");
+const { createSowDocument } = require("../helpers/updateDoc");
+
 
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
 const clients = require("../data/clients.js");
-const { generateTitleFromRequest } = require("./openai.js");
+const { generateTitleFromRequest, formatSowDescription } = require("./openai.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -64,7 +72,7 @@ const getMembers = async () => {
             !m.is_bot &&
             !m.deleted &&
             !m.is_restricted &&
-            !m.is_ultra_restricted
+            !m.is_ultra_restricted,
     );
 };
 
@@ -92,7 +100,7 @@ const filterMembers = (members) => {
     // If in beta release mode, only send to the defined users
     if (parseInt(process.env.BETA_RELEASE)) {
         return members.filter((member) =>
-            process.env.BETA_USERS.split(",").includes(member.id)
+            process.env.BETA_USERS.split(",").includes(member.id),
         );
     }
 
@@ -133,7 +141,7 @@ const addWorkflowInterfaceToSlack = async () => {
     const results = Promise.all(
         filteredMembers.map(async (member) => {
             await addWorkflowInterfaceToSlackByUser(member);
-        })
+        }),
     );
 
     return results;
@@ -153,7 +161,7 @@ const putAppIntoMaintenanceMode = async () => {
     const filteredMembers = members.filter(
         (member) =>
             member.id !== process.env.TEST_USER &&
-            member.id !== process.env.MAINTENANCE_USER
+            member.id !== process.env.MAINTENANCE_USER,
     );
 
     // Send message to each member
@@ -164,7 +172,7 @@ const putAppIntoMaintenanceMode = async () => {
                 user_id: member.id,
                 view: appMaintenance,
             });
-        })
+        }),
     );
 
     return results;
@@ -220,14 +228,14 @@ const openCustomerComplaintForm = async (payload) =>
     openFormWithCustomTemplate(
         payload,
         "handleCustomerComplaintResponse",
-        templates.customerComplaintModal
+        templates.customerComplaintModal,
     );
 
 const openOpportunityToImproveForm = async (payload) =>
     openFormWithCustomTemplate(
         payload,
         "handleOpportunityToImproveResponse",
-        templates.opportunityToImproveModal
+        templates.opportunityToImproveModal,
     );
 
 const openInvoiceRequestForm = async (payload) => {
@@ -325,7 +333,7 @@ const handleCustomerComplaint = async (payload, locations) => {
 
         if (addToGoogleSheets.success) {
             console.log(
-                "Customer complaint added to Google Sheets successfully"
+                "Customer complaint added to Google Sheets successfully",
             );
             console.log("Updated range:", addToGoogleSheets.updatedRange);
         }
@@ -362,7 +370,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
         ISOAreaSelected: findField(fields, "areaSelect").selected_option.value,
         ISOOpportunityToImproveText: findField(
             fields,
-            "opportunityToImproveText"
+            "opportunityToImproveText",
         ).value,
         ISOOpportunityToImprovePriority: findField(fields, "prioritySelect")
             .selected_option.value,
@@ -372,7 +380,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     //Custom message template to display on slack
     let newOpportunityToImproveTemplate = _.cloneDeep(
-        templates.newOpportunityToImproveMessage
+        templates.newOpportunityToImproveMessage,
     );
 
     // Populate the template
@@ -387,7 +395,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
     // Raised Date - Format 00/MM/YYYY
     newOpportunityToImproveTemplate.blocks[3].fields[0].text = `*Raised Date:*\n${new Date(
-        fieldsPayload.ISOOpportunityToImproveRaisedDate
+        fieldsPayload.ISOOpportunityToImproveRaisedDate,
     ).toLocaleDateString("en-GB", {
         day: "2-digit",
         month: "2-digit",
@@ -433,7 +441,7 @@ const handleOpportunityToImprove = async (payload, locations) => {
 
         if (addToGoogleSheets.success) {
             console.log(
-                "Opportunity To Improve added to Google Sheets successfully"
+                "Opportunity To Improve added to Google Sheets successfully",
             );
             console.log("Updated range:", addToGoogleSheets.updatedRange);
         }
@@ -486,7 +494,7 @@ const handleSpendRequest = async (payload, locations) => {
 
     //Custom message template to display on slack
     let newSpendRequestMessageTemplate = _.cloneDeep(
-        templates.newSpendRequestMessage
+        templates.newSpendRequestMessage,
     );
 
     //Display the user who submitted the request
@@ -645,7 +653,7 @@ const handleSpendRequest = async (payload, locations) => {
 const handleRequestResponse = async (payload, locations) => {
     console.log(
         "Payload inside handleRequestResponse",
-        payload.view.blocks[0].element
+        payload.view.blocks[0].element,
     );
     console.log("Locations inside handleRequestResponse", locations);
     const fields = Object.values(payload.view.state.values);
@@ -660,7 +668,7 @@ const handleRequestResponse = async (payload, locations) => {
 
     const projectTitle = await generateTitleFromRequest(
         findField(fields, "clientSelect").selected_option.value,
-        findField(fields, "notes").value
+        findField(fields, "notes").value,
     );
 
     //Get the project code from the dropdown (may be undefined if not selected)
@@ -712,7 +720,7 @@ const handleRequestResponse = async (payload, locations) => {
 
         // Prepare and send Slack message FIRST (before project linking)
         let newRequestMessageTemplate = _.cloneDeep(
-            templates.newRequestMessage
+            templates.newRequestMessage,
         );
 
         newRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request: ${projectTitle}`;
@@ -749,7 +757,7 @@ const handleRequestResponse = async (payload, locations) => {
         } catch (error) {
             await reportErrorToSlack(
                 error,
-                "Add Task to Board - handleRequestResponse"
+                "Add Task to Board - handleRequestResponse",
             );
             console.log(error);
         }
@@ -759,17 +767,17 @@ const handleRequestResponse = async (payload, locations) => {
             try {
                 // Get all the tasks from Ops board
                 const rows = await getAllTaskRowsFromBoard(
-                    process.env.OPS_MONDAY_BOARD
+                    process.env.OPS_MONDAY_BOARD,
                 );
 
                 // Match the project code to get the project ID
                 const matchedProject = rows.find(
-                    (row) => row.projectCode === projectCode
+                    (row) => row.projectCode === projectCode,
                 );
 
                 if (!matchedProject) {
                     console.warn(
-                        `No matching project found in Ops board for project code: ${projectCode}`
+                        `No matching project found in Ops board for project code: ${projectCode}`,
                     );
                 } else {
                     const opsProjectId = matchedProject.id;
@@ -777,22 +785,22 @@ const handleRequestResponse = async (payload, locations) => {
                     switch (boardId) {
                         case process.env.STUDIO_MONDAY_BOARD:
                             console.log(
-                                `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                                `Linking Studio task ${result.data.create_item.id} to Ops project ${opsProjectId}`,
                             );
                             await linkTaskToProject(
                                 result.data.create_item.id,
                                 opsProjectId,
-                                process.env.STUDIO_MONDAY_BOARD
+                                process.env.STUDIO_MONDAY_BOARD,
                             );
                             break;
                         case process.env.COMMTECH_MONDAY_BOARD:
                             console.log(
-                                `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`
+                                `Linking CommTech task ${result.data.create_item.id} to Ops project ${opsProjectId}`,
                             );
                             await linkTaskToProject(
                                 result.data.create_item.id,
                                 opsProjectId,
-                                process.env.COMMTECH_MONDAY_BOARD
+                                process.env.COMMTECH_MONDAY_BOARD,
                             );
                             break;
                     }
@@ -800,7 +808,7 @@ const handleRequestResponse = async (payload, locations) => {
             } catch (error) {
                 await reportErrorToSlack(
                     error,
-                    "Project linking - handleRequestResponse"
+                    "Project linking - handleRequestResponse",
                 );
                 console.error("Error linking project:", error);
             }
@@ -825,7 +833,7 @@ const handleProjectSelectOptions = async (payload) => {
 
         // Fetch all projects from Monday.com
         const rows = await getAllTaskRowsFromBoard(
-            process.env.OPS_MONDAY_BOARD
+            process.env.OPS_MONDAY_BOARD,
         );
 
         // Filter projects based on search term
@@ -862,6 +870,50 @@ const handleProjectSelectOptions = async (payload) => {
         return {
             options: [],
         };
+    }
+};
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+
+//Fetch projects from Copper and filter based on search term for the project select dropdown in the request form
+const handleSowProjectSelectOptions = async (payload) => {
+    try {
+        const searchTerm = (payload.value || "").trim().toLowerCase();
+        if (searchTerm.length < 4) return { options: [] };
+
+        // Add a small delay to avoid hitting rate limits if user is typing quickly
+        // Delay for 2 seconds after user stops typing
+        await sleep(2000);
+
+        const opportunities = await searchOpportunitiesBySearchTerm(searchTerm);
+
+        console.log("opportunities",opportunities)
+
+        console.log(
+            `Fetched ${opportunities.length} opportunities from Copper`,
+        );
+        console.log(
+            `Filtering opportunities with search term: "${searchTerm}"`,
+        );
+        //console.log("Opp:", opportunities);
+
+        const options = opportunities.slice(0, 100).map((opp) => ({
+            text: {
+                type: "plain_text",
+                text: `${opp.projectCode || ""} | ${opp.name}`.slice(0, 75),
+                emoji: true,
+            },
+            value: String(opp.id),
+        }));
+
+        return { options };
+
+        
+
+    } catch (error) {
+        console.error("Error fetching Copper opportunities:", error);
+        return { options: [] };
     }
 };
 
@@ -915,54 +967,54 @@ const handleInvoiceRequestResponse = async (payload) => {
     const fields = Object.values(payload.view.state.values);
 
     let newInvoiceRequestMessageTemplate = _.cloneDeep(
-        templates.newInvoiceRequestMessage
+        templates.newInvoiceRequestMessage,
     );
 
     newInvoiceRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
 
     newInvoiceRequestMessageTemplate.blocks[1].fields[0].text += findField(
         fields,
-        "projectClientInput"
+        "projectClientInput",
     ).selected_option.value;
 
     newInvoiceRequestMessageTemplate.blocks[1].fields[1].text += findField(
         fields,
-        "projectNameInput"
+        "projectNameInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[2].text.text += findField(
         fields,
-        "projectDescriptionInput"
+        "projectDescriptionInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[3].fields[0].text += findField(
         fields,
-        "projectCodeInput"
+        "projectCodeInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[3].fields[1].text += findField(
         fields,
-        "projectAmountInput"
+        "projectAmountInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[4].fields[0].text += findField(
         fields,
-        "projectContactNameInput"
+        "projectContactNameInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[4].fields[1].text += findField(
         fields,
-        "projectContactEmailInput"
+        "projectContactEmailInput",
     ).value;
 
     newInvoiceRequestMessageTemplate.blocks[5].fields[0].text += findField(
         fields,
-        "projectDateInput"
+        "projectDateInput",
     ).selected_date;
 
     newInvoiceRequestMessageTemplate.blocks[6].text.text += findField(
         fields,
-        "projectNotesInput"
+        "projectNotesInput",
     ).value;
 
     try {
@@ -995,28 +1047,28 @@ const handleOpsRequestResponse = async (payload) => {
 
     //4. Find copper user that moved the opportunity to the "Proposal Submitted" stage
     const copperUser = payload.copperUsers.filter(
-        (user) => user.id === selectedOpportunity.assignee_id
+        (user) => user.id === selectedOpportunity.assignee_id,
     );
 
     console.log("Selected copper user", copperUser);
 
     //5. Get the Consultant Monday user by email
     const mondayConsultantUser = await getMondayUserByEmail(
-        copperUser[0].email
+        copperUser[0].email,
     );
 
     console.log("Consultant Monday user", mondayConsultantUser);
 
     //6. Find the consultants slack user
     const consultantSlackUser = slackMembers.find(
-        (member) => member.profile.email === copperUser[0].email
+        (member) => member.profile.email === copperUser[0].email,
     );
 
     console.log("Consultant Slack user", consultantSlackUser);
 
     //7. Create a new Ops Request message template
     const newOpsRequestMessageTemplate = _.cloneDeep(
-        templates.newOpsRequestMessage
+        templates.newOpsRequestMessage,
     );
 
     //8. Check if there are any null fields in the selectedOpportunity object
@@ -1024,7 +1076,7 @@ const handleOpsRequestResponse = async (payload) => {
         (key) =>
             customFields[key] === null ||
             customFields[key] === undefined ||
-            customFields[key] === ""
+            customFields[key] === "",
     );
 
     // If there are, add a warning block with the null fields
@@ -1073,7 +1125,7 @@ const handleOpsRequestResponse = async (payload) => {
 
         console.log(
             "Message sent to Ops Slack channel",
-            message.message.blocks[0]
+            message.message.blocks[0],
         );
 
         await slack.chat.postMessage({
@@ -1129,13 +1181,13 @@ const handleMarketingRequestResponse = async (payload) => {
 
     const reviewerSlackUser = await getUserById(
         fieldValues.find((f) => f.hasOwnProperty("reviewerSelect"))
-            .reviewerSelect.selected_user
+            .reviewerSelect.selected_user,
     );
 
     console.log("Reviewer Slack user", reviewerSlackUser);
 
     const reviewerMondayUser = await getMondayUserByEmail(
-        reviewerSlackUser.profile.email
+        reviewerSlackUser.profile.email,
     );
 
     console.log("Reviewer Monday user", reviewerMondayUser);
@@ -1146,17 +1198,17 @@ const handleMarketingRequestResponse = async (payload) => {
         "Requested by": mondayUser.id,
         Reviewer: reviewerMondayUser.id,
         "Review Date": fieldValues.find((f) =>
-            f.hasOwnProperty("reviewDateInput")
+            f.hasOwnProperty("reviewDateInput"),
         ).reviewDateInput.selected_date,
         "Start Go-Live Date": fieldValues.find((f) =>
-            f.hasOwnProperty("goStartLiveDateInput")
+            f.hasOwnProperty("goStartLiveDateInput"),
         ).goStartLiveDateInput.selected_date,
         "End Go-Live Date": fieldValues.find((f) =>
-            f.hasOwnProperty("goEndLiveDateInput")
+            f.hasOwnProperty("goEndLiveDateInput"),
         ).goEndLiveDateInput.selected_date,
 
         Description: fieldValues.find((f) =>
-            f.hasOwnProperty("projectDescriptionInput")
+            f.hasOwnProperty("projectDescriptionInput"),
         ).projectDescriptionInput.value,
         "Dropbox Link":
             fieldValues.find((f) => f.hasOwnProperty("dropboxLinkInput"))
@@ -1165,7 +1217,7 @@ const handleMarketingRequestResponse = async (payload) => {
             .channelSelect.selected_option.value,
         "Go-Live Date": {
             from: fieldValues.find((f) =>
-                f.hasOwnProperty("goStartLiveDateInput")
+                f.hasOwnProperty("goStartLiveDateInput"),
             ).goStartLiveDateInput.selected_date,
             to: fieldValues.find((f) => f.hasOwnProperty("goEndLiveDateInput"))
                 .goEndLiveDateInput.selected_date,
@@ -1177,7 +1229,7 @@ const handleMarketingRequestResponse = async (payload) => {
     const addTaskRequest = await addTaskToMarketingBoard(newTask);
 
     const newMarketingRequestMessageTemplate = _.cloneDeep(
-        templates.newMarketingRequestMessage
+        templates.newMarketingRequestMessage,
     );
 
     newMarketingRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new Marketing Request:`;
@@ -1231,7 +1283,7 @@ const noActionRequired = async (payload) => {
 
     //Parse parent payload
     const { parentMessageTs, parentChannelId } = JSON.parse(
-        payload.actions[0].value
+        payload.actions[0].value,
     );
 
     //Look parent history
@@ -1249,7 +1301,7 @@ const noActionRequired = async (payload) => {
     //Look for all the actions blocks in the parent message
     //FindIndex returns -1 for no match
     const actionsBlockIndex = parentBlocks.findIndex(
-        (block) => block.type === "actions"
+        (block) => block.type === "actions",
     );
 
     //Check if a block with type "actions" exists, if yes filter to find the "viewOnCopper" button
@@ -1281,7 +1333,7 @@ const noActionRequired = async (payload) => {
 
     //Find if there is an actions block in the threads message
     const threadActionsBlockIndex = threadBlocks.findIndex(
-        (block) => block.type === "actions"
+        (block) => block.type === "actions",
     );
 
     //If there is an actions block, remove the "No Action Required" button
@@ -1339,7 +1391,7 @@ const approveSpendRequest = async (payload) => {
 
         //Check if the user id who approved the request is in the list of approvers
         const isApprover = process.env.SPEND_REQUEST_APPROVERS.split(
-            ","
+            ",",
         ).includes(user.id);
         if (!isApprover) {
             console.log("User is not an approver");
@@ -1436,7 +1488,7 @@ const handleAcceptSpendRequestModal = async (payload) => {
 
         // Find where the actions/buttons block is
         const actionsBlockIndex = originalBlocks.findIndex(
-            (block) => block.type === "actions"
+            (block) => block.type === "actions",
         );
 
         //Remove the action buttons from the original blocks
@@ -1477,13 +1529,13 @@ const handleAcceptSpendRequestModal = async (payload) => {
         const addToGoogleSheets = await addSpendRequestToGoogleSheets(
             payloadWithReason,
             acceptedIdBy,
-            acceptedNameBy
+            acceptedNameBy,
         );
 
         if (addToGoogleSheets && addToGoogleSheets.success) {
             console.log(
                 "Successfully added to Google Sheets:",
-                addToGoogleSheets
+                addToGoogleSheets,
             );
         } else {
             console.error("Failed to add to Google Sheets:", addToGoogleSheets);
@@ -1526,7 +1578,7 @@ const denySpendRequest = async (payload) => {
 
         //Check if the user id who approved the request is in the list of approvers
         const isApprover = process.env.SPEND_REQUEST_APPROVERS.split(
-            ","
+            ",",
         ).includes(user.id);
         if (!isApprover) {
             console.log("User is not an approver");
@@ -1617,11 +1669,10 @@ const handleDenySpendRequestModal = async (payload) => {
         //Retrive the orignal block from the message history
         const originalBlocks = messageHistory.messages[0].blocks;
 
-
         // Find where the actions/buttons block is
-const actionsBlockIndex = originalBlocks.findIndex(
-    (block) => block.type === "actions"
-);
+        const actionsBlockIndex = originalBlocks.findIndex(
+            (block) => block.type === "actions",
+        );
 
         //Remove the action buttons from the original blocks
         //Add a new section block with the user that declined the request
@@ -1655,13 +1706,13 @@ const actionsBlockIndex = originalBlocks.findIndex(
         const addToGoogleSheets = await addSpendRequestToGoogleSheets(
             payloadWithReason,
             deniedIdBy,
-            deniedNameBy
+            deniedNameBy,
         );
 
         if (addToGoogleSheets && addToGoogleSheets.success) {
             console.log(
                 "Successfully added to Google Sheets:",
-                addToGoogleSheets
+                addToGoogleSheets,
             );
         } else {
             console.error("Failed to add to Google Sheets:", addToGoogleSheets);
@@ -1707,7 +1758,7 @@ const createTask = async (payload) => {
 
     //3. Get the Monday user which the task is assigned to
     const mondayAssignedUser = await getMondayUserByEmail(
-        slackCreateTaskUser.profile.email
+        slackCreateTaskUser.profile.email,
     );
 
     //4. Get Opportunity object from copper
@@ -1727,7 +1778,7 @@ const createTask = async (payload) => {
             parsedPayload.opportunityProjectCodeUpdated ||
             "No ID",
         "Likely Invoice Date": new Date(
-            parseInt(customFields.likelyInvoiceDate) * 1000
+            parseInt(customFields.likelyInvoiceDate) * 1000,
         )
             .toISOString()
             .split("T")[0],
@@ -1749,12 +1800,12 @@ const createTask = async (payload) => {
     await updateAssignedUser(
         mondayAssignedUser.id,
         addTaskRequest.data.create_item.id,
-        process.env.OPS_MONDAY_BOARD
+        process.env.OPS_MONDAY_BOARD,
     );
 
     //12. Find the actions block location
     const actionsBlockIndex = payload.message.blocks.findIndex(
-        (block) => block.type === "actions"
+        (block) => block.type === "actions",
     );
 
     //13. Remove the claim button and no action required button
@@ -1808,7 +1859,7 @@ const claimTask = async (payload) => {
 
     // Find the actions block location
     const actionsBlockIndex = payload.message.blocks.findIndex(
-        (block) => block.type === "actions"
+        (block) => block.type === "actions",
     );
 
     const taskAddress =
@@ -1876,82 +1927,6 @@ const getUserById = async (id) => {
     return user.user;
 };
 
-// const getOpportunityOptions = async (payload) => {
-//   console.log("Search term", payload.value);
-
-//   const opportunities = await getOpportunities();
-
-//   const options = opportunities
-//     .sort((a, b) => {
-//       if (a.projectCode && b.projectCode) {
-//         return a.projectCode.localeCompare(b.projectCode);
-//       } else if (a.projectCode) {
-//         return -1;
-//       } else if (b.projectCode) {
-//         return 1;
-//       }
-//       return 0;
-//     })
-//     .filter((opportunity) => {
-//       const searchTerm = payload.value.toLowerCase();
-//       return (
-//         opportunity.name.toLowerCase().includes(searchTerm) ||
-//         opportunity.projectCode?.toLowerCase().includes(searchTerm) ||
-//         opportunity.stageName.toLowerCase().includes(searchTerm)
-//       );
-//     })
-//     .slice(0, 100);
-
-//   const option_groups = options.reduce((acc, option) => {
-//     const optionGroup = acc.find(
-//       (optionGroup) => optionGroup.label.text === option.stageName
-//     );
-
-//     if (optionGroup) {
-//       optionGroup.options.push({
-//         text: {
-//           type: "plain_text",
-//           text: `${option.name} (${option.projectCode || "No ID"})`.substring(
-//             0,
-//             75
-//           ),
-//           emoji: true,
-//         },
-//         value: String(option.id),
-//       });
-
-//       return acc;
-//     }
-
-//     acc.push({
-//       label: {
-//         type: "plain_text",
-//         text: option.stageName,
-//         emoji: true,
-//       },
-//       options: [
-//         {
-//           text: {
-//             type: "plain_text",
-//             text: `${option.name} (${option.projectCode || "No ID"})`.substring(
-//               0,
-//               75
-//             ),
-//             emoji: true,
-//           },
-//           value: String(option.id),
-//         },
-//       ],
-//     });
-
-//     return acc;
-//   }, []);
-
-//   return {
-//     option_groups,
-//   };
-// };
-
 const openOpsRequestForm = async (payload) => {
     const opsRequestModal = _.cloneDeep(templates.opsRequestModal);
 
@@ -1975,7 +1950,7 @@ const openMarketingRequestForm = async (payload) => {
     const campaignSelectFieldIndex = marketingRequestModal.blocks.findIndex(
         (block) =>
             block.type === "input" &&
-            block.element.action_id === "campaignSelect"
+            block.element.action_id === "campaignSelect",
     );
 
     const marketingCampaignOptions = await getMarketingCampaignOptions();
@@ -2049,6 +2024,21 @@ const openFormWithCustomTemplate = async (payload, callbackName, template) => {
     }
 };
 
+//Open the Ops SOW request form
+const openSowRequestForm = async (payload) => {
+    const modal = _.cloneDeep(templates.sowRequestModal);
+
+    try {
+        await slack.views.open({
+            trigger_id: payload.trigger_id,
+            view: modal,
+        });
+    } catch (error) {
+        await reportErrorToSlack(error, "openSowRequestForm");
+        console.error(error);
+    }
+};
+
 /**
  * Find application by name or alternative command
  * @param {string} searchTerm - The search term (app name or command alias)
@@ -2075,7 +2065,7 @@ const findApplicationByCommand = (searchTerm, passwords) => {
         ) {
             // Check if the search term matches any of the alternative commands
             const matchingCommand = credentials.commands.find(
-                (cmd) => cmd.toLowerCase() === lowerSearchTerm
+                (cmd) => cmd.toLowerCase() === lowerSearchTerm,
             );
             if (matchingCommand) {
                 return { appKey, credentials };
@@ -2097,7 +2087,7 @@ const logPasswordRequest = async (userId, appName, success) => {
 
     if (!passwordsChannel) {
         console.log(
-            "PASSWORDS_CHANNEL not configured, skipping password request logging"
+            "PASSWORDS_CHANNEL not configured, skipping password request logging",
         );
         return;
     }
@@ -2259,7 +2249,7 @@ const handlePasswordsListCommand = async (payload) => {
         await logPasswordRequest(
             payload.user_id,
             "passwords list (empty)",
-            true
+            true,
         );
         return;
     }
@@ -2302,7 +2292,7 @@ const reportErrorToSlack = async (error, context) => {
 
     if (!errorChannel) {
         console.log(
-            "ERROR_REPORTING_CHANNEL not configured, skipping error reporting"
+            "ERROR_REPORTING_CHANNEL not configured, skipping error reporting",
         );
         return;
     }
@@ -2331,6 +2321,186 @@ const reportErrorToSlack = async (error, context) => {
         });
     } catch (err) {
         console.error("Failed to report error to Slack:", err);
+    }
+};
+
+//SOW Modal submission
+const handleSowRequestResponse = async (payload) => {
+    const db = admin.database();
+
+    try {
+        const fields = Object.values(payload.view.state.values);
+
+        // Get the Copper Opportunity ID from the dropdown
+        const selected = findField(
+            fields,
+            "project_code_select",
+        )?.selected_option;
+
+        const id = selected?.value || "";
+
+        // Fetch full opportunity details from Copper
+        let projectCode = "";
+        let projectName = "";
+        let primaryContactId = "";
+        let client = "";
+        let clientEmail = "";
+
+        let opportunityLoaded = false;
+        if (id) {
+            try {
+                const opportunity = await getOpportunity(id);
+                projectCode = opportunity.projectCode || "";
+                projectName = opportunity.name || "";
+                primaryContactId = opportunity.primaryContactId || "";
+                client = opportunity.companyName || "";
+                opportunityLoaded = true;
+
+                // Get primary contact email
+                if (primaryContactId) {
+                    const contact = await getContactById(primaryContactId);
+                    clientEmail = contact?.emails?.[0]?.email || "";
+                }
+            } catch (err) {
+                console.error("Error fetching opportunity details:", err);
+            }
+        }
+
+        if (id && !opportunityLoaded) {
+            throw new Error(
+                "Failed to fetch opportunity details from Copper; aborting SOW creation."
+            );
+        }
+
+        const timelineStart =
+            findField(fields, "timeline_start")?.selected_date || "";
+        const timelineEnd =
+            findField(fields, "timeline_end")?.selected_date || "";
+        const workDescription =
+            findField(fields, "work_description")?.value || "";
+        const teamMembers = findField(fields, "team_members")?.value || "";
+
+       const formattedWorkDescription = await formatSowDescription(workDescription);
+
+        const sowData = {
+            id,
+            projectCode,
+            projectName,
+            client,
+            clientEmail,
+            primaryContactId,
+            timeline: {
+                startDate: timelineStart,
+                endDate: timelineEnd,
+            },
+            workDescription: formattedWorkDescription,
+            teamMembers,
+            status: "Submitted",
+            projectOwner: payload.user.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            
+        };
+
+        // Write directly to Firebase
+        await db.ref("sow").child(id).set(sowData);
+
+        //Create a SOW document on drive
+        const resultCreateSOW = await createSowDocument(sowData);
+
+        if (
+            !resultCreateSOW ||
+            !resultCreateSOW.success ||
+            !resultCreateSOW.docUrl
+        ) {
+            throw new Error(
+                "SOW document creation failed or missing doc link; aborting Slack notification."
+            );
+        }
+
+        // Add the document link to the Firebase entry
+        await db.ref("sow").child(id).update({ docId: resultCreateSOW.docId });
+
+       
+        
+
+        // Post confirmation to Slack
+        await slack.chat.postMessage({
+            channel: process.env.SOW_SLACK_CHANNEL,
+            text: `📋 *New SOW submitted by <@${payload.user.id}>*`,
+            blocks: [
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `📋 *New SOW submitted by <@${payload.user.id}>:*`,
+                    },
+                },
+                {
+                    type: "section",
+                    fields: [
+                        {
+                            type: "mrkdwn",
+                            text: `*Project Code:*\n${projectCode}`,
+                        },
+                        {
+                            type: "mrkdwn",
+                            text: `*Project Name:*\n${projectName}`,
+                        },
+                    ],
+                },
+                {
+                    type: "section",
+                    fields: [
+                        { type: "mrkdwn", text: `*Client:*\n${client}` },
+                        {
+                            type: "mrkdwn",
+                            text: `*Timeline:*\n${timelineStart} → ${timelineEnd}`,
+                        },
+                    ],
+                },
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `*Work Description:*\n${workDescription}`,
+                    },
+                },
+                {
+                    type: "section",
+                    text: {
+                        type: "mrkdwn",
+                        text: `*Team Members:*\n${teamMembers}`,
+                    },
+                },
+                //Add a button for google drive document if the document was created successfully
+                ...(resultCreateSOW && resultCreateSOW.success
+                    ? [
+                          {
+                              type: "actions",
+
+                              elements: [
+                                  {
+                                      action_id: "viewSowDocument",
+                                      type: "button",
+                                      text: {
+                                          type: "plain_text",
+                                          text: "View SOW Document",
+                                      },
+                                      url: resultCreateSOW.docUrl,
+                                  },
+                              ],
+                          },
+                      ]
+                    : []),
+            ],
+        });
+
+        return { status: "success", message: "SOW submitted successfully." };
+    } catch (error) {
+        await reportErrorToSlack(error, "handleSowRequestResponse");
+        console.error("Error submitting SOW:", error);
+        return { status: "error", message: "Failed to submit SOW." };
     }
 };
 
@@ -2374,4 +2544,7 @@ module.exports = {
     handlePasswordsListCommand,
     reportErrorToSlack,
     handleProjectSelectOptions,
+    openSowRequestForm,
+    handleSowRequestResponse,
+    handleSowProjectSelectOptions,
 };

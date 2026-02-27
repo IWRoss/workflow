@@ -19,6 +19,7 @@ const customerComplaintModal = require("./customerComplaintModal");
 const opportunityToImproveModal = require("./opportunityToImproveModal");
 const newCustomerComplaintMessage = require("./newCustomerComplaintMessage");
 const newOpportunityToImproveMessage = require("./newOpportunityToImprove");
+const sowRequestModal = require("./operations/sowRequestModal");
 
 
 module.exports = {
@@ -40,4 +41,5 @@ module.exports = {
     opportunityToImproveModal,
     newCustomerComplaintMessage,
     newOpportunityToImproveMessage,
+    sowRequestModal,
 };

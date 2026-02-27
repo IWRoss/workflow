@@ -1,6 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, use } from "react";
 import { firebaseService } from "../services/firebaseService";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function SOWPage() {
     const [loading, setLoading] = useState(true);
@@ -16,7 +18,7 @@ export default function SOWPage() {
                 const sowDetails = await firebaseService.getSOW(SOWId);
                 setSowDetails(sowDetails);
 
-                console.log("Fetched SOW Details:", sowDetails);
+               // console.log("Fetched SOW Details:", sowDetails);
             } catch (error) {
                 console.error("Error fetching SOW details:", error);
             } finally {
@@ -50,7 +52,6 @@ export default function SOWPage() {
         <div className="min-h-screen bg-gray-100 p-8">
             <div className="mx-auto bg-white p-6 rounded shadow-md">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold  text-center">SOW Details</h1>
                     {/* Button to go back*/}
                     <button
                         onClick={() => window.history.back()}
@@ -58,6 +59,13 @@ export default function SOWPage() {
                     >
                         Go Back
                     </button>
+                    <h1 className="text-3xl font-bold  text-center">SOW Details</h1>
+                     <button
+                    onClick={accessSOWDocument}
+                    className="mt-4 bg-yellow-800 text-white px-4 py-2 rounded hover:bg-yellow-900"
+                >
+                    View SOW Document
+                </button>
                 </div>
                 {/* Display SOW details in card with formatted fields */}
                 <div className="bg-gray-50 p-4 rounded shadow flex flex-col gap-2">
@@ -103,17 +111,16 @@ export default function SOWPage() {
                                 <span className="font-semibold mr-2">Updated At:</span>
                                 <span>{new Date(sowDetails.updatedAt).toLocaleString()}</span>
                             </div>
-                            <div className="flex flex-col">
+                            <div className="flex flex-col gap-4">
                                 <span className="font-semibold mr-2">Work Description:</span>
                                 <span>
-                                    <div
-                                        className="prose"
-                                        dangerouslySetInnerHTML={{
-                                            __html: sowDetails.workDescription
-                                                ? sowDetails.workDescription.replace(/\n/g, "<br/>")
-                                                : "",
-                                        }}
-                                    />
+                                    {sowDetails.workDescription ? (
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {sowDetails.workDescription}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        "N/A"
+                                    )}
                                 </span>
                             </div>
                         </>
@@ -123,12 +130,8 @@ export default function SOWPage() {
                         </div>
                     )}
                 </div>
-                <button
-                    onClick={accessSOWDocument}
-                    className="mt-4 bg-yellow-800 text-white px-4 py-2 rounded hover:bg-yellow-900"
-                >
-                    SOW Document
-                </button>
+                       
+               
             </div>
         </div>
     );

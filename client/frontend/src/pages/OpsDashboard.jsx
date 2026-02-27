@@ -31,7 +31,7 @@ export default function OpsDashboard() {
         const fetchSows = async () => {
             try {
                 const data = await firebaseService.getAllSOWs();
-                console.log("Fetched SOWs:", data);
+               // console.log("Fetched SOWs:", data);
                 setSows(data);
             } catch (error) {
                 console.error("Error fetching sows:", error);
@@ -192,71 +192,83 @@ export default function OpsDashboard() {
                                 </div>
                             </div>
 
-                            {sortedSows.map((sow) => (
-                                <Link
-                                    key={sow.id}
-                                    to={`/ops-dashboard/sow/${sow.id}`}
-                                    className="group flex rounded-lg  p-2  hover:bg-gray-200 hover:cursor-pointer"
-                                >
-                                    <div className="flex pl-2 min-w-max gap-4">
-                                        {/* Fixed Column */}
-                                        <div className="sticky left-0 bg-gray-100 group-hover:bg-gray-200 transition-colors p-2 z-10 w-32 flex-shrink-0">
-                                            <p className="text-sm font-bold">
-                                                {sow.client}
-                                                <br />
-                                                <span className="text-gray-500 text-sm">
-                                                    {sow.projectCode
-                                                        ? sow.projectCode
+                            {sortedSows.map((sow) => {
+                                const isCreatedToday = sow.createdAt
+                                    ? new Date(sow.createdAt)
+                                          .toISOString()
+                                          .split("T")[0] ===
+                                      new Date().toISOString().split("T")[0]
+                                    : false;
+                                return (
+                                    <Link
+                                        key={sow.id}
+                                        to={`/ops-dashboard/sow/${sow.id}`}
+                                        className="group flex rounded-lg  p-2  hover:bg-gray-200 hover:cursor-pointer"
+                                    >
+                                        <div className="flex pl-2 min-w-max gap-4">
+                                            {/* If created today - change background color to green */}
+                                            <div
+                                                className={`sticky left-0 ${isCreatedToday ? "bg-green-100" : "bg-gray-100"} group-hover:bg-gray-200 transition-colors p-2 z-10 w-32 flex-shrink-0`}
+                                            >
+                                                {" "}
+                                                <p className="text-sm font-bold">
+                                                    {sow.client}
+                                                    <br />
+                                                    <span className="text-gray-500 text-sm">
+                                                        {sow.projectCode
+                                                            ? sow.projectCode
+                                                            : "N/A"}
+                                                    </span>
+                                                </p>
+                                            </div>
+
+                                            <div className="w-74 flex-shrink-0">
+                                                <p className="text-gray-500 text-sm">
+                                                    {sow.projectName}
+                                                </p>
+                                            </div>
+
+                                            <div className="w-24 flex-shrink-0">
+                                                <p className="text-gray-500 text-sm">
+                                                    {sow.status}
+                                                </p>
+                                            </div>
+
+                                            <div className="w-48 flex-shrink-0">
+                                                <p className="text-gray-500 text-sm">
+                                                    {sow.timeline?.startDate
+                                                        ? new Date(
+                                                              sow.timeline
+                                                                  .startDate,
+                                                          ).toLocaleDateString()
+                                                        : "N/A"}{" "}
+                                                    -{" "}
+                                                    {sow.timeline?.endDate
+                                                        ? new Date(
+                                                              sow.timeline
+                                                                  .endDate,
+                                                          ).toLocaleDateString()
                                                         : "N/A"}
-                                                </span>
-                                            </p>
+                                                </p>
+                                            </div>
+                                            <div className="w-48 flex-shrink-0">
+                                                <p className="text-gray-500 text-sm">
+                                                    {sow.clientEmail}
+                                                </p>
+                                            </div>
+                                            <div className="w-32 flex-shrink-0">
+                                                <p className="text-gray-500 text-sm">
+                                                    {sow.createdAt
+                                                        ? new Date(
+                                                              sow.createdAt,
+                                                          ).toLocaleDateString()
+                                                        : "N/A"}
+                                                </p>
+                                            </div>
                                         </div>
-
-                                        <div className="w-74 flex-shrink-0">
-                                            <p className="text-gray-500 text-sm">
-                                                {sow.projectName}
-                                            </p>
-                                        </div>
-
-                                        <div className="w-24 flex-shrink-0">
-                                            <p className="text-gray-500 text-sm">
-                                                {sow.status}
-                                            </p>
-                                        </div>
-
-                                        <div className="w-48 flex-shrink-0">
-                                            <p className="text-gray-500 text-sm">
-                                                {sow.timeline?.startDate
-                                                    ? new Date(
-                                                          sow.timeline
-                                                              .startDate,
-                                                      ).toLocaleDateString()
-                                                    : "N/A"}{" "}
-                                                -{" "}
-                                                {sow.timeline?.endDate
-                                                    ? new Date(
-                                                          sow.timeline.endDate,
-                                                      ).toLocaleDateString()
-                                                    : "N/A"}
-                                            </p>
-                                        </div>
-                                        <div className="w-48 flex-shrink-0">
-                                            <p className="text-gray-500 text-sm">
-                                                {sow.clientEmail}
-                                            </p>
-                                        </div>
-                                        <div className="w-32 flex-shrink-0">
-                                            <p className="text-gray-500 text-sm">
-                                                {sow.createdAt
-                                                    ? new Date(
-                                                          sow.createdAt,
-                                                      ).toLocaleDateString()
-                                                    : "N/A"}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                    </Link>
+                                );
+                            })}
                         </div>
                     )}
                 </div>

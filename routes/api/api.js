@@ -148,13 +148,20 @@ router.post("/slack/receive", async (req, res) => {
 
     console.log("=== Slack Request Received ===");
     console.log("Payload type:", payload.type);
-    console.log("Action ID:", payload.action_id);
+    console.log("Action ID:", payload.actions ? payload.actions[0].action_id : "N/A");
 
     try {
         //Check if the actions are button clicks or static select
         if (payload.type === "block_actions") {
-            // Call the appropriate action handler
-            await actions[payload.actions[0].action_id](payload);
+            const actionId = payload.actions?.[0]?.action_id;
+            const handler = actions[actionId];
+
+            if (!handler) {
+                console.log("No handler for action_id:", actionId);
+            } else {
+                // Call the appropriate action handler
+                await handler(payload);
+            }
         }
 
        

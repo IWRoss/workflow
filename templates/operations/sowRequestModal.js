@@ -66,6 +66,10 @@ const sowRequestModal = {
       element: {
         type: "plain_text_input",
         action_id: "work_description",
+        placeholder: {
+          type: "plain_text",
+          text: "You can write or paste the work description here.",
+        },
         multiline: true,
       },
     },

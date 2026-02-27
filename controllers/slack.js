@@ -2346,6 +2346,7 @@ const handleSowRequestResponse = async (payload) => {
         let client = "";
         let clientEmail = "";
 
+        let opportunityLoaded = false;
         if (id) {
             try {
                 const opportunity = await getOpportunity(id);
@@ -2353,6 +2354,7 @@ const handleSowRequestResponse = async (payload) => {
                 projectName = opportunity.name || "";
                 primaryContactId = opportunity.primaryContactId || "";
                 client = opportunity.companyName || "";
+                opportunityLoaded = true;
 
                 // Get primary contact email
                 if (primaryContactId) {
@@ -2362,6 +2364,12 @@ const handleSowRequestResponse = async (payload) => {
             } catch (err) {
                 console.error("Error fetching opportunity details:", err);
             }
+        }
+
+        if (id && !opportunityLoaded) {
+            throw new Error(
+                "Failed to fetch opportunity details from Copper; aborting SOW creation."
+            );
         }
 
         const timelineStart =
@@ -2400,15 +2408,18 @@ const handleSowRequestResponse = async (payload) => {
         //Create a SOW document on drive
         const resultCreateSOW = await createSowDocument(sowData);
 
-        //Add the document link to the Firebase entry
-        if (resultCreateSOW && resultCreateSOW.success) {
-            await db
-                .ref("sow")
-                .child(id)
-                .update({ docId: resultCreateSOW.docId });
-        } else {
-            console.error("Failed to create SOW document:", resultCreateSOW);
+        if (
+            !resultCreateSOW ||
+            !resultCreateSOW.success ||
+            !resultCreateSOW.docUrl
+        ) {
+            throw new Error(
+                "SOW document creation failed or missing doc link; aborting Slack notification."
+            );
         }
+
+        // Add the document link to the Firebase entry
+        await db.ref("sow").child(id).update({ docId: resultCreateSOW.docId });
 
        
         
@@ -2462,6 +2473,26 @@ const handleSowRequestResponse = async (payload) => {
                         text: `*Team Members:*\n${teamMembers}`,
                     },
                 },
+                //Add a button for google drive document if the document was created successfully
+                ...(resultCreateSOW && resultCreateSOW.success
+                    ? [
+                          {
+                              type: "actions",
+
+                              elements: [
+                                  {
+                                      action_id: "viewSowDocument",
+                                      type: "button",
+                                      text: {
+                                          type: "plain_text",
+                                          text: "View SOW Document",
+                                      },
+                                      url: resultCreateSOW.docUrl,
+                                  },
+                              ],
+                          },
+                      ]
+                    : []),
             ],
         });
 

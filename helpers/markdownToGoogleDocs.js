@@ -1,65 +1,103 @@
 
 
+const MarkdownIt = require("markdown-it");
+
 const PT_11 = { magnitude: 11, unit: "PT" };
 
 // Tune this if your markdown uses 4 spaces per nesting level instead of 2.
 const SPACES_PER_INDENT_LEVEL = 2;
 
 /**
- * Parse inline markdown formatting and return:
- * - plain text (without markers)
- * - bold/italic ranges (absolute doc indices)
+ * Render markdown-it inline tokens into plain text and style ranges.
  */
-function parseInlineFormatting(raw, baseIndex) {
+function renderInlineTokens(tokens, baseIndex) {
   const boldRanges = [];
   const italicRanges = [];
+  const linkRanges = [];
 
-  // **bold** or __bold__
-  const boldMatches = [...raw.matchAll(/\*\*(.+?)\*\*|__(.+?)__/g)].map((m) => ({
-    type: "bold",
-    originalStart: m.index,
-    originalEnd: m.index + m[0].length,
-    content: m[1] || m[2] || "",
-  }));
+  let text = "";
+  const stack = [];
 
-  // *italic* or _italic_ (not inside bold)
-  const italicMatchesAll = [
-    ...raw.matchAll(/(?<!\*)\*([^*]+?)\*(?!\*)|(?<!_)_([^_]+?)_(?!_)/g),
-  ].map((m) => ({
-    type: "italic",
-    originalStart: m.index,
-    originalEnd: m.index + m[0].length,
-    content: m[1] || m[2] || "",
-  }));
+  const pushStyle = (type, data) => {
+    stack.push({ type, data, startIndex: baseIndex + text.length });
+  };
 
-  const italicMatches = italicMatchesAll.filter((it) => {
-    return !boldMatches.some(
-      (b) => it.originalStart >= b.originalStart && it.originalEnd <= b.originalEnd
-    );
-  });
+  const popStyle = (type) => {
+    for (let i = stack.length - 1; i >= 0; i -= 1) {
+      if (stack[i].type === type) {
+        const entry = stack.splice(i, 1)[0];
+        const endIndex = baseIndex + text.length;
+        if (endIndex > entry.startIndex) {
+          if (type === "bold") boldRanges.push({ startIndex: entry.startIndex, endIndex });
+          if (type === "italic") italicRanges.push({ startIndex: entry.startIndex, endIndex });
+          if (type === "link" && entry.data) {
+            linkRanges.push({
+              startIndex: entry.startIndex,
+              endIndex,
+              url: entry.data,
+            });
+          }
+        }
+        return;
+      }
+    }
+  };
 
-  const markers = [...boldMatches, ...italicMatches].sort(
-    (a, b) => a.originalStart - b.originalStart
-  );
-
-  let plain = "";
-  let lastEnd = 0;
-
-  for (const mk of markers) {
-    plain += raw.slice(lastEnd, mk.originalStart);
-
-    const start = baseIndex + plain.length;
-    plain += mk.content;
-    const end = baseIndex + plain.length;
-
-    if (mk.type === "bold") boldRanges.push({ startIndex: start, endIndex: end });
-    if (mk.type === "italic") italicRanges.push({ startIndex: start, endIndex: end });
-
-    lastEnd = mk.originalEnd;
+  for (const token of tokens || []) {
+    switch (token.type) {
+      case "text":
+        text += token.content;
+        break;
+      case "softbreak":
+      case "hardbreak":
+        text += " ";
+        break;
+      case "strong_open":
+        pushStyle("bold");
+        break;
+      case "strong_close":
+        popStyle("bold");
+        break;
+      case "em_open":
+        pushStyle("italic");
+        break;
+      case "em_close":
+        popStyle("italic");
+        break;
+      case "link_open":
+        pushStyle("link", token.attrGet("href"));
+        break;
+      case "link_close":
+        popStyle("link");
+        break;
+      case "code_inline": {
+        text += token.content;
+        break;
+      }
+      case "image": {
+        // Insert alt text or a placeholder for images
+        text += token.content || "image";
+        break;
+      }
+      default:
+        break;
+    }
   }
 
-  plain += raw.slice(lastEnd);
-  return { plain, boldRanges, italicRanges };
+  // Close any unclosed styles at end of line
+  for (let i = stack.length - 1; i >= 0; i -= 1) {
+    const entry = stack[i];
+    const endIndex = baseIndex + text.length;
+    if (endIndex > entry.startIndex) {
+      if (entry.type === "bold") boldRanges.push({ startIndex: entry.startIndex, endIndex });
+      if (entry.type === "italic") italicRanges.push({ startIndex: entry.startIndex, endIndex });
+      if (entry.type === "link" && entry.data) {
+        linkRanges.push({ startIndex: entry.startIndex, endIndex, url: entry.data });
+      }
+    }
+  }
+
+  return { text, boldRanges, italicRanges, linkRanges };
 }
 
 /**
@@ -80,13 +118,20 @@ function indentationToTabs(leadingSpaces) {
 const parseMarkdownForGoogleDocs = (markdown, startIndex = 1) => {
   if (!markdown) return { plainText: "", requests: [] };
 
-  const lines = markdown.replace(/\r\n/g, "\n").split("\n");
+  const md = new MarkdownIt({
+    html: false,
+    linkify: true,
+    breaks: false,
+  });
+
+  const tokens = md.parse(markdown, {});
 
   const requests = [];
 
   // Inline styles
   const boldRanges = [];
   const italicRanges = [];
+  const linkRanges = [];
 
   // Heading line ranges (Option A: NORMAL_TEXT + bold + 11pt)
   const headingRanges = [];
@@ -98,120 +143,82 @@ const parseMarkdownForGoogleDocs = (markdown, startIndex = 1) => {
 
   let plainText = "";
   let currentIndex = startIndex;
-  let lastLineWasList = false; // tracks whether the most recent non-blank line was a list item
 
-  for (let i = 0; i < lines.length; i++) {
-    let rawLine = lines[i];
+  const listStack = [];
+  let inListItem = false;
 
-    // Blank line: preserve it UNLESS it sits between two list items.
-    // If we emit an empty paragraph between bullets, Google Docs will
-    // auto-inherit bullet styling onto it, creating ghost "* " lines.
-    if (rawLine.trim() === "") {
-      // Look back: was the previous non-blank line a list item?
-      const prevIsList = lastLineWasList;
-
-      // Look ahead: is the next non-blank line also a list item?
-      let nextIsList = false;
-      if (prevIsList) {
-        for (let k = i + 1; k < lines.length; k++) {
-          const peek = lines[k];
-          if (peek.trim() === "") continue; // skip further blanks
-          // Check if it matches bullet or numbered pattern
-          nextIsList = /^(\s*)[-*]\s+/.test(peek) || /^(\s*)\d+\.\s+/.test(peek);
-          break;
-        }
-      }
-
-      // Skip this blank line if it's between two list items
-      if (prevIsList && nextIsList) {
-        continue;
-      }
-
-      plainText += "\n";
-      currentIndex = startIndex + plainText.length;
-      continue;
-    }
-
-    // Detect heading: ## Heading
-    let isHeading = false;
-    const headingMatch = rawLine.match(/^(#{1,6})\s+(.*)$/);
-    if (headingMatch) {
-      isHeading = true;
-      rawLine = headingMatch[2] || "";
-    }
-
-    // Detect bullet / numbered with indentation
-    let isBullet = false;
-    let isNumbered = false;
-    let indentPrefix = "";
-
-    // Bullet: allow leading whitespace (for nesting)
-    const bulletMatch = rawLine.match(/^(\s*)[-*]\s+(.*)$/);
-    if (bulletMatch) {
-      indentPrefix = indentationToTabs(bulletMatch[1] || "");
-      rawLine = bulletMatch[2] || "";
-      isBullet = true;
-    }
-
-    // Numbered: allow leading whitespace (for nesting)
-    if (!isBullet) {
-      const numberedMatch = rawLine.match(/^(\s*)\d+\.\s+(.*)$/);
-      if (numberedMatch) {
-        indentPrefix = indentationToTabs(numberedMatch[1] || "");
-        rawLine = numberedMatch[2] || "";
-        isNumbered = true;
-      }
-    }
-
-    // Build paragraph text: indent tabs + content (inline formatting)
+  const appendLine = (lineText, isHeading, listType) => {
     const lineStartIndex = currentIndex;
-    const contentBaseIndex = lineStartIndex + indentPrefix.length;
+    plainText += lineText + "\n";
 
-    const {
-      plain: contentPlain,
-      boldRanges: br,
-      italicRanges: ir,
-    } = parseInlineFormatting(rawLine, contentBaseIndex);
+    const paragraphEndIndex = lineStartIndex + lineText.length;
 
-    const plainLine = indentPrefix + contentPlain;
-
-    // Append to document text with newline
-    plainText += plainLine + "\n";
-
-    // Collect inline style ranges
-    boldRanges.push(...br);
-    italicRanges.push(...ir);
-
-    // Paragraph end (exclude newline) for paragraph-level styling
-    const paragraphEndIndex = lineStartIndex + plainLine.length;
-
-    // Heading Option A: store range to style as "normal heading look" (bold + 11pt)
     if (isHeading) {
       headingRanges.push({ startIndex: lineStartIndex, endIndex: paragraphEndIndex });
     }
 
-    // Record individual list paragraph range.
-    // endIndex = paragraphEndIndex + 1  (includes the \n, which Docs needs to
-    // identify the paragraph for createParagraphBullets).
-    if (isBullet) {
+    if (listType) {
       listParagraphs.push({
-        type: "bullet",
-        startIndex: lineStartIndex,
-        endIndex: paragraphEndIndex + 1,
-      });
-    } else if (isNumbered) {
-      listParagraphs.push({
-        type: "number",
+        type: listType,
         startIndex: lineStartIndex,
         endIndex: paragraphEndIndex + 1,
       });
     }
 
-    // Track whether this line was a list item (for blank-line collapsing)
-    lastLineWasList = isBullet || isNumbered;
-
-    // Advance current index
     currentIndex = startIndex + plainText.length;
+  };
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    const token = tokens[i];
+
+    switch (token.type) {
+      case "bullet_list_open":
+        listStack.push("bullet");
+        break;
+      case "ordered_list_open":
+        listStack.push("number");
+        break;
+      case "bullet_list_close":
+      case "ordered_list_close":
+        listStack.pop();
+        break;
+      case "list_item_open":
+        inListItem = true;
+        break;
+      case "list_item_close":
+        inListItem = false;
+        break;
+      case "inline": {
+        const prev = tokens[i - 1];
+        const isHeading = prev && prev.type === "heading_open";
+        const indentLevel = inListItem ? Math.max(0, listStack.length - 1) : 0;
+        const indentPrefix = indentationToTabs(" ".repeat(indentLevel * SPACES_PER_INDENT_LEVEL));
+        const listType = inListItem ? listStack[listStack.length - 1] : null;
+
+        const contentBaseIndex = currentIndex + indentPrefix.length;
+        const { text, boldRanges: br, italicRanges: ir, linkRanges: lr } =
+          renderInlineTokens(token.children || [], contentBaseIndex);
+
+        const lineText = indentPrefix + text;
+        appendLine(lineText, isHeading, listType);
+
+        boldRanges.push(...br);
+        italicRanges.push(...ir);
+        linkRanges.push(...lr);
+        break;
+      }
+      case "fence":
+      case "code_block": {
+        const content = token.content || "";
+        const lines = content.replace(/\n$/, "").split("\n");
+        for (const line of lines) {
+          appendLine(line, false, null);
+        }
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   // ---- Merge contiguous same-type list paragraphs into blocks ----
@@ -315,6 +322,16 @@ const parseMarkdownForGoogleDocs = (markdown, startIndex = 1) => {
     });
   }
 
+  for (const r of linkRanges) {
+    requests.push({
+      updateTextStyle: {
+        range: { startIndex: r.startIndex, endIndex: r.endIndex },
+        textStyle: { link: { url: r.url } },
+        fields: "link",
+      },
+    });
+  }
+
   // 3) Bullets/numbering LAST (Docs may remove leading tabs when applying bullets)
   for (const block of clampedBulletBlocks) {
     if (block.endIndex > block.startIndex) {
@@ -339,6 +356,76 @@ const parseMarkdownForGoogleDocs = (markdown, startIndex = 1) => {
   }
 
   return { plainText, requests };
+};
+
+/**
+ * Remove list styling that can leak into template paragraphs after inserted markdown.
+ * Google Docs may keep bullet styling on following empty paragraphs in the template.
+ */
+const clearTrailingInheritedBullets = async (docs, documentId, anchorIndex) => {
+  const doc = await docs.documents.get({ documentId });
+  const content = doc.data.body?.content || [];
+
+  // Find the paragraph that contains the anchor (end of inserted markdown)
+  let anchorParagraphIdx = -1;
+  for (let i = 0; i < content.length; i += 1) {
+    const element = content[i];
+    if (!element.paragraph) continue;
+    const start = element.startIndex ?? 0;
+    const end = element.endIndex ?? 0;
+    if (anchorIndex >= start && anchorIndex <= end) {
+      anchorParagraphIdx = i;
+      break;
+    }
+  }
+
+  if (anchorParagraphIdx === -1) return;
+
+  // Scan following paragraphs and remove bullets from the contiguous inherited run
+  let clearStart = null;
+  let clearEnd = null;
+
+  for (let i = anchorParagraphIdx + 1; i < content.length; i += 1) {
+    const element = content[i];
+    if (!element.paragraph) continue;
+
+    const isBulletParagraph = Boolean(element.paragraph.bullet);
+    if (isBulletParagraph) {
+      if (clearStart == null) {
+        clearStart = element.startIndex;
+      }
+      clearEnd = element.endIndex;
+      continue;
+    }
+
+    // Stop at first non-bullet paragraph after starting a bullet run
+    if (clearStart != null) {
+      break;
+    }
+
+    // No inherited bullets immediately after inserted content
+    break;
+  }
+
+  if (clearStart == null || clearEnd == null || clearEnd <= clearStart) {
+    return;
+  }
+
+  await docs.documents.batchUpdate({
+    documentId,
+    requestBody: {
+      requests: [
+        {
+          deleteParagraphBullets: {
+            range: {
+              startIndex: clearStart,
+              endIndex: clearEnd,
+            },
+          },
+        },
+      ],
+    },
+  });
 };
 
 /**
@@ -404,6 +491,17 @@ const replaceWithFormattedMarkdown = async (docs, documentId, placeholder, markd
     documentId,
     requestBody: { requests },
   });
+
+  // If inserted markdown created list items, ensure following template paragraphs
+  // do not inherit list styling (common with placeholder + empty-line layouts).
+  const insertedContainsLists = formatRequests.some(
+    (req) => req.createParagraphBullets
+  );
+
+  if (insertedContainsLists) {
+    const anchorIndex = placeholderIndex + plainText.length;
+    await clearTrailingInheritedBullets(docs, documentId, anchorIndex);
+  }
 
   return true;
 };

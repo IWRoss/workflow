@@ -75,11 +75,11 @@ module.exports = {
                     type: "button",
                     text: {
                         type: "plain_text",
-                        text: "View on Dropbox",
+                        text: "View on Drive",
                         emoji: true,
                     },
                     url: "",
-                    action_id: "viewOnDropbox",
+                    action_id: "viewOnDrive",
                 },
             ],
         },

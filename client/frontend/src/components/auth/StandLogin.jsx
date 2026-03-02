@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword,sendEmailVerification } from "firebase/auth";
 import { auth } from "../../config/firebase";
 
 const StandLogin = () => {
@@ -9,6 +9,10 @@ const StandLogin = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+        const [unverifiedUser, setUnverifiedUser] = useState(null);
+    const [resendLoading, setResendLoading] = useState(false);
+
+
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -26,6 +30,18 @@ const StandLogin = () => {
                 email,
                 password
             );
+
+            // Check if email is verified
+            if (!userCredential.user.emailVerified) {
+                                setUnverifiedUser(userCredential.user);
+
+                setError("Please verify your email before logging in. Check your spam folder for the verification email.");
+                setLoading(false);
+                return;
+            }
+
+         
+
             const firebaseToken = await userCredential.user.getIdToken();
 
             // 2. Verify with backend & check domain permissions
@@ -52,7 +68,6 @@ const StandLogin = () => {
 
             navigate("/dashboard");
         } catch (err) {
-           // console.error("Login error:", err);
             switch (err.code) {
                 case "auth/user-not-found":
                     setError("No account found with this email.");
@@ -74,11 +89,37 @@ const StandLogin = () => {
         }
     };
 
+
+    const handleResendVerification = async () => {
+        if (!unverifiedUser) return;
+        
+        setResendLoading(true);
+        try {
+            await sendEmailVerification(unverifiedUser);
+            setError("Verification email sent! Check your inbox.");
+            setUnverifiedUser(null); // Clear unverified user after sending
+        } catch (err) {
+            setError("Failed to resend verification email.");
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
     return (
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {error && (
                 <div className="p-3 text-center bg-red-100 text-red-700 border border-red-400 rounded">
                     {error}
+                    {unverifiedUser && (
+                        <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={resendLoading}
+                            className="text-center justify-around mt-2 text-blue-600 hover:underline disabled:opacity-50"
+                        >
+                            {resendLoading ? "Sending..." : "Resend verification email"}
+                        </button>
+                    )}
                 </div>
             )}
 

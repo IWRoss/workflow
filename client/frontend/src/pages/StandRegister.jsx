@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword,sendEmailVerification } from "firebase/auth";
 import { ref, set } from "firebase/database";
 import { auth, database } from "../config/firebase";
 
@@ -10,6 +10,7 @@ const StandRegister = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+const [verificationSent, setVerificationSent] = useState(false);
 
     const navigate = useNavigate();
 
@@ -38,7 +39,10 @@ const StandRegister = () => {
             );
             const user = userCredential.user;
 
-            // 2. Save user data to Firebase Realtime Database
+            // 2. Send email verification ✅
+            await sendEmailVerification(user);
+
+            // 3. Save user data to Firebase Realtime Database
             await set(ref(database, `users/${user.uid}`), {
                 email: user.email,
                 uid: user.uid,
@@ -46,7 +50,9 @@ const StandRegister = () => {
                 role: "user",
             });
 
-            navigate("/login");
+            
+            setVerificationSent(true);
+
         } catch (err) {
             console.error("Register error:", err);
             switch (err.code) {
@@ -67,6 +73,32 @@ const StandRegister = () => {
         }
     };
 
+
+
+    if (verificationSent) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
+                    <div className="text-5xl mb-4">📧</div>
+                    <h2 className="text-2xl font-bold mb-2 text-gray-800">Check your email</h2>
+                    <p className="text-gray-600 mb-6">
+                        We've sent a verification link to <span className="font-semibold text-blue-600">{email}</span>.
+                        Please verify your email before logging in.
+                    </p>
+                    <button
+                        onClick={() => navigate("/login")}
+                        className="w-full py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors duration-200"
+                    >
+                        Go to Login
+                    </button>
+                    <p className="mt-4 text-sm text-gray-400">
+                        Didn't receive it? Check your spam folder.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+    
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded shadow-md w-full max-w-md">

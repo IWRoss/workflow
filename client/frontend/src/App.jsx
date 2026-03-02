@@ -17,6 +17,8 @@ import RevenueCalendar from "./pages/RevenueCalendar";
 import StandRegister from "./pages/StandRegister";
 import OpsDashboard from "./pages/OpsDashboard";
 import SOWPage from "./pages/SOWPage";
+import EmailActionHandler from "./pages/EmailActionHandler";
+
 
 function App() {
     const [msalHandled, setMsalHandled] = useState(false);
@@ -132,10 +134,10 @@ function App() {
             />
 
             <Route path="/register" element={<StandRegister />} />
+            <Route path="/auth/action" element={<EmailActionHandler />} />
 
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
-            <Route path="/auth/action" element={<EmailActionHandler />} />
         </Routes>
     );
 }

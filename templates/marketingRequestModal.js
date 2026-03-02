@@ -149,21 +149,21 @@ module.exports = {
                 emoji: true,
             },
         },
-        // Dropbox link
+        // Google Drive link
         {
             type: "input",
             element: {
                 type: "plain_text_input",
-                action_id: "dropboxLinkInput",
+                action_id: "googleDriveLinkInput",
                 placeholder: {
                     type: "plain_text",
-                    text: "Enter a link to the Dropbox folder for this project",
+                    text: "Enter a link to the Google Drive folder for this project",
                     emoji: true,
                 },
             },
             label: {
                 type: "plain_text",
-                text: "Dropbox link",
+                text: "Google Drive link",
                 emoji: true,
             },
         },

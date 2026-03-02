@@ -21,7 +21,7 @@ const blocks = {
             type: "section",
             text: {
                 type: "mrkdwn",
-                text: "Workflow bot allows producers to submit tickets directly through Slack, providing an easy and convenient way to request Studio and Webdev services. With Workflow, producers can submit tickets by filling out a form, including the client name, producer deadline, client deadline, media type, a link to a Dropbox file containing all the content, and project code. ",
+                text: "Workflow bot allows producers to submit tickets directly through Slack, providing an easy and convenient way to request Studio and Webdev services. With Workflow, producers can submit tickets by filling out a form, including the client name, producer deadline, client deadline, media type, a link to a Google Drive file containing all the content, and project code. ",
             },
         },
         {

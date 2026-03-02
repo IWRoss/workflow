@@ -238,7 +238,7 @@ const addTaskToBoard = async (newTask, boardId) => {
         date4: newTask.producerDeadline,
         date: newTask.clientDeadline,
         link: {
-            url: newTask.dropboxLink,
+            url: newTask.googleDriveLink,
             text: "Link",
         },
         dropdown8: newTask.media,

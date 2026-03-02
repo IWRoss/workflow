@@ -678,12 +678,12 @@ const handleRequestResponse = async (payload, locations) => {
 
     console.log("Project Code:", projectCode);
 
-    const rawDropboxLink = findField(fields, "dropboxLink").value;
+    const rawGoogleDriveLink = findField(fields, "googleDriveLink").value;
 
-    const formattedDropboxLink =
-        rawDropboxLink && !rawDropboxLink.startsWith("http")
-            ? "https://" + rawDropboxLink
-            : rawDropboxLink;
+    const formattedGoogleDriveLink =
+        rawGoogleDriveLink && !rawGoogleDriveLink.startsWith("http")
+            ? "https://" + rawGoogleDriveLink
+            : rawGoogleDriveLink;
 
     const newTask = {
         name: projectTitle,
@@ -699,10 +699,10 @@ const handleRequestResponse = async (payload, locations) => {
         Media: findField(fields, "mediaSelect")
             .selected_options.map((m) => m.value)
             .join(", "),
-        dropboxLink: formattedDropboxLink,
+        googleDriveLink: formattedGoogleDriveLink,
 
-        Dropbox: {
-            url: formattedDropboxLink,
+        GoogleDrive: {
+            url: formattedGoogleDriveLink,
             text: "Link",
         },
         Details: findField(fields, "notes").value,
@@ -740,9 +740,9 @@ const handleRequestResponse = async (payload, locations) => {
         });
         newRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${boardId}/pulses/${result.data.create_item.id}`;
 
-        if (isValidHttpUrl(newTask.dropboxLink)) {
+        if (isValidHttpUrl(newTask.googleDriveLink)) {
             newRequestMessageTemplate.blocks[4].elements[2].url =
-                newTask.dropboxLink;
+                newTask.googleDriveLink;
         } else {
             newRequestMessageTemplate.blocks[4].elements.splice(2, 1);
         }
@@ -1210,9 +1210,9 @@ const handleMarketingRequestResponse = async (payload) => {
         Description: fieldValues.find((f) =>
             f.hasOwnProperty("projectDescriptionInput"),
         ).projectDescriptionInput.value,
-        "Dropbox Link":
-            fieldValues.find((f) => f.hasOwnProperty("dropboxLinkInput"))
-                .dropboxLinkInput.value + " Link",
+        "Google Drive Link":
+            fieldValues.find((f) => f.hasOwnProperty("googleDriveLinkInput"))
+                .googleDriveLinkInput.value + " Link",
         Channel: fieldValues.find((f) => f.hasOwnProperty("channelSelect"))
             .channelSelect.selected_option.value,
         "Go-Live Date": {
@@ -1251,9 +1251,9 @@ const handleMarketingRequestResponse = async (payload) => {
         });
     newMarketingRequestMessageTemplate.blocks[4].elements[1].url = `https://iwcrew.monday.com/boards/${process.env.MARKETING_MONDAY_BOARD}/pulses/${addTaskRequest.data.create_item.id}`;
 
-    if (isValidHttpUrl(newTask["Dropbox Link"])) {
+    if (isValidHttpUrl(newTask["Google Drive Link"])) {
         newMarketingRequestMessageTemplate.blocks[4].elements[2].url =
-            newTask["Dropbox Link"];
+            newTask["Google Drive Link"];
     } else {
         newMarketingRequestMessageTemplate.blocks[4].elements.splice(2, 1);
     }

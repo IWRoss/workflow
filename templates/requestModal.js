@@ -170,10 +170,10 @@ module.exports = {
             type: "input",
             element: {
                 type: "plain_text_input",
-                action_id: "dropboxLink",
+                action_id: "googleDriveLink",
                 placeholder: {
                     type: "plain_text",
-                    text: "Paste a Dropbox (or other) link here. Must be a valid URL",
+                    text: "Paste a Google Drive (or other) link here. Must be a valid URL",
                 },
             },
             label: {

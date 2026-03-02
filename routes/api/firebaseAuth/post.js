@@ -39,6 +39,15 @@ router.post("/login", async (req, res) => {
             });
         }
 
+
+        //Do not allow cegos.uk emails to log in
+        if (emailDomain === "cegos.uk") {
+            return res.status(403).json({
+                success: false,
+                error: "Users with cegos.uk email addresses are not allowed to log in.",
+            });
+        }
+
         // Get permissions
         const permissions = getPermissionsByDomain(emailDomain);
 

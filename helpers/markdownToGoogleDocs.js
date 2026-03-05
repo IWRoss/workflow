@@ -428,26 +428,93 @@ const clearTrailingInheritedBullets = async (docs, documentId, anchorIndex) => {
   });
 };
 
+const findPlaceholderInParagraph = (elements = [], placeholder) => {
+  const placeholderLength = placeholder.length;
+  if (placeholderLength === 0) return null;
+
+  // Sliding window across consecutive text runs so split tokens still match.
+  const windowChars = [];
+  const windowDocIndices = [];
+
+  for (const textElement of elements) {
+    const text = textElement.textRun?.content || "";
+    const startIndex = textElement.startIndex;
+    if (!text || startIndex == null) continue;
+
+    for (let i = 0; i < text.length; i += 1) {
+      windowChars.push(text[i]);
+      windowDocIndices.push(startIndex + i);
+
+      if (windowChars.length > placeholderLength) {
+        windowChars.shift();
+        windowDocIndices.shift();
+      }
+
+      if (windowChars.length === placeholderLength) {
+        if (windowChars.join("") === placeholder) {
+          return windowDocIndices[0];
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+const findPlaceholderInContent = (content = [], placeholder) => {
+  for (const element of content) {
+    if (element.paragraph?.elements) {
+      const paragraphIndex = findPlaceholderInParagraph(
+        element.paragraph.elements,
+        placeholder
+      );
+      if (paragraphIndex != null) return paragraphIndex;
+    }
+
+    if (element.table?.tableRows) {
+      for (const row of element.table.tableRows) {
+        for (const cell of row.tableCells || []) {
+          const cellIndex = findPlaceholderInContent(
+            cell.content || [],
+            placeholder
+          );
+          if (cellIndex != null) return cellIndex;
+        }
+      }
+    }
+
+    if (element.tableOfContents?.content) {
+      const tocIndex = findPlaceholderInContent(
+        element.tableOfContents.content,
+        placeholder
+      );
+      if (tocIndex != null) return tocIndex;
+    }
+  }
+
+  return null;
+};
+
 /**
  * Find the index where a placeholder exists in the document.
  * Returns the start index of the placeholder text.
  */
 const findPlaceholderIndex = async (docs, documentId, placeholder) => {
   const doc = await docs.documents.get({ documentId });
-  const content = doc.data.body?.content || [];
 
-  for (const element of content) {
-    const para = element.paragraph;
-    if (!para?.elements) continue;
-
-    for (const textElement of para.elements) {
-      const text = textElement.textRun?.content || "";
-      const pos = text.indexOf(placeholder);
-      if (pos !== -1) {
-        return (textElement.startIndex ?? 0) + pos;
-      }
-    }
+  const segments = [doc.data.body?.content || []];
+  for (const header of Object.values(doc.data.headers || {})) {
+    segments.push(header.content || []);
   }
+  for (const footer of Object.values(doc.data.footers || {})) {
+    segments.push(footer.content || []);
+  }
+
+  for (const content of segments) {
+    const index = findPlaceholderInContent(content, placeholder);
+    if (index != null) return index;
+  }
+
   return null;
 };
 

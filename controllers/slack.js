@@ -2325,6 +2325,37 @@ const reportErrorToSlack = async (error, context) => {
 };
 
 //SOW Modal submission
+const extractCopperContactName = (contact) => {
+    const fullNameCandidates = [
+        contact?.name,
+        contact?.full_name,
+        [contact?.first_name, contact?.last_name].filter(Boolean).join(" "),
+        [contact?.firstName, contact?.lastName].filter(Boolean).join(" "),
+    ];
+
+    const selectedName = fullNameCandidates.find(
+        (value) => typeof value === "string" && value.trim().length > 0,
+    );
+
+    return selectedName ? selectedName.trim() : "";
+};
+
+const parseSowCost = (costValue) => {
+    const rawCost = String(costValue || "").trim();
+    if (!rawCost) return "";
+
+    const normalizedCost = rawCost.replace(/[$£€,]/g, "").replace(/\s+/g, "");
+    const isValidCost = /^\d+(\.\d{1,2})?$/.test(normalizedCost);
+
+    if (!isValidCost) {
+        throw new Error(
+            `Invalid SOW cost "${rawCost}". Use numbers only (optional decimals).`,
+        );
+    }
+
+    return normalizedCost;
+};
+
 const handleSowRequestResponse = async (payload) => {
     const db = admin.database();
 
@@ -2344,6 +2375,7 @@ const handleSowRequestResponse = async (payload) => {
         let projectName = "";
         let primaryContactId = "";
         let client = "";
+        let clientName = "";
         let clientEmail = "";
 
         let opportunityLoaded = false;
@@ -2360,6 +2392,7 @@ const handleSowRequestResponse = async (payload) => {
                 if (primaryContactId) {
                     const contact = await getContactById(primaryContactId);
                     clientEmail = contact?.emails?.[0]?.email || "";
+                    clientName = extractCopperContactName(contact);
                 }
             } catch (err) {
                 console.error("Error fetching opportunity details:", err);
@@ -2376,6 +2409,8 @@ const handleSowRequestResponse = async (payload) => {
             findField(fields, "timeline_start")?.selected_date || "";
         const timelineEnd =
             findField(fields, "timeline_end")?.selected_date || "";
+        const rawCost = findField(fields, "cost")?.value || "";
+        const cost = parseSowCost(rawCost);
         const workDescription =
             findField(fields, "work_description")?.value || "";
         const teamMembers = findField(fields, "team_members")?.value || "";
@@ -2387,12 +2422,14 @@ const handleSowRequestResponse = async (payload) => {
             projectCode,
             projectName,
             client,
+            clientName,
             clientEmail,
             primaryContactId,
             timeline: {
                 startDate: timelineStart,
                 endDate: timelineEnd,
             },
+            cost,
             workDescription: formattedWorkDescription,
             teamMembers,
             status: "Submitted",
@@ -2456,6 +2493,10 @@ const handleSowRequestResponse = async (payload) => {
                         {
                             type: "mrkdwn",
                             text: `*Timeline:*\n${timelineStart} → ${timelineEnd}`,
+                        },
+                        {
+                            type: "mrkdwn",
+                            text: `*Cost:*\n${cost}`,
                         },
                     ],
                 },

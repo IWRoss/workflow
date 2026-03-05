@@ -58,6 +58,22 @@ const sowRequestModal = {
     },
     {
       type: "input",
+      block_id: "cost_block",
+      label: {
+        type: "plain_text",
+        text: "Cost",
+      },
+      element: {
+        type: "plain_text_input",
+        action_id: "cost",
+        placeholder: {
+          type: "plain_text",
+          text: "Numbers only (e.g. 25000 or 25000.00)",
+        },
+      },
+    },
+    {
+      type: "input",
       block_id: "work_block",
       label: {
         type: "plain_text",

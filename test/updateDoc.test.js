@@ -6,7 +6,9 @@ const testSowData = {
     projectCode: "TEST-001",
     projectName: "Test Project - Unit Test",
     client: "Test Client Ltd",
+    clientName: "Jane Test",
     clientEmail: "test@example.com",
+    cost: "25000",
     primaryContactId: "12345",
     timeline: {
         startDate: "2026-03-01",

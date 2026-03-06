@@ -840,24 +840,48 @@ const getCopperUserById = async (userId) => {
 
 
 //Copper Search Opportunities function
-const searchOpportunitiesBySearchTerm = async (searchTerm) => {
+const searchOpportunitiesBySearchTerm = async (
+    searchTerm,
+    {
+        stageIds = null,
+        stageNames = ["proposal creation", "proposal submitted", "agreed (backlog)", "completed"],
+        statuses = ["Open", "Won"],
+        pageSize = 200,
+        useDateFilter = true,
+    } = {}
+) => {
     let page = 1;
     let allOpportunities = [];
 
-    const stageIds = await getPipelineStageIds([
-        'proposal creation',
-        'proposal submitted', 
-      
-    ]);
+    const resolvedStageIds =
+        Array.isArray(stageIds) && stageIds.length > 0
+            ? stageIds
+            : await getPipelineStageIds(stageNames);
+
+            // Calculate 6 months ago timestamp
+    const sixMonthsAgo = Math.floor(
+        new Date(new Date().setMonth(new Date().getMonth() - 6)).setHours(0, 0, 0, 0) / 1000
+    );
+
+    const payload = {
+        pipeline_stage_ids: resolvedStageIds,
+        statuses,
+        page_size: pageSize,
+    };
+
+    // Add date filter if enabled
+    if (useDateFilter) {
+        payload.minimum_modified_date = sixMonthsAgo;
+    }
+
 
     while (true) {
         const response = await axios.post(
             `${process.env.COPPER_API_URL}/opportunities/search`,
             {
-                pipeline_stage_ids: stageIds,
-                statuses: ["Open", "Won"],
+                ...payload,
                 page_number: page,
-                page_size: 200,
+               
             },
             { headers: copperHeaders }
         );
@@ -869,21 +893,25 @@ const searchOpportunitiesBySearchTerm = async (searchTerm) => {
         page++;
     }
 
-    const searchLower = searchTerm.toLowerCase();
+    const searchLower = (searchTerm || "").toLowerCase();
 
-    console.log('Total pages of opportunities fetched:', page);
+    console.log("Total pages of opportunities fetched:", page);
 
-    // Format 
     const formatted = allOpportunities.map(formatOpportunity);
 
-    // Filter the formatted data
-    const filtered = formatted.filter(opp => 
-        opp.name?.toLowerCase().includes(searchLower) ||
-        opp.companyName?.toLowerCase().includes(searchLower) ||  
-        opp.projectCode?.toLowerCase().includes(searchLower)
+    // If no search term, return all
+    if (!searchLower) {
+        return formatted;
+    }
+
+    const filtered = formatted.filter(
+        (opp) =>
+            opp.name?.toLowerCase().includes(searchLower) ||
+            opp.companyName?.toLowerCase().includes(searchLower) ||
+            (opp.projectCode && opp.projectCode.toLowerCase().includes(searchLower))
     );
 
-    return filtered; 
+    return filtered;
 };
 
 // Helper function to get pipeline stage IDs

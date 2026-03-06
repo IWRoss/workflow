@@ -12,11 +12,7 @@ module.exports = {
       fields: [
         {
           type: "mrkdwn",
-          text: "*Client*\n",
-        },
-        {
-          type: "mrkdwn",
-          text: "*Project Name*\n",
+          text: "*Project*\n",
         },
       ],
     },

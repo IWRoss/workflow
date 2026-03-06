@@ -1,15 +1,13 @@
 /**
- * This is the modal that is used to create a new design request.
+ * This is the modal that is used to create a new invoice request.
  */
-
-const clients = require("../data/clients");
 
 module.exports = {
   type: "modal",
   callback_id: "handleInvoiceRequestResponse",
   title: {
     type: "plain_text",
-    text: "Post a request",
+    text: "New Invoice Request",
     emoji: true,
   },
   submit: {
@@ -25,78 +23,20 @@ module.exports = {
   blocks: [
     {
       type: "input",
+      block_id: "project_select_block",
       element: {
-        type: "static_select",
+        type: "external_select",
+        action_id: "project_select",
         placeholder: {
           type: "plain_text",
-          text: "Select a client from the list",
+          text: "Search for a project",
           emoji: true,
         },
-        // options: [
-        //   ...clients.map((client) => {
-        //     return {
-        //       text: {
-        //         type: "plain_text",
-        //         text: client,
-        //         emoji: true,
-        //       },
-        //       value: client,
-        //     };
-        //   }),
-        // ],
-        option_groups: [
-          ...clients.reduce((acc, client) => {
-            const firstLetter = client.charAt(0).toUpperCase();
-
-            const groupIndex = acc.findIndex(
-              (group) => group.label.text === firstLetter
-            );
-
-            if (groupIndex === -1) {
-              acc.push({
-                label: {
-                  type: "plain_text",
-                  text: firstLetter,
-                  emoji: true,
-                },
-                options: [],
-              });
-            }
-
-            acc[acc.length - 1].options.push({
-              text: {
-                type: "plain_text",
-                text: client,
-                emoji: true,
-              },
-              value: client,
-            });
-
-            return acc;
-          }, []),
-        ],
-        action_id: "projectClientInput",
+        min_query_length: 4,
       },
       label: {
         type: "plain_text",
-        text: "Client",
-        emoji: true,
-      },
-    },
-    {
-      type: "input",
-      element: {
-        type: "plain_text_input",
-        action_id: "projectNameInput",
-        placeholder: {
-          type: "plain_text",
-          text: "Enter the Project Name (ensuring it matches Copper exactly)",
-          emoji: true,
-        },
-      },
-      label: {
-        type: "plain_text",
-        text: "Project Name",
+        text: "Project",
         emoji: true,
       },
     },
@@ -115,23 +55,6 @@ module.exports = {
       label: {
         type: "plain_text",
         text: "Description",
-        emoji: true,
-      },
-    },
-    {
-      type: "input",
-      element: {
-        type: "plain_text_input",
-        action_id: "projectCodeInput",
-        placeholder: {
-          type: "plain_text",
-          text: "Enter the Project Code (e.g. INV001)",
-          emoji: true,
-        },
-      },
-      label: {
-        type: "plain_text",
-        text: "Project Code",
         emoji: true,
       },
     },

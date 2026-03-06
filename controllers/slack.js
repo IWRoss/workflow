@@ -35,11 +35,13 @@ const {
 } = require("../helpers/helpers.js");
 const { createSowDocument } = require("../helpers/updateDoc");
 
-
 const templates = require("../templates");
 const { stringify } = require("nodemon/lib/utils/index.js");
 const clients = require("../data/clients.js");
-const { generateTitleFromRequest, formatSowDescription } = require("./openai.js");
+const {
+    generateTitleFromRequest,
+    formatSowDescription,
+} = require("./openai.js");
 
 //Oportunity custom field map
 // This map is used to convert Copper custom field IDs
@@ -672,9 +674,11 @@ const handleRequestResponse = async (payload, locations) => {
     );
 
     //Get the project code from the dropdown (may be undefined if not selected)
+    const selected =
+        findField(fields, "project_select")?.selected_option?.value || "";
+    const normalized = selected.startsWith("NO_CODE_") ? "" : selected;
     const projectCode =
-        findField(fields, "project_select")?.selected_option?.value ||
-        findField(fields, "projectCode")?.value;
+        normalized || findField(fields, "projectCode")?.value || "";
 
     console.log("Project Code:", projectCode);
 
@@ -827,43 +831,67 @@ const handleRequestResponse = async (payload, locations) => {
  */
 const handleProjectSelectOptions = async (payload) => {
     try {
+        const fixedOptions = [
+            {
+                text: { type: "plain_text", text: "Sales", emoji: true },
+                value: "SALES",
+            },
+            {
+                text: { type: "plain_text", text: "Marketing", emoji: true },
+                value: "MARKETING",
+            },
+            {
+                text: { type: "plain_text", text: "Internal", emoji: true },
+                value: "INTERNAL",
+            },
+        ];
         const searchTerm = payload.value || "";
+        const callbackId = payload.view?.callback_id;
 
-        //console.log("Searching for projects with term:", searchTerm);
+        let statuses;
+        let stageNames;
+        if (callbackId === "handleStudioRequestResponse") {
+            statuses = ["Won"];
+        } else if (callbackId === "handleCommTechRequestResponse") {
+            statuses = ["Open", "Won"];
+        } else if (callbackId === "handleInvoiceRequestResponse") {
+            statuses = ["Open", "Won"];
+            stageNames = ["proposal submitted", "agreed (backlog)"];
+        }
 
-        // Fetch all projects from Monday.com
-        const rows = await getAllTaskRowsFromBoard(
-            process.env.OPS_MONDAY_BOARD,
+        // Fetch opportunities from Copper (already filtered inside the function)
+        const opportunities = await searchOpportunitiesBySearchTerm(
+            searchTerm,
+            {
+                statuses,
+                ...(stageNames && { stageNames }),
+            },
         );
 
-        // Filter projects based on search term
-        const filteredRows = rows.filter((row) => {
-            const searchLower = searchTerm.toLowerCase();
-            return (
-                row.name.toLowerCase().includes(searchLower) ||
-                row.projectCode.toLowerCase().includes(searchLower)
-            );
-        });
+        console.log(
+            `Fetched ${opportunities.length} opportunities from Copper`,
+        );
+        console.log("First 3 opportunities:", opportunities.slice(0, 3));
+        console.log(
+            `Using callback ${callbackId || "unknown"} with statuses: ${statuses.join(", ")}`,
+        );
 
         // Convert to Slack options format (max 100 results)
-        const options = filteredRows.slice(0, 100).map((row) => {
+        const options = opportunities.slice(0, 100).map((row) => {
             const displayName =
                 row.name.length > 75 ? `${row.name.slice(0, 72)}...` : row.name;
 
             return {
                 text: {
                     type: "plain_text",
-                    text: `${displayName}`,
+                    text: `${row.projectCode || "N/A"} - ${displayName}`,
                     emoji: true,
                 },
-                value: row.projectCode,
+                value: row.projectCode || "NO_CODE_<oppId_" + row.id + ">", // Use project code as value, or a placeholder if not available
             };
         });
 
-        // Return options to Slack
-        return {
-            options: options,
-        };
+        return { options: [...options, ...fixedOptions].slice(0, 100) };
     } catch (error) {
         await reportErrorToSlack(error, "handleProjectSelectOptions");
         console.error("Error loading project options:", error);
@@ -875,7 +903,6 @@ const handleProjectSelectOptions = async (payload) => {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-
 //Fetch projects from Copper and filter based on search term for the project select dropdown in the request form
 const handleSowProjectSelectOptions = async (payload) => {
     try {
@@ -886,9 +913,15 @@ const handleSowProjectSelectOptions = async (payload) => {
         // Delay for 2 seconds after user stops typing
         await sleep(2000);
 
-        const opportunities = await searchOpportunitiesBySearchTerm(searchTerm);
+        const opportunities = await searchOpportunitiesBySearchTerm(
+            searchTerm,
+            {
+                stageNames: ["proposal creation", "proposal submitted"],
+                statuses: ["Open", "Won"],
+            },
+        );
 
-        console.log("opportunities",opportunities)
+        console.log("opportunities", opportunities);
 
         console.log(
             `Fetched ${opportunities.length} opportunities from Copper`,
@@ -908,9 +941,6 @@ const handleSowProjectSelectOptions = async (payload) => {
         }));
 
         return { options };
-
-        
-
     } catch (error) {
         console.error("Error fetching Copper opportunities:", error);
         return { options: [] };
@@ -963,6 +993,7 @@ const handleMultipleTeamsRequestResponse = async (payload) =>
         },
     ]);
 
+//Invoice Request
 const handleInvoiceRequestResponse = async (payload) => {
     const fields = Object.values(payload.view.state.values);
 
@@ -972,25 +1003,19 @@ const handleInvoiceRequestResponse = async (payload) => {
 
     newInvoiceRequestMessageTemplate.blocks[0].text.text = `*<@${payload.user.id}>* submitted a new request:`;
 
-    newInvoiceRequestMessageTemplate.blocks[1].fields[0].text += findField(
-        fields,
-        "projectClientInput",
-    ).selected_option.value;
+    const selectedOption = findField(fields, "project_select")?.selected_option;
+    const projectText = selectedOption?.text?.text || "";
+    const selectedValue = selectedOption?.value || "";
+    const projectCode = selectedValue.startsWith("NO_CODE_") ? "" : selectedValue;
 
-    newInvoiceRequestMessageTemplate.blocks[1].fields[1].text += findField(
-        fields,
-        "projectNameInput",
-    ).value;
+    newInvoiceRequestMessageTemplate.blocks[1].fields[0].text += projectText;
 
     newInvoiceRequestMessageTemplate.blocks[2].text.text += findField(
         fields,
         "projectDescriptionInput",
     ).value;
 
-    newInvoiceRequestMessageTemplate.blocks[3].fields[0].text += findField(
-        fields,
-        "projectCodeInput",
-    ).value;
+    newInvoiceRequestMessageTemplate.blocks[3].fields[0].text += projectCode;
 
     newInvoiceRequestMessageTemplate.blocks[3].fields[1].text += findField(
         fields,
@@ -2219,7 +2244,7 @@ const handlePasswordCommand = async (payload) => {
         });
 
         // Log failed password request
-        await logPasswordRequest(payload.user_id, appName, false);
+        await logPasswordRequest(payload.user.id, appName, false);
     }
 };
 
@@ -2401,7 +2426,7 @@ const handleSowRequestResponse = async (payload) => {
 
         if (id && !opportunityLoaded) {
             throw new Error(
-                "Failed to fetch opportunity details from Copper; aborting SOW creation."
+                "Failed to fetch opportunity details from Copper; aborting SOW creation.",
             );
         }
 
@@ -2415,7 +2440,8 @@ const handleSowRequestResponse = async (payload) => {
             findField(fields, "work_description")?.value || "";
         const teamMembers = findField(fields, "team_members")?.value || "";
 
-       const formattedWorkDescription = await formatSowDescription(workDescription);
+        const formattedWorkDescription =
+            await formatSowDescription(workDescription);
 
         const sowData = {
             id,
@@ -2436,7 +2462,6 @@ const handleSowRequestResponse = async (payload) => {
             projectOwner: payload.user.id,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            
         };
 
         // Write directly to Firebase
@@ -2451,15 +2476,12 @@ const handleSowRequestResponse = async (payload) => {
             !resultCreateSOW.docUrl
         ) {
             throw new Error(
-                "SOW document creation failed or missing doc link; aborting Slack notification."
+                "SOW document creation failed or missing doc link; aborting Slack notification.",
             );
         }
 
         // Add the document link to the Firebase entry
         await db.ref("sow").child(id).update({ docId: resultCreateSOW.docId });
-
-       
-        
 
         // Post confirmation to Slack
         await slack.chat.postMessage({
